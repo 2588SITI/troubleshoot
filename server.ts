@@ -474,10 +474,14 @@ function getGroundedSolution(rawQuery: string, locoType: string) {
       (f.id === 'F1901P1' && (norm.includes('wtb') || norm.includes('train bus') || norm.includes('1901'))) ||
       (f.id === 'GEN_CE' && norm.includes('control electronics')) ||
       (f.id === 'GEN_PANTO' && norm.includes('panto')) ||
-      (f.id === 'P56_BP_MASTER' && (norm.includes('bp') || norm.includes('maintaining')))
+      (f.id === 'P56_BP_MASTER' && (
+        norm.includes('maintaining') || norm.includes('bp pressure') || norm.includes('bp gauge') || norm.includes('बीपी') ||
+        (/\bbp\b/i.test(norm) && !norm.includes('bpfa') && !norm.includes('bppb') && !norm.includes('bpcs'))
+      ))
     );
     if (matched) {
-      const pageNum = matched.id.startsWith('P53') ? 53 : (matched.id === 'P56_BP_MASTER' ? 56 : (matched.id === 'F1901P1' ? 52 : (matched.id === 'GEN_CE' ? 54 : (matched.id === 'GEN_PANTO' ? 55 : 14))));
+      const pageMatch = matched.message.match(/पृष्ठ\s*(\d+)/i) || (matched.effect || '').match(/पृष्ठ\s*(\d+)/i);
+      const pageNum = pageMatch ? parseInt(pageMatch[1], 10) : (matched.id.startsWith('P53') ? 53 : (matched.id === 'P56_BP_MASTER' ? 56 : (matched.id === 'F1901P1' ? 52 : (matched.id === 'GEN_CE' ? 54 : (matched.id === 'GEN_PANTO' ? 55 : 14)))));
       return {
         identifiedFaultId: matched.id,
         faultTitle: matched.message,

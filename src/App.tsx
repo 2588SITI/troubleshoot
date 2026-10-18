@@ -1,13 +1,14 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, ChevronRight, ArrowLeft, AlertTriangle, Lightbulb, Activity, Wrench, ShieldAlert, Sparkles, Loader2, Bot, AlertCircle, ExternalLink, HelpCircle, Mic, MicOff, Volume2, VolumeX, Globe, BookOpen, Download, FileText, CheckCircle2, Bookmark, Layers, Smartphone, Copy, Check, X, Share2 } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, AlertTriangle, Lightbulb, Activity, Wrench, ShieldAlert, Sparkles, Loader2, Bot, AlertCircle, ExternalLink, HelpCircle, Mic, MicOff, Volume2, VolumeX, Globe, BookOpen, Download, FileText, CheckCircle2, Bookmark, Layers, Smartphone, Copy, Check, X, Share2, Sun, Moon, Type, Radio, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { subSystems, faults } from './data';
 import { amritBharatSubSystems, amritBharatFaults } from './dataAmritBharat';
 import { Fault } from './types';
 import { cn } from './lib/utils';
 import { cleanRailwayVoiceText } from './lib/speechCleaner';
-import { resolveDefectClientSide } from './lib/clientTroubleshooter';
+import { resolveDefectClientSide, expandLocoTokens } from './lib/clientTroubleshooter';
 import { usePWAInstall } from './lib/usePWAInstall';
+import { LPVoiceGuide } from './components/LPVoiceGuide';
 
 interface AiTroubleshootResult {
   identifiedFaultId?: string | null;
@@ -41,7 +42,40 @@ interface ManualSearchResult {
 
 export default function App() {
   const [locoType, setLocoType] = useState<'3phase' | 'amrit_bharat'>('3phase');
-  const [mode, setMode] = useState<'browse' | 'ai' | 'manual'>('browse');
+  const [mode, setMode] = useState<'browse' | 'ai' | 'voice' | 'manual'>('browse');
+  
+  // Cab visibility modes: 'night' (Dark high contrast) or 'day' (Day glare high contrast)
+  const [cabMode, setCabMode] = useState<'night' | 'day'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return (localStorage.getItem('cab_mode') as 'night' | 'day') || 'night';
+      } catch (e) {}
+    }
+    return 'night';
+  });
+
+  // Text size for LP readability: 'normal', 'large', 'extra-large'
+  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'extra-large'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return (localStorage.getItem('font_size') as 'normal' | 'large' | 'extra-large') || 'large';
+      } catch (e) {}
+    }
+    return 'large';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cab_mode', cabMode);
+    } catch (e) {}
+  }, [cabMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('font_size', fontSize);
+    } catch (e) {}
+  }, [fontSize]);
+
   const [aiQuery, setAiQuery] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -310,10 +344,23 @@ export default function App() {
     { label: "स्लेव लोको ब्रेक रिलीज नहीं (BC 3.5 - P53)", query: "During push pull formation if slave loco brakes are not releasing & slave loco BC gauge showing 3.5 kg/cm2 C3W valve 57 58 D-2 94 cock" },
     { label: "F1901P1 WTB संचार बाधा / Self Hold", query: "F1901P1 communication disturbance WTB slave loco self hold mode train bus isolated" },
     { label: "F0101P1 VCB Stuck ON / Master-Slave", query: "F0101P1 VCB stuck in ON position master slave loco push pull" },
-    { label: "ZNN स्विच / न्यूट्रल सेक्शन", query: "ZNN switch neutral section passing push pull WAP-5 master slave DJ" },
+    { label: "F0104P1 कैटेनरी वोल्टेज / OHE सीमा (P15)", query: "F0104P1 Catenary voltage out of limit OHE meter 17.5 29.5 kV PT fuse" },
+    { label: "न्यूट्रल सेक्शन (NSN) सावधानियां - P3", query: "Precautions to be taken while NSN Neutral Section Negotiation ZNN switch" },
     { label: "स्लेव लोको VCD पेनल्टी ब्रेक", query: "Slave loco VCD acts penalty brake switch 237.1 push pull" },
     { label: "F0401P1 हार्मोनिक फिल्टर / 40 kmph नियम", query: "F0401P1 harmonic filter current too high 40 kmph restriction push pull" },
     { label: "स्लेव लोको कंट्रोल इलेक्ट्रॉनिक्स नहीं ऑन हो रहा", query: "Slave loco control electronics not getting on ADD BL ADD BPFA" },
+    { label: "स्लेव लोको डेड करना (Stationary - P10)", query: "Procedure to make slave loco dead stationary cock 47 70 74 112.1 110" },
+    { label: "स्लेव लोको डेड करना (On Run - P11)", query: "Procedure to make slave loco dead on run 100 minutes train bus isolated" },
+    { label: "कैब बदलना / रिवर्सल (P12)", query: "Changing of Master Loco to Slave Loco and Slave Loco to Master Loco reversal" },
+    { label: "पुश-पुल 21 नियम (Push-Pull 21 Points - P8/9)", query: "Points to keep in mind while working Push Pull operation 21 golden rules" },
+    { label: "F0105P1 ट्रांसफार्मर ऑयल (P20)", query: "SS01 F0105P1 transformer oil temperature or pressure not ok pump mcb push pull" },
+    { label: "F0301P1 कन्वर्टर-2 / बोगी-2 (P24)", query: "SS03 F0301P1 Disturbance in converter-2 switch 154 bogie-2 push pull" },
+    { label: "F0701P1 BUR-2 ऑक्सिलरी-2 (P33)", query: "SS07 F0701P1 disturbance in processor BUR-2 127.22/2 push pull" },
+    { label: "F0801P1 BUR-3 ऑक्सिलरी-3 (P35)", query: "SS08 F0801P1 disturbance in processor BUR-3 127.22/3 push pull" },
+    { label: "F0903P2 बैटरी चार्जर करंट (P39)", query: "SS09 F0903P2 low battery charger current MCB 100 110 push pull" },
+    { label: "F1001P1 ब्रेक इलेक्ट्रॉनिक्स (SS10)", query: "SS10 F1001P1 fault in brake electronics MCB 127.7 128.1 push pull" },
+    { label: "F1002P1 लो MR प्रेशर 6.4 (P32)", query: "SS10 F1002P1 low pressure main reservoir 6.4 kg/cm2 compressor 47.1/1 push pull" },
+    { label: "F1006P1 पार्किंग ब्रेक BPPB (P36)", query: "SS10 F1006P1 traction with parking brakes not allowed BPPB latch solenoid 30 push pull" },
     { label: "स्लेव लोको होटल लोड समस्या (HLC-2/1 - P58)", query: "Hotel load not coming from HLC- 2/1 of slave loco" }
   ];
 
@@ -523,55 +570,161 @@ export default function App() {
   }, [aiResult, currentFaults]);
 
   const filteredFaults = useMemo(() => {
+    const rawSearch = searchQuery.trim();
+    if (!rawSearch) {
+      return selectedSystem ? currentFaults.filter(f => f.subSystem === selectedSystem) : currentFaults;
+    }
+
+    const rawLower = rawSearch.toLowerCase();
+    const tokens = expandLocoTokens(rawSearch);
+
     return currentFaults.filter((fault) => {
-      const matchesSearch = 
-        fault.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        fault.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        fault.lamp.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        fault.effect.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (fault.masterEffect && fault.masterEffect.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (fault.slaveEffect && fault.slaveEffect.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        fault.actions.some(a => a.toLowerCase().includes(searchQuery.toLowerCase()));
+      const fullFaultText = [
+        fault.id,
+        fault.message,
+        fault.lamp,
+        fault.effect,
+        fault.masterEffect || '',
+        fault.slaveEffect || '',
+        ...fault.actions,
+        ...(fault.slaveActions || [])
+      ].join(' ').toLowerCase();
+
+      // 1. Direct exact or substring match
+      let matchesSearch = fullFaultText.includes(rawLower);
+
+      // 2. Multilingual expanded token semantic match
+      if (!matchesSearch && tokens.length > 0) {
+        const matchedTokens = tokens.filter(tok => fullFaultText.includes(tok));
+        if (tokens.length <= 2) {
+          matchesSearch = matchedTokens.length > 0;
+        } else {
+          matchesSearch = (matchedTokens.length / tokens.length) >= 0.35;
+        }
+      }
+
       const matchesSystem = selectedSystem ? fault.subSystem === selectedSystem : true;
       return matchesSearch && matchesSystem;
     });
   }, [searchQuery, selectedSystem, currentFaults]);
 
+  const isDay = cabMode === 'day';
+
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-[#E4E4E7] flex flex-col font-sans">
+    <div className={cn(
+      "min-h-screen flex flex-col font-sans transition-colors duration-200",
+      isDay ? "bg-slate-100 text-slate-950" : "bg-[#09090B] text-[#F4F4F5]",
+      fontSize === 'extra-large' ? "text-lg" : fontSize === 'large' ? "text-base" : "text-sm"
+    )}>
       {/* Header */}
-      <header className="h-16 border-b border-[#27272A] bg-[#121214] sticky top-0 z-10 flex items-center">
-        <div className="max-w-3xl w-full mx-auto px-4 sm:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className={cn(
+        "border-b sticky top-0 z-30 transition-colors duration-200",
+        isDay ? "bg-white border-slate-300 shadow-sm" : "bg-[#121214] border-[#27272A]"
+      )}>
+        <div className="max-w-3xl w-full mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <div className={cn(
-              "w-10 h-10 rounded flex items-center justify-center font-black text-xl shadow-md transition-colors",
-              locoType === 'amrit_bharat' ? "bg-emerald-500 text-black" : "bg-orange-500 text-black"
+              "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-lg sm:text-xl shadow-md transition-colors",
+              locoType === 'amrit_bharat' ? "bg-emerald-500 text-black shadow-emerald-500/20" : "bg-orange-500 text-black shadow-orange-500/20"
             )}>
               {locoType === 'amrit_bharat' ? 'AB' : '3Φ'}
             </div>
             <div className="flex flex-col leading-none">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className={cn(
-                  "text-sm font-bold tracking-wider uppercase",
-                  locoType === 'amrit_bharat' ? "text-emerald-400" : "text-orange-500"
+                  "text-xs sm:text-sm font-black tracking-wider uppercase",
+                  locoType === 'amrit_bharat' 
+                    ? (isDay ? "text-emerald-800" : "text-emerald-400") 
+                    : (isDay ? "text-orange-700" : "text-orange-500")
                 )}>
                   {locoType === 'amrit_bharat' ? 'LocoAssist • Amrit Bharat' : 'LocoAssist Pro'}
                 </span>
                 <span className={cn(
-                  "text-[10px] font-extrabold px-1.5 py-0.5 rounded border uppercase",
-                  locoType === 'amrit_bharat' ? "bg-emerald-950 text-emerald-300 border-emerald-800" : "bg-orange-950 text-orange-300 border-orange-800"
+                  "text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded border uppercase",
+                  locoType === 'amrit_bharat' 
+                    ? (isDay ? "bg-emerald-100 text-emerald-900 border-emerald-300" : "bg-emerald-950 text-emerald-300 border-emerald-800")
+                    : (isDay ? "bg-orange-100 text-orange-900 border-orange-300" : "bg-orange-950 text-orange-300 border-orange-800")
                 )}>
                   {locoType === 'amrit_bharat' ? 'Push-Pull' : '3-Phase'}
                 </span>
               </div>
-              <span className="text-xs text-[#71717A] mt-1">
+              <span className={cn("text-[11px] mt-1 font-medium hidden xs:inline", isDay ? "text-slate-600" : "text-zinc-400")}>
                 {locoType === 'amrit_bharat' 
                   ? 'Aerodynamic WAP-5 Push-Pull & Coaches (CLW 67p TSD)' 
                   : '3 Phase Troubleshooter & Vadodara Directory (254p)'}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* 🔊 DIRECT LOUD VOICE INSTRUCTOR BUTTON (ALWAYS ACCESSIBLE IN HEADER) */}
+            <button
+              type="button"
+              onClick={() => {
+                setMode('voice');
+              }}
+              className={cn(
+                "inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer shadow-md active:scale-95 shrink-0 border",
+                mode === 'voice'
+                  ? "bg-amber-400 text-black border-amber-300 ring-2 ring-amber-400 shadow-amber-400/30"
+                  : "bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-black border-amber-300 hover:brightness-105 shadow-amber-500/20"
+              )}
+              title="वॉयस गाइड (Loud Voice) - कैब में लाउड आवाज में स्टेप-दर-स्टेप सुनें"
+            >
+              <Volume2 className={cn("w-3.5 h-3.5 fill-current", mode === 'voice' && "animate-bounce")} />
+              <span className="font-black tracking-wide">वॉयस गाइड</span>
+              <span className="bg-red-600 text-white text-[9px] px-1 py-0.2 rounded font-black uppercase">
+                LOUD
+              </span>
+            </button>
+            {/* 🌙 CAB VISIBILITY TOGGLE (HIGH CONTRAST DAY vs NIGHT) */}
+            <button
+              type="button"
+              onClick={() => setCabMode(prev => prev === 'night' ? 'day' : 'night')}
+              className={cn(
+                "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black border transition-all cursor-pointer shadow-sm active:scale-95",
+                isDay
+                  ? "bg-amber-100 text-amber-950 border-amber-400 hover:bg-amber-200"
+                  : "bg-zinc-800 text-amber-300 border-zinc-700 hover:bg-zinc-700"
+              )}
+              title={isDay ? "नाइट कैब मोड चालू करें (Dark Cab Night)" : "डे एंटी-ग्लेयर मोड चालू करें (Sunlight Anti-Glare Day)"}
+            >
+              {isDay ? <Sun className="w-3.5 h-3.5 text-amber-600" /> : <Moon className="w-3.5 h-3.5 text-amber-400" />}
+              <span className="hidden sm:inline">{isDay ? 'डे मोड (Sun)' : 'नाइट मोड (Dark)'}</span>
+            </button>
+
+            {/* 🔤 FONT SIZE SELECTOR (LP READABILITY) */}
+            <div className={cn(
+              "hidden sm:flex items-center rounded-lg border p-0.5 text-xs font-black",
+              isDay ? "bg-slate-100 border-slate-300 text-slate-800" : "bg-zinc-800 border-zinc-700 text-zinc-300"
+            )}>
+              <button
+                type="button"
+                onClick={() => setFontSize('normal')}
+                className={cn("px-2 py-0.5 rounded transition-colors", fontSize === 'normal' && (isDay ? "bg-slate-900 text-white" : "bg-amber-500 text-black font-black"))}
+                title="सामान्य फॉन्ट (Normal Font)"
+              >
+                A
+              </button>
+              <button
+                type="button"
+                onClick={() => setFontSize('large')}
+                className={cn("px-2 py-0.5 rounded transition-colors", fontSize === 'large' && (isDay ? "bg-slate-900 text-white" : "bg-amber-500 text-black font-black"))}
+                title="बड़ा फॉन्ट - LP कैब अनुशंसित (Large Font - Recommended)"
+              >
+                A+
+              </button>
+              <button
+                type="button"
+                onClick={() => setFontSize('extra-large')}
+                className={cn("px-2 py-0.5 rounded transition-colors", fontSize === 'extra-large' && (isDay ? "bg-slate-900 text-white" : "bg-amber-500 text-black font-black"))}
+                title="विशाल फॉन्ट (Extra Large Font)"
+              >
+                A++
+              </button>
+            </div>
+
+            {/* Mobile PWA Install */}
             <button
               onClick={() => {
                 if (isInstallable) {
@@ -580,23 +733,12 @@ export default function App() {
                   setShowMobileModal(true);
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md border border-emerald-400/40 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md border border-emerald-400/40 transition-all active:scale-95 cursor-pointer shrink-0"
               title="अपने मोबाइल में चलाएं और होम स्क्रीन पर ऐप लगाएं"
             >
               <Smartphone className="w-3.5 h-3.5 text-white" />
-              <span>{isInstalled ? '✅ ऐप इंस्टॉल है' : isInstallable ? '⚡ अभी इंस्टॉल करें' : '📲 होम स्क्रीन पर जोड़ें'}</span>
+              <span className="hidden xs:inline">{isInstalled ? '✅ इंस्टॉल है' : isInstallable ? '⚡ इंस्टॉल करें' : '📲 ऐप बनाएं'}</span>
             </button>
-            <div className="hidden sm:flex items-center gap-2">
-              <span className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border",
-                locoType === 'amrit_bharat'
-                  ? "bg-emerald-950/80 text-emerald-300 border-emerald-800"
-                  : "bg-blue-950/80 text-blue-300 border-blue-800"
-              )}>
-                <BookOpen className="w-3 h-3" /> 
-                {locoType === 'amrit_bharat' ? 'CLW 67p Memory Active' : '254p Memory Active'}
-              </span>
-            </div>
           </div>
         </div>
 
@@ -632,9 +774,9 @@ export default function App() {
 
       <main className="flex-1 max-w-3xl w-full mx-auto relative overflow-hidden flex flex-col">
         <AnimatePresence mode="wait">
-          {!selectedFault ? (
+          {(!selectedFault || mode === 'voice') ? (
             <motion.div 
-              key="list"
+              key={mode === 'voice' ? 'voice' : 'list'}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -687,51 +829,87 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* Sub-modes Navigation: Catalog, AI Assistant, Directory Reader */}
-                <div className="flex bg-[#121214] p-1 rounded-lg border border-[#27272A] gap-1">
+                {/* 4-Tab Navigation: Catalog, AI Assistant, LOUD Voice Instructor, Directory Reader */}
+                <div className={cn(
+                  "flex p-1 rounded-xl border gap-1 shadow-sm transition-colors",
+                  isDay ? "bg-slate-200 border-slate-300" : "bg-[#121214] border-[#27272A]"
+                )}>
                   <button 
-                    onClick={() => setMode('browse')} 
+                    onClick={() => {
+                      setMode('browse');
+                      setSelectedFault(null);
+                    }} 
                     className={cn(
-                      "flex-1 py-1.5 px-2 text-xs sm:text-sm font-semibold rounded-md transition-colors", 
-                      mode === 'browse' ? "bg-[#27272A] text-white" : "text-[#71717A] hover:text-[#A1A1AA]"
+                      "flex-1 py-2 px-1 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                      mode === 'browse' 
+                        ? (isDay ? "bg-white text-slate-950 shadow-sm font-black" : "bg-[#27272A] text-white shadow-sm font-black") 
+                        : (isDay ? "text-slate-700 hover:text-slate-950" : "text-[#A1A1AA] hover:text-white")
                     )}
                   >
-                    Fault Catalog
+                    <Search className="w-3.5 h-3.5" />
+                    <span>कैटलॉग</span>
                   </button>
                   <button 
                     onClick={() => setMode('ai')} 
                     className={cn(
-                      "flex-1 py-1.5 px-2 text-xs sm:text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5", 
+                      "flex-1 py-2 px-1 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
                       mode === 'ai' 
-                        ? (locoType === 'amrit_bharat' ? "bg-emerald-500 text-black" : "bg-orange-500 text-black")
-                        : "text-[#71717A] hover:text-orange-400"
+                        ? (locoType === 'amrit_bharat' ? "bg-emerald-500 text-black shadow font-black" : "bg-orange-500 text-black shadow font-black")
+                        : (isDay ? "text-slate-700 hover:text-orange-600" : "text-[#A1A1AA] hover:text-orange-400")
                     )}
                   >
                     <Sparkles className="w-3.5 h-3.5"/> <span>AI सहायक</span>
                   </button>
+                  
+                  {/* 🎙️ PROMINENT LP LOUD VOICE INSTRUCTOR TAB */}
+                  <button 
+                    onClick={() => setMode('voice')} 
+                    className={cn(
+                      "flex-1 py-2 px-1 text-xs sm:text-sm font-black rounded-lg transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer", 
+                      mode === 'voice' 
+                        ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/30 scale-102 font-black"
+                        : (isDay 
+                            ? "bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold" 
+                            : "bg-amber-950/60 text-amber-300 hover:bg-amber-900/60 border border-amber-500/40 font-bold")
+                    )}
+                  >
+                    <Volume2 className={cn("w-3.5 h-3.5", mode === 'voice' ? "animate-bounce text-black" : "text-amber-500")}/> 
+                    <span>वॉयस गाइड</span>
+                    <span className="text-[9px] bg-red-600 text-white px-1 py-0.2 rounded font-black uppercase tracking-wider hidden sm:inline">
+                      LOUD
+                    </span>
+                  </button>
+
                   <button 
                     onClick={() => {
                       setMode('manual');
                       if (!manualInfo) fetchManualInfo(locoType);
                     }} 
                     className={cn(
-                      "flex-1 py-1.5 px-2 text-xs sm:text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5", 
-                      mode === 'manual' ? "bg-blue-600 text-white" : "text-[#71717A] hover:text-blue-400"
+                      "flex-1 py-2 px-1 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                      mode === 'manual' 
+                        ? "bg-blue-600 text-white shadow-sm font-black" 
+                        : (isDay ? "text-slate-700 hover:text-blue-600" : "text-[#A1A1AA] hover:text-blue-400")
                     )}
                   >
-                    <BookOpen className="w-3.5 h-3.5"/> <span>{locoType === 'amrit_bharat' ? 'अमृत भारत TSD (67p)' : 'लोको मेमोरी (254p)'}</span>
+                    <BookOpen className="w-3.5 h-3.5"/> <span>{locoType === 'amrit_bharat' ? 'TSD (67p)' : 'मेमोरी'}</span>
                   </button>
                 </div>
 
                 {mode === 'browse' && (
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717A]" />
+                    <Search className={cn("absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4", isDay ? "text-slate-500" : "text-zinc-400")} />
                     <input 
                       type="text" 
-                      placeholder="Search fault code or message... (e.g. F0101P1)" 
+                      placeholder="दोष कोड या समस्या खोजें... (उदा. P56 BP, P55 Panto, P53 Brakes, CE, F0101P1)" 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-[#121214] border border-[#27272A] text-[#E4E4E7] rounded focus:bg-[#18181B] focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all outline-none"
+                      className={cn(
+                        "w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-semibold transition-all outline-none shadow-sm",
+                        isDay 
+                          ? "bg-white border-slate-300 text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-200" 
+                          : "bg-[#121214] border-[#27272A] text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      )}
                     />
                   </div>
                 )}
@@ -740,15 +918,18 @@ export default function App() {
               {mode === 'browse' ? (
                 <>
                   {/* Sub Systems Scroller */}
-                  <div className="bg-[#121214] border-b border-[#27272A] shrink-0">
-                    <div className="overflow-x-auto hide-scrollbar flex gap-2 px-4 py-3">
+                  <div className={cn(
+                    "border-b shrink-0 transition-colors",
+                    isDay ? "bg-slate-200/70 border-slate-300" : "bg-[#121214] border-[#27272A]"
+                  )}>
+                    <div className="overflow-x-auto hide-scrollbar flex gap-2 px-4 py-2.5">
                       <button
                         onClick={() => setSelectedSystem(null)}
                         className={cn(
-                          "px-4 py-1.5 rounded text-sm font-medium whitespace-nowrap transition-colors",
+                          "px-3.5 py-1.5 rounded-lg text-xs font-black whitespace-nowrap transition-all shadow-sm",
                           selectedSystem === null 
-                            ? "bg-[#1E1E22] text-orange-500 border border-orange-500/50" 
-                            : "bg-[#18181B] text-[#A1A1AA] border border-transparent hover:bg-[#1E1E22]"
+                            ? (isDay ? "bg-slate-900 text-white" : "bg-amber-500 text-black shadow-amber-500/20") 
+                            : (isDay ? "bg-white text-slate-800 border border-slate-300 hover:bg-slate-100" : "bg-[#18181B] text-zinc-300 border border-transparent hover:bg-[#222226]")
                         )}
                       >
                         {locoType === 'amrit_bharat' ? 'सभी सिस्टम (All)' : 'All Systems'}
@@ -758,10 +939,12 @@ export default function App() {
                           key={sys.id}
                           onClick={() => setSelectedSystem(sys.id)}
                           className={cn(
-                            "px-4 py-1.5 rounded text-sm font-medium whitespace-nowrap transition-colors",
+                            "px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm",
                             selectedSystem === sys.id 
-                              ? (locoType === 'amrit_bharat' ? "bg-emerald-950 text-emerald-400 border border-emerald-500/50" : "bg-[#1E1E22] text-orange-500 border border-orange-500/50")
-                              : "bg-[#18181B] text-[#A1A1AA] border border-transparent hover:bg-[#1E1E22]"
+                              ? (locoType === 'amrit_bharat' 
+                                  ? (isDay ? "bg-emerald-700 text-white font-black" : "bg-emerald-950 text-emerald-300 border border-emerald-500 font-black") 
+                                  : (isDay ? "bg-orange-700 text-white font-black" : "bg-orange-500 text-black font-black"))
+                              : (isDay ? "bg-white text-slate-800 border border-slate-300 hover:bg-slate-100" : "bg-[#18181B] text-zinc-300 border border-transparent hover:bg-[#222226]")
                           )}
                         >
                           {sys.id} - {sys.name}
@@ -778,40 +961,75 @@ export default function App() {
                           key={fault.id}
                           onClick={() => setSelectedFault(fault)}
                           className={cn(
-                            "bg-[#121214] rounded-lg p-5 border border-[#27272A] cursor-pointer transition-all active:scale-[0.98]",
-                            locoType === 'amrit_bharat' 
-                              ? "hover:border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.06)]" 
-                              : "hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.05)]"
+                            "rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all active:scale-[0.99] shadow-sm",
+                            isDay 
+                              ? "bg-white border-slate-300 hover:border-amber-500 hover:shadow-md" 
+                              : "bg-[#131316] border-[#2A2A30] hover:border-amber-500/60 hover:bg-[#18181D]"
                           )}
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="bg-red-950 border border-red-900 text-red-400 text-[10px] uppercase font-bold px-2 py-1 rounded">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="bg-red-600 text-white text-[11px] uppercase font-black px-2.5 py-0.5 rounded-lg shadow-sm">
                                 {fault.id}
                               </span>
-                              <span className="text-[10px] uppercase font-bold text-[#71717A] tracking-wider bg-[#18181B] border border-[#27272A] px-2 py-1 rounded">
+                              <span className={cn(
+                                "text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border",
+                                isDay ? "bg-slate-100 text-slate-800 border-slate-300" : "bg-zinc-900 text-zinc-300 border-zinc-700"
+                              )}>
                                 {fault.subSystem}
                               </span>
                               {fault.masterEffect && (
-                                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded font-medium">
+                                <span className={cn(
+                                  "text-[10px] px-2 py-0.5 rounded font-black border uppercase tracking-wider",
+                                  isDay ? "bg-blue-100 text-blue-900 border-blue-300" : "bg-blue-950 text-blue-300 border-blue-800"
+                                )}>
                                   Master / Slave
                                 </span>
                               )}
                             </div>
-                            <ChevronRight className="w-5 h-5 text-[#71717A]" />
+                            <ChevronRight className={cn("w-5 h-5 shrink-0", isDay ? "text-slate-400" : "text-zinc-500")} />
                           </div>
-                          <h3 className="mt-3 text-lg font-light tracking-tight text-[#E4E4E7] leading-snug line-clamp-2">
+
+                          <h3 className={cn("mt-2.5 text-base sm:text-lg font-black tracking-tight leading-snug line-clamp-2", isDay ? "text-slate-950" : "text-white")}>
                             {fault.message.split('\n')[0]}
                           </h3>
-                          <p className="mt-1 text-sm text-[#A1A1AA] line-clamp-1">
+
+                          <p className={cn("mt-1 text-xs sm:text-sm font-semibold line-clamp-2 leading-relaxed", isDay ? "text-slate-700" : "text-zinc-300")}>
                             {fault.effect}
                           </p>
+
+                          {/* Quick Card Footer with Loud Voice button */}
+                          <div className={cn(
+                            "mt-3 pt-2.5 border-t flex items-center justify-between gap-2",
+                            isDay ? "border-slate-200" : "border-zinc-800"
+                          )}>
+                            <span className={cn("text-[11px] font-bold", isDay ? "text-slate-600" : "text-zinc-400")}>
+                              {fault.actions.length} निवारण चरण
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFault(fault);
+                                setMode('voice');
+                              }}
+                              className={cn(
+                                "text-xs font-black px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer",
+                                isDay 
+                                  ? "bg-amber-100 text-amber-950 border-amber-400 hover:bg-amber-200" 
+                                  : "bg-amber-950/80 text-amber-300 border-amber-500/50 hover:bg-amber-900"
+                              )}
+                              title="इस खराबी का निवारण जोर से बोलकर सुनें"
+                            >
+                              <Volume2 className="w-3.5 h-3.5 text-amber-500" />
+                              <span>🔊 वॉयस में सुनें</span>
+                            </button>
+                          </div>
                         </div>
                       ))
                     ) : (
-                      <div className="h-40 flex flex-col items-center justify-center text-[#71717A]">
+                      <div className={cn("h-40 flex flex-col items-center justify-center font-bold", isDay ? "text-slate-500" : "text-zinc-500")}>
                         <Search className="w-8 h-8 mb-2 opacity-50" />
-                        <p>No faults found matching your criteria</p>
                       </div>
                     )}
                   </div>
@@ -1118,40 +1336,26 @@ export default function App() {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {/* Read Aloud Button */}
+                            {/* 🔊 Open in Voice Guide with step-by-step loud voice */}
                             <button
                               type="button"
-                              onClick={() => {
-                                const fullSpeech = `${aiResult.faultTitle || ''}. विश्लेषण: ${aiResult.analysis}. कार्यवाही: ${aiResult.suggestedActions.join('. ')}. ${aiResult.precautions || ''}`;
-                                handleSpeakText(fullSpeech);
-                              }}
-                              className={cn(
-                                "text-xs flex items-center gap-1.5 px-2.5 py-1 rounded border font-medium transition-colors",
-                                isSpeaking 
-                                  ? "bg-red-950/80 text-red-300 border-red-800 hover:bg-red-900" 
-                                  : "bg-[#18181B] text-[#A1A1AA] hover:text-white border-[#27272A] hover:border-orange-500/50"
-                              )}
-                              title="समाधान को बोलकर सुनें"
+                              onClick={() => setMode('voice')}
+                              className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-black bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-md transition-all active:scale-95 cursor-pointer"
+                              title="इस पूरे समाधान को वॉयस गाइड में जोर से सुनें"
                             >
-                              {isSpeaking ? (
-                                <>
-                                  <VolumeX className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-                                  <span>Stop Audio</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Volume2 className="w-3.5 h-3.5 text-orange-500" />
-                                  <span>बोलकर सुनें (Listen)</span>
-                                </>
-                              )}
+                              <Volume2 className="w-3.5 h-3.5 fill-current animate-bounce" />
+                              <span>🔊 वॉयस गाइड में सुनें</span>
                             </button>
 
                             {matchedCatalogFault && (
                               <button
                                 onClick={() => setSelectedFault(matchedCatalogFault)}
-                                className="text-xs flex items-center gap-1.5 text-orange-400 hover:text-orange-300 bg-orange-950/40 border border-orange-800/60 px-2.5 py-1 rounded hover:bg-orange-900/50 transition-colors font-medium"
+                                className={cn(
+                                  "text-xs flex items-center gap-1.5 border px-2.5 py-1.5 rounded-lg font-bold transition-colors",
+                                  isDay ? "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200" : "text-orange-400 bg-orange-950/40 border-orange-800/60 hover:bg-orange-900/50"
+                                )}
                               >
-                                <span>View in Catalog</span>
+                                <span>कैटलॉग में देखें</span>
                                 <ExternalLink className="w-3.5 h-3.5" />
                               </button>
                             )}
@@ -1284,6 +1488,22 @@ export default function App() {
                     </div>
                   )}
                 </div>
+              ) : mode === 'voice' ? (
+                <LPVoiceGuide
+                  locoType={locoType}
+                  currentFault={selectedFault}
+                  aiResult={aiResult}
+                  cabMode={cabMode}
+                  fontSize={fontSize}
+                  onSelectFault={(f) => {
+                    setSelectedFault(f);
+                  }}
+                  onOpenAi={() => setMode('ai')}
+                  onBackToCatalog={() => {
+                    setMode('browse');
+                    setSelectedFault(null);
+                  }}
+                />
               ) : (
                 /* Mode === 'manual' - Full Permanent Memory & Vadodara Directory */
                 <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5">
@@ -1726,114 +1946,246 @@ export default function App() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-[#0A0A0B] z-20 flex flex-col h-full"
+              className={cn(
+                "absolute inset-0 z-20 flex flex-col h-full transition-colors",
+                isDay ? "bg-slate-100 text-slate-950" : "bg-[#09090B] text-zinc-100"
+              )}
             >
-              <div className="bg-[#121214] border-b border-[#27272A] px-4 py-3 shrink-0 flex items-center gap-3">
-                <button 
-                  onClick={() => setSelectedFault(null)}
-                  className="p-2 -ml-2 rounded hover:bg-[#18181B] text-[#E4E4E7] transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div className="flex items-center gap-2">
-                  <span className="inline-block px-2 py-1 rounded bg-red-950 text-red-400 text-[10px] font-bold uppercase tracking-tighter border border-red-900">
-                    {selectedFault.id}
-                  </span>
-                  <span className="text-[10px] font-bold text-[#71717A] tracking-widest uppercase">
-                    {selectedFault.subSystem}
-                  </span>
+              {/* Detail Header */}
+              <div className={cn(
+                "border-b px-3 sm:px-4 py-3 shrink-0 flex items-center justify-between gap-2 shadow-sm transition-colors",
+                isDay ? "bg-white border-slate-300" : "bg-[#121214] border-[#27272A]"
+              )}>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <button 
+                    onClick={() => setSelectedFault(null)}
+                    className={cn(
+                      "p-2 -ml-1 rounded-xl transition-all cursor-pointer",
+                      isDay ? "hover:bg-slate-200 text-slate-900" : "hover:bg-[#18181B] text-white"
+                    )}
+                    title="वापस जाएं (Back)"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block px-2.5 py-1 rounded-lg bg-red-600 text-white text-xs font-black uppercase tracking-wide shadow-sm">
+                      {selectedFault.id}
+                    </span>
+                    <span className={cn(
+                      "text-xs font-bold tracking-wider uppercase px-2 py-0.5 rounded border",
+                      isDay ? "bg-slate-100 text-slate-800 border-slate-300" : "bg-zinc-900 text-zinc-300 border-zinc-700"
+                    )}>
+                      {selectedFault.subSystem}
+                    </span>
+                  </div>
                 </div>
+
+                {/* 🔊 LOUD VOICE INSTRUCTOR BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => setMode('voice')}
+                  className="px-3 sm:px-4 py-2 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                  title="इस खराबी का निवारण जोर से बोलकर सुनें"
+                >
+                  <Volume2 className="w-4 h-4 fill-current animate-bounce" />
+                  <span>🔊 लाउड वॉयस में सुनें</span>
+                </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 pb-12">
-                <div className="mb-8">
-                  <h1 className="text-3xl font-light tracking-tight text-[#E4E4E7] whitespace-pre-wrap">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-16 space-y-5">
+                {/* 📢 PROMINENT VOICE GUIDE BANNER */}
+                <div className={cn(
+                  "p-4 rounded-2xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg transition-all",
+                  isDay 
+                    ? "bg-gradient-to-r from-amber-100 via-orange-50 to-amber-100 border-amber-500 text-slate-950 shadow-amber-200/50" 
+                    : "bg-gradient-to-r from-amber-950/90 via-[#18140B] to-orange-950/90 border-amber-500/80 text-white shadow-[0_0_25px_rgba(245,158,11,0.2)]"
+                )}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shrink-0 shadow-md">
+                      <Volume2 className="w-6 h-6 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500 text-black">
+                          📢 LP VOICE CO-PILOT
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-600 text-white">
+                          हिंदी / English
+                        </span>
+                      </div>
+                      <h4 className="font-black text-sm sm:text-base mt-0.5">
+                        लोको पायलट वॉयस गाइड (Loud Voice Instructor)
+                      </h4>
+                      <p className={cn("text-xs font-semibold", isDay ? "text-slate-700" : "text-zinc-300")}>
+                        कैब में बिना स्क्रीन देखे 100% लाउड आवाज में एक-एक स्टेप सुनें
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMode('voice')}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer shrink-0"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>▶️ जोर से बोलकर सुनें (Start Audio)</span>
+                  </button>
+                </div>
+
+                {/* Fault Message Title */}
+                <div className={cn(
+                  "p-4 sm:p-5 rounded-2xl border-2 shadow-sm transition-all",
+                  isDay ? "bg-white border-slate-300" : "bg-[#131316] border-zinc-800"
+                )}>
+                  <span className="text-[10px] uppercase font-bold text-amber-500 block mb-1">
+                    खराबी संदेश (Fault Title / Description):
+                  </span>
+                  <h1 className={cn(
+                    "font-black tracking-tight leading-snug whitespace-pre-wrap",
+                    fontSize === 'extra-large' ? 'text-2xl sm:text-3xl' : fontSize === 'large' ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl',
+                    isDay ? "text-slate-950" : "text-white"
+                  )}>
                     {selectedFault.message}
                   </h1>
                 </div>
 
-                <div className="space-y-6 mb-8">
-                  <div className="bg-[#121214] p-5 rounded-lg border border-[#27272A]">
-                    <div className="flex items-center gap-2 mb-2 text-[#E4E4E7]">
-                      <Lightbulb className="w-4 h-4 text-orange-500" />
-                      <h3 className="font-bold text-xs uppercase tracking-widest text-[#71717A]">Lamps (लैम्प)</h3>
+                {/* Indicators & Effects Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className={cn(
+                    "p-4 rounded-xl border transition-all",
+                    isDay ? "bg-white border-slate-300" : "bg-[#131316] border-zinc-800"
+                  )}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Lightbulb className="w-4 h-4 text-amber-500" />
+                      <h3 className={cn("font-black text-xs uppercase tracking-wider", isDay ? "text-slate-800" : "text-zinc-300")}>
+                        लैम्प एवं संकेत (Lamps)
+                      </h3>
                     </div>
-                    <p className="text-sm text-[#A1A1AA] italic">
+                    <p className={cn("text-xs sm:text-sm font-semibold", isDay ? "text-slate-700 italic" : "text-zinc-300 italic")}>
                       {selectedFault.lamp}
                     </p>
                   </div>
 
-                  <div className="bg-[#121214] p-5 rounded-lg border border-[#27272A]">
-                    <div className="flex items-center gap-2 mb-2 text-[#E4E4E7]">
+                  <div className={cn(
+                    "p-4 rounded-xl border transition-all",
+                    isDay ? "bg-white border-slate-300" : "bg-[#131316] border-zinc-800"
+                  )}>
+                    <div className="flex items-center gap-2 mb-1.5">
                       <Activity className="w-4 h-4 text-orange-500" />
-                      <h3 className="font-bold text-xs uppercase tracking-widest text-[#71717A]">Effect (प्रभाव)</h3>
+                      <h3 className={cn("font-black text-xs uppercase tracking-wider", isDay ? "text-slate-800" : "text-zinc-300")}>
+                        प्रभाव एवं लक्षण (Effect)
+                      </h3>
                     </div>
-                    <p className="text-sm text-[#A1A1AA] italic">
+                    <p className={cn("text-xs sm:text-sm font-semibold leading-relaxed", isDay ? "text-slate-700" : "text-zinc-300")}>
                       {selectedFault.effect}
                     </p>
                   </div>
 
                   {selectedFault.masterEffect && (
-                    <div className="bg-[#121214] p-5 rounded-lg border border-blue-900/50 bg-blue-950/10">
-                      <div className="flex items-center gap-2 mb-2 text-blue-300">
-                        <ShieldAlert className="w-4 h-4 text-blue-400" />
-                        <h3 className="font-bold text-xs uppercase tracking-widest text-blue-400">मास्टर लोको पर प्रभाव (Master Loco Effect)</h3>
+                    <div className={cn(
+                      "p-4 rounded-xl border transition-all",
+                      isDay ? "bg-blue-50 border-blue-300 text-blue-950" : "bg-blue-950/40 border-blue-800 text-blue-200"
+                    )}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <ShieldAlert className="w-4 h-4 text-blue-500" />
+                        <h3 className="font-black text-xs uppercase tracking-wider">
+                          मास्टर लोको पर प्रभाव (Master Loco Effect)
+                        </h3>
                       </div>
-                      <p className="text-sm text-[#E4E4E7]">
+                      <p className="text-xs sm:text-sm font-semibold leading-relaxed">
                         {selectedFault.masterEffect}
                       </p>
                     </div>
                   )}
 
                   {selectedFault.slaveEffect && (
-                    <div className="bg-[#121214] p-5 rounded-lg border border-emerald-900/50 bg-emerald-950/10">
-                      <div className="flex items-center gap-2 mb-2 text-emerald-300">
-                        <Layers className="w-4 h-4 text-emerald-400" />
-                        <h3 className="font-bold text-xs uppercase tracking-widest text-emerald-400">स्लेव लोको पर प्रभाव (Slave Loco Effect)</h3>
+                    <div className={cn(
+                      "p-4 rounded-xl border transition-all",
+                      isDay ? "bg-emerald-50 border-emerald-300 text-emerald-950" : "bg-emerald-950/40 border-emerald-800 text-emerald-200"
+                    )}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Layers className="w-4 h-4 text-emerald-500" />
+                        <h3 className="font-black text-xs uppercase tracking-wider">
+                          स्लेव लोको पर प्रभाव (Slave Loco Effect)
+                        </h3>
                       </div>
-                      <p className="text-sm text-[#E4E4E7]">
+                      <p className="text-xs sm:text-sm font-semibold leading-relaxed">
                         {selectedFault.slaveEffect}
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="mb-4 flex items-center gap-2 px-1 text-[#E4E4E7]">
-                  <Wrench className="w-5 h-5 text-orange-400" />
-                  <h3 className="font-bold text-sm tracking-widest uppercase text-[#E4E4E7]">
-                    {selectedFault.slaveActions ? "मास्टर लोको / मुख्य कार्यवाही (Master Actions)" : "Actions to Take (कार्यवाही)"}
-                  </h3>
-                </div>
-                
-                <div className="space-y-4 mb-8">
-                  {selectedFault.actions.map((action, idx) => (
-                    <div key={idx} className="flex gap-4 items-start bg-[#121214] p-5 rounded-lg border border-[#27272A] hover:border-orange-500/30 transition-colors">
-                      <div className="w-8 h-8 shrink-0 rounded-full bg-[#18181B] flex items-center justify-center text-xs font-bold text-orange-500 border border-[#3F3F46]">
-                        {(idx + 1).toString().padStart(2, '0')}
-                      </div>
-                      <div className="flex-1 pt-1">
-                        <p className="text-[#E4E4E7] text-sm leading-relaxed whitespace-pre-wrap">
-                          {action}
-                        </p>
-                      </div>
+                {/* Troubleshooting Actions */}
+                <div className="pt-2">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-5 h-5 text-amber-500" />
+                      <h3 className={cn("font-black tracking-wide uppercase text-sm sm:text-base", isDay ? "text-slate-950" : "text-white")}>
+                        {selectedFault.slaveActions ? "मास्टर लोको / मुख्य निवारण कार्यवाही (Master Actions)" : "दोष निवारण कार्यवाही (Actions to Take)"}
+                      </h3>
                     </div>
-                  ))}
+                    <span className="text-xs font-bold text-amber-500">
+                      ({selectedFault.actions.length} चरण)
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-3.5">
+                    {selectedFault.actions.map((action, idx) => (
+                      <div 
+                        key={idx} 
+                        className={cn(
+                          "flex gap-3.5 items-start p-4 sm:p-5 rounded-2xl border-2 transition-all shadow-sm",
+                          isDay 
+                            ? "bg-white border-slate-300 hover:border-amber-500" 
+                            : "bg-[#131316] border-[#2A2A30] hover:border-amber-500/50"
+                        )}
+                      >
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-amber-500 text-black flex items-center justify-center text-xs sm:text-sm font-black shadow-md border-2 border-amber-300 mt-0.5">
+                          {(idx + 1).toString().padStart(2, '0')}
+                        </div>
+                        <div className="flex-1">
+                          <p className={cn(
+                            "leading-relaxed whitespace-pre-wrap font-bold",
+                            fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm',
+                            isDay ? "text-slate-950" : "text-zinc-100"
+                          )}>
+                            {action}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
+                {/* Slave Loco Actions if Push-Pull formation */}
                 {selectedFault.slaveActions && selectedFault.slaveActions.length > 0 && (
-                  <div>
-                    <div className="mb-4 flex items-center gap-2 px-1 text-emerald-300">
-                      <Layers className="w-5 h-5 text-emerald-400" />
-                      <h3 className="font-bold text-sm tracking-widest uppercase text-emerald-400">स्लेव लोको में की जाने वाली कार्यवाही (Slave Loco Actions)</h3>
+                  <div className="pt-4">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-emerald-500" />
+                      <h3 className="font-black text-sm sm:text-base tracking-wide uppercase text-emerald-500">
+                        स्लेव लोको में की जाने वाली कार्यवाही (Slave Loco Actions)
+                      </h3>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3.5">
                       {selectedFault.slaveActions.map((action, idx) => (
-                        <div key={idx} className="flex gap-4 items-start bg-[#121214] p-5 rounded-lg border border-emerald-900/40 hover:border-emerald-500/40 transition-colors">
-                          <div className="w-8 h-8 shrink-0 rounded-full bg-emerald-950 flex items-center justify-center text-xs font-bold text-emerald-400 border border-emerald-800">
+                        <div 
+                          key={idx} 
+                          className={cn(
+                            "flex gap-3.5 items-start p-4 sm:p-5 rounded-2xl border-2 transition-all shadow-sm",
+                            isDay 
+                              ? "bg-emerald-50/60 border-emerald-300 hover:border-emerald-500" 
+                              : "bg-[#0E1714] border-emerald-900/60 hover:border-emerald-600"
+                          )}
+                        >
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-emerald-500 text-black flex items-center justify-center text-xs sm:text-sm font-black shadow-md border-2 border-emerald-300 mt-0.5">
                             S{(idx + 1).toString().padStart(2, '0')}
                           </div>
-                          <div className="flex-1 pt-1">
-                            <p className="text-[#E4E4E7] text-sm leading-relaxed">
+                          <div className="flex-1">
+                            <p className={cn(
+                              "leading-relaxed whitespace-pre-wrap font-bold",
+                              fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm',
+                              isDay ? "text-slate-950" : "text-emerald-100"
+                            )}>
                               {action}
                             </p>
                           </div>
