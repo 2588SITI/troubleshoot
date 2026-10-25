@@ -43,6 +43,19 @@ export function cleanRailwayVoiceText(raw: string): string {
   text = text.replace(/ट्रेक्शन/gi, 'ट्रैक्शन');
   text = text.replace(/कम्प्रेसर|कंप्रेशर/gi, 'कंप्रेसर');
 
+  // 5b. Push-Pull & Locomotive terms: Slave / Master / Amrit Bharat corrections
+  // 'स्लैब लोको' / 'स्लेब लोको' / 'स्लैब' / 'स्लेब' -> 'स्लेव लोको' (Common Speech-to-Text misrecognition for 'slave loco')
+  text = text.replace(/स्लैब\s*लोको/gi, 'स्लेव लोको');
+  text = text.replace(/स्लेब\s*लोको/gi, 'स्लेव लोको');
+  text = text.replace(/(^|\s)(?:स्लैब|स्लेब)(\s|$)/gi, '$1स्लेव$2');
+  text = text.replace(/(^|\s)(?:slab|slabe)\s+loco(\s|$)/gi, '$1slave loco$2');
+  text = text.replace(/(^|\s)(?:slab|slabe)(\s|$)/gi, '$1slave$2');
+  text = text.replace(/मासटर\s*लोको/gi, 'मास्टर लोको');
+  text = text.replace(/मासटर/gi, 'मास्टर');
+  text = text.replace(/पुशपुल|पुश\s*पुल/gi, 'पुश-पुल');
+  text = text.replace(/बाइन्डिंग|बाइंडिग/gi, 'बाइंडिंग');
+  text = text.replace(/ब्रेक\s*बाइन्डिंग|ब्रेक\s*बाइंडिग/gi, 'ब्रेक बाइंडिंग');
+
   // 6. Handle historical concatenations from earlier speech bugs if present
   // (e.g. user text ending with repetitive "क्या करें")
   const clauses = text.split(/(?:क्या करें|kya kare)/gi);

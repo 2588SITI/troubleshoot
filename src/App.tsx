@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, ChevronRight, ArrowLeft, AlertTriangle, Lightbulb, Activity, Wrench, ShieldAlert, Sparkles, Loader2, Bot, AlertCircle, ExternalLink, HelpCircle, Mic, MicOff, Volume2, VolumeX, Globe, BookOpen, Download, FileText, CheckCircle2, Bookmark, Layers, Smartphone, Copy, Check, X, Share2, Sun, Moon, Type, Radio, Play } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, AlertTriangle, Lightbulb, Activity, Wrench, ShieldAlert, Sparkles, Loader2, Bot, AlertCircle, ExternalLink, HelpCircle, Globe, BookOpen, Download, FileText, CheckCircle2, Bookmark, Layers, Smartphone, Copy, Check, X, Share2, Sun, Moon, Type, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { subSystems, faults } from './data';
 import { amritBharatSubSystems, amritBharatFaults } from './dataAmritBharat';
@@ -8,7 +8,7 @@ import { cn } from './lib/utils';
 import { cleanRailwayVoiceText } from './lib/speechCleaner';
 import { resolveDefectClientSide, expandLocoTokens } from './lib/clientTroubleshooter';
 import { usePWAInstall } from './lib/usePWAInstall';
-import { LPVoiceGuide } from './components/LPVoiceGuide';
+import { VoiceTroubleshooterPlayer } from './components/VoiceTroubleshooterPlayer';
 
 interface AiTroubleshootResult {
   identifiedFaultId?: string | null;
@@ -42,7 +42,7 @@ interface ManualSearchResult {
 
 export default function App() {
   const [locoType, setLocoType] = useState<'3phase' | 'amrit_bharat'>('3phase');
-  const [mode, setMode] = useState<'browse' | 'ai' | 'voice' | 'manual'>('browse');
+  const [mode, setMode] = useState<'browse' | 'ai' | 'manual'>('browse');
   
   // Cab visibility modes: 'night' (Dark high contrast) or 'day' (Day glare high contrast)
   const [cabMode, setCabMode] = useState<'night' | 'day'>(() => {
@@ -80,6 +80,161 @@ export default function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<AiTroubleshootResult | null>(null);
+  const [aiVoiceActiveIndex, setAiVoiceActiveIndex] = useState<number | null>(null);
+  const [detailVoiceActiveIndex, setDetailVoiceActiveIndex] = useState<number | null>(null);
+
+  // Voice Input (Loco Pilot Speech-to-Text Microphone) states
+  const [isVoiceInputActive, setIsVoiceInputActive] = useState<boolean>(false);
+  const [voiceInputError, setVoiceInputError] = useState<string | null>(null);
+  const [voicePermissionGuideOpen, setVoicePermissionGuideOpen] = useState<boolean>(false);
+  const [voiceInputLang, setVoiceInputLang] = useState<'hi-IN' | 'en-IN'>('hi-IN');
+  const [isInIframe, setIsInIframe] = useState<boolean>(false);
+  const speechRecognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        setIsInIframe(window.self !== window.top);
+      } catch (e) {
+        setIsInIframe(true);
+      }
+    }
+  }, []);
+
+  const startVoiceInput = () => {
+    if (typeof window === 'undefined') return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceInputError("आपके डिवाइस/ब्राउज़र में वेब स्पीच रिकॉग्निशन सपोर्ट नहीं मिला। कृपया Google Chrome ब्राउज़र का उपयोग करें।");
+      return;
+    }
+
+    setVoiceInputError(null);
+
+    try {
+      if (speechRecognitionRef.current) {
+        try {
+          speechRecognitionRef.current.abort();
+        } catch {}
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = voiceInputLang; // 'hi-IN' or 'en-IN'
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsVoiceInputActive(true);
+        setVoiceInputError(null);
+      };
+
+      recognition.onaudiostart = () => {
+        setIsVoiceInputActive(true);
+      };
+
+      recognition.onspeechstart = () => {
+        setIsVoiceInputActive(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let interim = '';
+        let final = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+
+        const rawTranscript = final || interim;
+        if (rawTranscript) {
+          const cleaned = cleanRailwayVoiceText(rawTranscript);
+          setAiQuery(cleaned);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        setIsVoiceInputActive(false);
+
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          if (isInIframe) {
+            setVoiceInputError("ब्राउज़र ने प्रीव्यू फ्रेम (iFrame) में माइक एक्सेस ब्लॉक किया है। अलग टैब में यह 100% काम करता है — कृपया नीचे 'अलग टैब में खोलें' दबाएं।");
+          } else {
+            setVoiceInputError("माइक्रोफ़ोन अनुमति (Mic Permission) नहीं मिली। नीचे 'अनुमति दें' दबाएं या एड्रेस बार के 🔒 लॉक से Microphone Allow करें।");
+          }
+          setVoicePermissionGuideOpen(true);
+        } else if (event.error === 'no-speech') {
+          setVoiceInputError("कोई आवाज सुनाई नहीं दी। कृपया दोबारा माइक दबाकर स्पष्ट बोलें।");
+        } else if (event.error !== 'aborted') {
+          setVoiceInputError(`माइक सूचना (${event.error})। कृपया पुनः प्रयास करें या नीचे त्वरित विषय चुनें।`);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsVoiceInputActive(false);
+      };
+
+      speechRecognitionRef.current = recognition;
+      
+      // CRITICAL: Call recognition.start() synchronously within user click event loop!
+      recognition.start();
+      setIsVoiceInputActive(true);
+    } catch (err: any) {
+      console.error("Speech recognition start failed:", err);
+      setIsVoiceInputActive(false);
+      if (err?.name === 'InvalidStateError') {
+        // already started
+        return;
+      }
+      setVoiceInputError("माइक चालू नहीं हो सका। कृपया अनुमति दें या नीचे तुरंत समाधान बटन दबाएं।");
+    }
+  };
+
+  const stopVoiceInput = () => {
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop();
+      } catch {}
+      setIsVoiceInputActive(false);
+    }
+  };
+
+  const toggleVoiceInput = () => {
+    if (isVoiceInputActive) {
+      stopVoiceInput();
+    } else {
+      startVoiceInput();
+    }
+  };
+
+  const handleRequestMicPermission = async () => {
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+        setVoiceInputError(null);
+        setVoicePermissionGuideOpen(false);
+        // User explicitly granted permission in the native browser dialog!
+        startVoiceInput();
+      } catch (err: any) {
+        console.warn("Manual getUserMedia error:", err);
+        setVoicePermissionGuideOpen(true);
+        if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+          setVoiceInputError("माइक अनुमति ब्लॉक है। कृपया ब्राउज़र के URL बार में 🔒 लॉक या ⚙️ आइकन दबाकर 'Microphone' चालू करें।");
+        } else {
+          setVoiceInputError("माइक्रोफ़ोन एक्सेस नहीं मिल सका: " + (err.message || "त्रुटि"));
+        }
+      }
+    } else {
+      setVoiceInputError("ब्राउज़र में ऑडियो डिवाइस एक्सेस उपलब्ध नहीं है। कृपया Google Chrome का उपयोग करें।");
+    }
+  };
 
   // Manual memory states
   const [manualInfo, setManualInfo] = useState<ManualInfo | null>(null);
@@ -92,31 +247,7 @@ export default function App() {
   const [loadingPage, setLoadingPage] = useState(false);
   const [manualSubTab, setManualSubTab] = useState<'search' | 'reader' | 'chapters'>('search');
 
-  // Speech Recognition state
-  // Input Mode: 'keyboard' (default, clean, no mic prompts) or 'voice'
-  const [inputMode, setInputMode] = useState<'keyboard' | 'voice'>('keyboard');
-  const [isListening, setIsListening] = useState(false);
-  const [speechLang, setSpeechLang] = useState<'hi-IN' | 'en-IN'>('hi-IN');
-  const [speechError, setSpeechError] = useState<string | null>(null);
-  const [speechSupported, setSpeechSupported] = useState(false);
-  const [showMicPermissionGuide, setShowMicPermissionGuide] = useState(false);
-  const [micPermanentlyDismissed, setMicPermanentlyDismissed] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return localStorage.getItem('dismiss_mic_guide') === 'true';
-      } catch (e) {
-        return false;
-      }
-    }
-    return false;
-  });
-  const [isCheckingMic, setIsCheckingMic] = useState(false);
-  const [isInIframe, setIsInIframe] = useState(false);
-  const recognitionRef = useRef<any>(null);
-  const initialQueryBeforeSpeakRef = useRef<string>('');
 
-  // Text to speech state
-  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Mobile App modal state
   const { isInstallable, isInstalled, isIOS, isInAppBrowser, install } = usePWAInstall();
@@ -164,169 +295,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFault, setSelectedFault] = useState<Fault | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        setSpeechSupported(true);
-      }
-      setIsInIframe(window.self !== window.top);
-    }
-  }, []);
 
-  const requestMicrophoneAccess = async (): Promise<boolean> => {
-    setIsCheckingMic(true);
-    try {
-      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-        setSpeechError(null);
-        setShowMicPermissionGuide(false);
-        return true;
-      }
-      return true;
-    } catch (err: any) {
-      console.warn("Microphone access check:", err);
-      if (!micPermanentlyDismissed) {
-        setSpeechError("ब्राउज़र ने प्रीव्यू फ्रेम (iframe) में माइक्रोफ़ोन की अनुमति रोक रखी है।");
-        setShowMicPermissionGuide(true);
-      }
-      return false;
-    } finally {
-      setIsCheckingMic(false);
-    }
-  };
-
-  const dismissMicBanner = (persist = true) => {
-    setSpeechError(null);
-    setShowMicPermissionGuide(false);
-    setMicPermanentlyDismissed(true);
-    try {
-      localStorage.setItem('dismiss_mic_guide', 'true');
-      sessionStorage.setItem('dismiss_mic_guide', 'true');
-    } catch (e) {}
-  };
-
-  const toggleListening = async () => {
-    if (isListening) {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch (e) {}
-      }
-      setIsListening(false);
-      setAiQuery(prev => cleanRailwayVoiceText(prev));
-      return;
-    }
-
-    setSpeechError(null);
-    setShowMicPermissionGuide(false);
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setSpeechError("आपके ब्राउज़र में वॉइस इनपुट सपोर्ट नहीं है। कृपया Google Chrome या Edge का उपयोग करें अथवा सीधे कीबोर्ड से टाइप करें।");
-      return;
-    }
-
-    // Capture starting query before user begins speaking
-    initialQueryBeforeSpeakRef.current = aiQuery;
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = speechLang;
-      recognition.interimResults = true;
-      recognition.continuous = false;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-        setSpeechError(null);
-        setShowMicPermissionGuide(false);
-      };
-
-      recognition.onresult = (event: any) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
-        const fullTranscript = (finalTranscript + ' ' + interimTranscript).trim();
-        if (fullTranscript) {
-          const cleaned = cleanRailwayVoiceText(fullTranscript);
-          const base = initialQueryBeforeSpeakRef.current.trim();
-          setAiQuery(base ? `${base} ${cleaned}` : cleaned);
-        }
-      };
-
-      recognition.onerror = (event: any) => {
-        console.warn("Speech recognition error:", event.error);
-        setIsListening(false);
-        if (event.error === 'not-allowed') {
-          if (!micPermanentlyDismissed) {
-            setSpeechError("ब्राउज़र ने प्रीव्यू फ्रेम (iframe) में माइक्रोफ़ोन की अनुमति रोक रखी है। आप सीधे कीबोर्ड से लिख सकते हैं।");
-            setShowMicPermissionGuide(true);
-          }
-        } else if (event.error === 'no-speech') {
-          // No sound detected - quiet reset, don't harass user
-          setSpeechError(null);
-        } else {
-          setSpeechError(null);
-        }
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-        setAiQuery(prev => cleanRailwayVoiceText(prev));
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (e: any) {
-      console.warn("SpeechRecognition start exception:", e);
-      setIsListening(false);
-      if (!micPermanentlyDismissed) {
-        setSpeechError("माइक शुरू नहीं हो सका। कृपया सीधे कीबोर्ड से टाइप करें।");
-      }
-    }
-  };
-
-  const handleSpeakText = (text: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'hi-IN';
-    utterance.rate = 0.95;
-
-    // Try finding Hindi voice
-    const voices = window.speechSynthesis.getVoices();
-    const hiVoice = voices.find(v => v.lang.includes('hi') || v.name.toLowerCase().includes('hindi') || v.lang.includes('IN'));
-    if (hiVoice) {
-      utterance.voice = hiVoice;
-    }
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
-  };
-
-  // Stop speech synthesis on component unmount or result change
-  useEffect(() => {
-    return () => {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
 
   const quickPrompts = [
     { label: "LSCE लैम्प प्रकाशित / Cooling Mode", query: "LSCE lamp glow kar raha hai over temperature control electronics F0101P2 cooling mode" },
@@ -335,6 +304,9 @@ export default function App() {
     { label: "VCB Close नहीं हो रहा", query: "VCB close nahi ho raha stuck in off position" },
     { label: "MR Pressure कम हो रहा है", query: "MR pressure drop ho raha hai brake nahi lag raha" },
     { label: "Converter 1 Disturbance", query: "Converter 1 disturbance VCB open" },
+    { label: "F0108P1 Primary Over Current / OCR-78", query: "SS01 F0108P1 Primary over current check over current relay flag close VCB after unlocking relay OCR-78" },
+    { label: "F0109P1 Aux Winding Over Current / BUR MCB", query: "SS01 F0109P1 Aux winding over current try to close VCB again BUR-1 BUR-2 BUR-3 MCB 127.22" },
+    { label: "F0110P1 Fatal Error Main Circuit / Turn OFF", query: "SS01 F0110P1 Fatal error in main circuit turn off the loco HB/SB MCB RDSO" },
     { label: "Brake Electronics Fault", query: "Fault in brake electronics emergency brake applied" }
   ];
 
@@ -367,14 +339,7 @@ export default function App() {
   const activeQuickPrompts = locoType === 'amrit_bharat' ? amritBharatQuickPrompts : quickPrompts;
 
   const handleAiSubmit = async (overrideQuery?: string) => {
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-    if (isSpeaking && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
+
 
     const rawQuery = overrideQuery || aiQuery;
     const q = cleanRailwayVoiceText(rawQuery).trim();
@@ -397,7 +362,7 @@ export default function App() {
     const isExplicitAmrit = 
       qLower.includes('amrit bharat') || qLower.includes('अमृत भारत') || 
       qLower.includes('push pull') || qLower.includes('push-pull') || qLower.includes('पुश-पुल') || qLower.includes('पुश पुल') ||
-      qLower.includes('slave') || qLower.includes('स्लेव') || 
+      qLower.includes('slave') || qLower.includes('स्लेव') || qLower.includes('स्लैब') || qLower.includes('स्लेब') || qLower.includes('slab') ||
       qLower.includes('master & slave') || qLower.includes('slave loco') || qLower.includes('master loco') ||
       qLower.includes('hlc') || qLower.includes('power car') || qLower.includes('wtb') || qLower.includes('67');
 
@@ -560,8 +525,13 @@ export default function App() {
   }, [locoType]);
 
   const currentFaults = useMemo(() => {
+    const rawLower = searchQuery.trim().toLowerCase();
+    const isAmritSearch = rawLower.includes('slave') || rawLower.includes('स्लेव') || rawLower.includes('स्लैब') || rawLower.includes('स्लेब') || rawLower.includes('slab') || rawLower.includes('push pull') || rawLower.includes('push-pull') || rawLower.includes('amrit') || rawLower.includes('अमृत');
+    if (isAmritSearch) {
+      return amritBharatFaults;
+    }
     return locoType === 'amrit_bharat' ? amritBharatFaults : faults;
-  }, [locoType]);
+  }, [locoType, searchQuery]);
 
   const matchedCatalogFault = useMemo(() => {
     if (!aiResult?.identifiedFaultId) return null;
@@ -577,8 +547,10 @@ export default function App() {
 
     const rawLower = rawSearch.toLowerCase();
     const tokens = expandLocoTokens(rawSearch);
+    const hasSlaveInSearch = rawLower.includes('slave') || rawLower.includes('स्लेव') || rawLower.includes('स्लैब') || rawLower.includes('स्लेब') || rawLower.includes('slab');
+    const hasMasterInSearch = (rawLower.includes('master') || rawLower.includes('मास्टर')) && !hasSlaveInSearch;
 
-    return currentFaults.filter((fault) => {
+    const matched = currentFaults.filter((fault) => {
       const fullFaultText = [
         fault.id,
         fault.message,
@@ -606,49 +578,199 @@ export default function App() {
       const matchesSystem = selectedSystem ? fault.subSystem === selectedSystem : true;
       return matchesSearch && matchesSystem;
     });
+
+    // Prioritize specific Slave vs Master fault over generic combined fault
+    if (hasSlaveInSearch) {
+      matched.sort((a, b) => {
+        const aIsSlave = a.id.includes('SLAVE') || a.message.toLowerCase().includes('slave') || a.message.includes('स्लेव');
+        const bIsSlave = b.id.includes('SLAVE') || b.message.toLowerCase().includes('slave') || b.message.includes('स्लेव');
+        if (aIsSlave && !bIsSlave) return -1;
+        if (!aIsSlave && bIsSlave) return 1;
+        return 0;
+      });
+    } else if (hasMasterInSearch) {
+      matched.sort((a, b) => {
+        const aIsMaster = a.id.includes('MASTER') || a.message.toLowerCase().includes('master') || a.message.includes('मास्टर');
+        const bIsMaster = b.id.includes('MASTER') || b.message.toLowerCase().includes('master') || b.message.includes('मास्टर');
+        if (aIsMaster && !bIsMaster) return -1;
+        if (!aIsMaster && bIsMaster) return 1;
+        return 0;
+      });
+    }
+
+    return matched;
   }, [searchQuery, selectedSystem, currentFaults]);
 
   const isDay = cabMode === 'day';
 
+  const getSubsystemBadgeStyle = (subSystem: string, isDayMode: boolean) => {
+    const code = (subSystem || '').toUpperCase();
+    if (code.includes('SS01') || code.includes('VCB') || code.includes('MAIN POWER')) {
+      return isDayMode 
+        ? "bg-rose-100 text-rose-900 border-rose-300 shadow-sm" 
+        : "bg-rose-950/80 text-rose-300 border-rose-500/60 shadow-rose-950/40";
+    }
+    if (code.includes('SS02') || code.includes('BOGIE-1')) {
+      return isDayMode 
+        ? "bg-blue-100 text-blue-900 border-blue-300 shadow-sm" 
+        : "bg-blue-950/80 text-blue-300 border-blue-500/60 shadow-blue-950/40";
+    }
+    if (code.includes('SS03') || code.includes('BOGIE-2')) {
+      return isDayMode 
+        ? "bg-cyan-100 text-cyan-900 border-cyan-300 shadow-sm" 
+        : "bg-cyan-950/80 text-cyan-300 border-cyan-500/60 shadow-cyan-950/40";
+    }
+    if (code.includes('SS04') || code.includes('HARMONIC')) {
+      return isDayMode 
+        ? "bg-purple-100 text-purple-900 border-purple-300 shadow-sm" 
+        : "bg-purple-950/80 text-purple-300 border-purple-500/60 shadow-purple-950/40";
+    }
+    if (code.includes('SS05') || code.includes('HOTEL')) {
+      return isDayMode 
+        ? "bg-amber-100 text-amber-900 border-amber-300 shadow-sm" 
+        : "bg-amber-950/80 text-amber-300 border-amber-500/60 shadow-amber-950/40";
+    }
+    if (code.includes('SS06') || code.includes('SS07') || code.includes('SS08') || code.includes('BUR') || code.includes('AUX')) {
+      return isDayMode 
+        ? "bg-emerald-100 text-emerald-900 border-emerald-300 shadow-sm" 
+        : "bg-emerald-950/80 text-emerald-300 border-emerald-500/60 shadow-emerald-950/40";
+    }
+    if (code.includes('SS09') || code.includes('BATTERY')) {
+      return isDayMode 
+        ? "bg-yellow-100 text-yellow-950 border-yellow-300 shadow-sm" 
+        : "bg-yellow-950/80 text-yellow-300 border-yellow-500/60 shadow-yellow-950/40";
+    }
+    if (code.includes('SS10') || code.includes('BRAKE') || code.includes('P53') || code.includes('P56')) {
+      return isDayMode 
+        ? "bg-red-100 text-red-900 border-red-300 shadow-sm" 
+        : "bg-red-950/80 text-red-300 border-red-500/60 shadow-red-950/40";
+    }
+    if (code.includes('SS11') || code.includes('SS12') || code.includes('HB')) {
+      return isDayMode 
+        ? "bg-teal-100 text-teal-900 border-teal-300 shadow-sm" 
+        : "bg-teal-950/80 text-teal-300 border-teal-500/60 shadow-teal-950/40";
+    }
+    if (code.includes('SS15') || code.includes('FIRE')) {
+      return isDayMode 
+        ? "bg-orange-100 text-orange-900 border-orange-300 shadow-sm" 
+        : "bg-orange-950/80 text-orange-300 border-orange-500/60 shadow-orange-950/40";
+    }
+    if (code.includes('SS19') || code.includes('WTB') || code.includes('TRAIN BUS')) {
+      return isDayMode 
+        ? "bg-indigo-100 text-indigo-900 border-indigo-300 shadow-sm" 
+        : "bg-indigo-950/80 text-indigo-300 border-indigo-500/60 shadow-indigo-950/40";
+    }
+    if (code.includes('GEN') || code.includes('COACH') || code.includes('PUSH-PULL')) {
+      return isDayMode 
+        ? "bg-teal-100 text-teal-900 border-teal-300 shadow-sm" 
+        : "bg-teal-950/80 text-teal-300 border-teal-500/60 shadow-teal-950/40";
+    }
+    return isDayMode 
+      ? "bg-slate-100 text-slate-800 border-slate-300" 
+      : "bg-zinc-800 text-zinc-300 border-zinc-700";
+  };
+
+  const getSubsystemLeftAccent = (subSystem: string) => {
+    const code = (subSystem || '').toUpperCase();
+    if (code.includes('SS01') || code.includes('VCB')) return "border-l-rose-500";
+    if (code.includes('SS02')) return "border-l-blue-500";
+    if (code.includes('SS03')) return "border-l-cyan-500";
+    if (code.includes('SS04')) return "border-l-purple-500";
+    if (code.includes('SS05')) return "border-l-amber-500";
+    if (code.includes('SS06') || code.includes('SS07') || code.includes('SS08')) return "border-l-emerald-500";
+    if (code.includes('SS09')) return "border-l-yellow-400";
+    if (code.includes('SS10') || code.includes('BRAKE')) return "border-l-red-500";
+    if (code.includes('SS19') || code.includes('WTB')) return "border-l-indigo-500";
+    if (code.includes('GEN') || code.includes('COACH')) return "border-l-teal-500";
+    return "border-l-orange-500";
+  };
+
+  const getQuickPromptStyle = (label: string, isDayMode: boolean) => {
+    const l = (label || '').toLowerCase();
+    if (l.includes('ब्रेक') || l.includes('brake') || l.includes('bp') || l.includes('mr') || l.includes('vcd')) {
+      return isDayMode 
+        ? "bg-rose-50 hover:bg-rose-100 text-rose-950 border-rose-300 shadow-sm" 
+        : "bg-gradient-to-br from-rose-950/70 via-red-950/50 to-zinc-900 text-rose-200 border-rose-500/50 hover:border-rose-400 hover:shadow-rose-950/50";
+    }
+    if (l.includes('vcb') || l.includes('voltage') || l.includes('ohe') || l.includes('हार्मोनिक') || l.includes('nsn')) {
+      return isDayMode 
+        ? "bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-300 shadow-sm" 
+        : "bg-gradient-to-br from-amber-950/70 via-orange-950/50 to-zinc-900 text-amber-200 border-amber-500/50 hover:border-amber-400 hover:shadow-amber-950/50";
+    }
+    if (l.includes('कन्वर्टर') || l.includes('bur') || l.includes('ऑक्सिलरी') || l.includes('होटल लोड') || l.includes('hlc')) {
+      return isDayMode 
+        ? "bg-sky-50 hover:bg-sky-100 text-sky-950 border-sky-300 shadow-sm" 
+        : "bg-gradient-to-br from-sky-950/70 via-blue-950/50 to-zinc-900 text-sky-200 border-sky-500/50 hover:border-sky-400 hover:shadow-sky-950/50";
+    }
+    if (l.includes('wtb') || l.includes('बैटरी') || l.includes('इलेक्ट्रॉनिक्स') || l.includes('ce') || l.includes('f1901')) {
+      return isDayMode 
+        ? "bg-purple-50 hover:bg-purple-100 text-purple-950 border-purple-300 shadow-sm" 
+        : "bg-gradient-to-br from-purple-950/70 via-indigo-950/50 to-zinc-900 text-purple-200 border-purple-500/50 hover:border-purple-400 hover:shadow-purple-950/50";
+    }
+    if (l.includes('पुश-पुल') || l.includes('डेड') || l.includes('रिवर्सल') || l.includes('कैब')) {
+      return isDayMode 
+        ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border-emerald-300 shadow-sm" 
+        : "bg-gradient-to-br from-emerald-950/70 via-teal-950/50 to-zinc-900 text-emerald-200 border-emerald-500/50 hover:border-emerald-400 hover:shadow-emerald-950/50";
+    }
+    return isDayMode 
+      ? "bg-slate-50 hover:bg-slate-100 text-slate-900 border-slate-300" 
+      : "bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700 hover:border-amber-500/50";
+  };
+
   return (
     <div className={cn(
       "min-h-screen flex flex-col font-sans transition-colors duration-200",
-      isDay ? "bg-slate-100 text-slate-950" : "bg-[#09090B] text-[#F4F4F5]",
-      fontSize === 'extra-large' ? "text-lg" : fontSize === 'large' ? "text-base" : "text-sm"
+      isDay 
+        ? "bg-gradient-to-br from-amber-50/60 via-slate-50 to-blue-50/50 text-slate-950" 
+        : "bg-gradient-to-b from-[#0B0F19] via-[#0D1220] to-[#080B14] text-[#F4F4F5]",
+      fontSize === 'extra-large' ? "text-xl sm:text-2xl" : fontSize === 'large' ? "text-lg sm:text-xl" : "text-base sm:text-lg"
     )}>
+      {/* 🇮🇳 Indian Railways Tricolor & Amrit Bharat Livery Accent Ribbon */}
+      <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-amber-300 via-emerald-400 to-blue-500 shadow-sm" />
+
       {/* Header */}
       <header className={cn(
-        "border-b sticky top-0 z-30 transition-colors duration-200",
-        isDay ? "bg-white border-slate-300 shadow-sm" : "bg-[#121214] border-[#27272A]"
+        "border-b sticky top-0 z-30 transition-colors duration-200 backdrop-blur-md",
+        isDay 
+          ? "bg-white/95 border-amber-200/80 shadow-md" 
+          : "bg-[#0c1424]/95 border-indigo-500/25 shadow-xl shadow-black/30"
       )}>
         <div className="max-w-3xl w-full mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className={cn(
-              "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-lg sm:text-xl shadow-md transition-colors",
-              locoType === 'amrit_bharat' ? "bg-emerald-500 text-black shadow-emerald-500/20" : "bg-orange-500 text-black shadow-orange-500/20"
-            )}>
-              {locoType === 'amrit_bharat' ? 'AB' : '3Φ'}
+            <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden shadow-lg border-2 border-orange-500 bg-zinc-950 shrink-0 flex items-center justify-center ring-2 ring-orange-500/30">
+              <img 
+                src="/icon-192.png" 
+                alt="Locomotive" 
+                className="w-full h-full object-cover" 
+                referrerPolicy="no-referrer"
+              />
+              <span className={cn(
+                "absolute -bottom-0.5 -right-0.5 text-[8px] font-black px-1 rounded-tl shadow-sm",
+                locoType === 'amrit_bharat' ? "bg-emerald-400 text-black font-extrabold" : "bg-gradient-to-r from-orange-500 to-amber-400 text-black font-extrabold"
+              )}>
+                {locoType === 'amrit_bharat' ? 'AB' : 'WAP'}
+              </span>
             </div>
             <div className="flex flex-col leading-none">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className={cn(
-                  "text-xs sm:text-sm font-black tracking-wider uppercase",
+                  "text-sm sm:text-base font-black tracking-wider uppercase",
                   locoType === 'amrit_bharat' 
-                    ? (isDay ? "text-emerald-800" : "text-emerald-400") 
-                    : (isDay ? "text-orange-700" : "text-orange-500")
+                    ? (isDay ? "text-emerald-800" : "bg-gradient-to-r from-emerald-400 via-teal-300 to-lime-300 bg-clip-text text-transparent") 
+                    : (isDay ? "text-orange-700" : "bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-300 bg-clip-text text-transparent")
                 )}>
                   {locoType === 'amrit_bharat' ? 'LocoAssist • Amrit Bharat' : 'LocoAssist Pro'}
                 </span>
                 <span className={cn(
-                  "text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded border uppercase",
+                  "text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded border uppercase shadow-sm",
                   locoType === 'amrit_bharat' 
-                    ? (isDay ? "bg-emerald-100 text-emerald-900 border-emerald-300" : "bg-emerald-950 text-emerald-300 border-emerald-800")
-                    : (isDay ? "bg-orange-100 text-orange-900 border-orange-300" : "bg-orange-950 text-orange-300 border-orange-800")
+                    ? (isDay ? "bg-emerald-100 text-emerald-900 border-emerald-300" : "bg-emerald-950/80 text-emerald-300 border-emerald-500/60")
+                    : (isDay ? "bg-orange-100 text-orange-900 border-orange-300" : "bg-orange-950/80 text-orange-300 border-orange-500/60")
                 )}>
                   {locoType === 'amrit_bharat' ? 'Push-Pull' : '3-Phase'}
                 </span>
               </div>
-              <span className={cn("text-[11px] mt-1 font-medium hidden xs:inline", isDay ? "text-slate-600" : "text-zinc-400")}>
+              <span className={cn("text-xs mt-1 font-semibold hidden xs:inline", isDay ? "text-slate-600" : "text-slate-400")}>
                 {locoType === 'amrit_bharat' 
                   ? 'Aerodynamic WAP-5 Push-Pull & Coaches (CLW 67p TSD)' 
                   : '3 Phase Troubleshooter & Vadodara Directory (254p)'}
@@ -657,26 +779,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* 🔊 DIRECT LOUD VOICE INSTRUCTOR BUTTON (ALWAYS ACCESSIBLE IN HEADER) */}
-            <button
-              type="button"
-              onClick={() => {
-                setMode('voice');
-              }}
-              className={cn(
-                "inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer shadow-md active:scale-95 shrink-0 border",
-                mode === 'voice'
-                  ? "bg-amber-400 text-black border-amber-300 ring-2 ring-amber-400 shadow-amber-400/30"
-                  : "bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-black border-amber-300 hover:brightness-105 shadow-amber-500/20"
-              )}
-              title="वॉयस गाइड (Loud Voice) - कैब में लाउड आवाज में स्टेप-दर-स्टेप सुनें"
-            >
-              <Volume2 className={cn("w-3.5 h-3.5 fill-current", mode === 'voice' && "animate-bounce")} />
-              <span className="font-black tracking-wide">वॉयस गाइड</span>
-              <span className="bg-red-600 text-white text-[9px] px-1 py-0.2 rounded font-black uppercase">
-                LOUD
-              </span>
-            </button>
             {/* 🌙 CAB VISIBILITY TOGGLE (HIGH CONTRAST DAY vs NIGHT) */}
             <button
               type="button"
@@ -684,24 +786,29 @@ export default function App() {
               className={cn(
                 "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black border transition-all cursor-pointer shadow-sm active:scale-95",
                 isDay
-                  ? "bg-amber-100 text-amber-950 border-amber-400 hover:bg-amber-200"
-                  : "bg-zinc-800 text-amber-300 border-zinc-700 hover:bg-zinc-700"
+                  ? "bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-950 border-amber-400 hover:bg-amber-200"
+                  : "bg-gradient-to-r from-slate-800 to-indigo-950 text-amber-300 border-indigo-500/50 hover:border-amber-400"
               )}
               title={isDay ? "नाइट कैब मोड चालू करें (Dark Cab Night)" : "डे एंटी-ग्लेयर मोड चालू करें (Sunlight Anti-Glare Day)"}
             >
               {isDay ? <Sun className="w-3.5 h-3.5 text-amber-600" /> : <Moon className="w-3.5 h-3.5 text-amber-400" />}
-              <span className="hidden sm:inline">{isDay ? 'डे मोड (Sun)' : 'नाइट मोड (Dark)'}</span>
+              <span className="hidden sm:inline">{isDay ? 'डे मोड' : 'नाइट मोड'}</span>
             </button>
 
-            {/* 🔤 FONT SIZE SELECTOR (LP READABILITY) */}
+            {/* 🔤 FONT SIZE SELECTOR (LP READABILITY - ACCESSIBLE ON ALL DEVICES) */}
             <div className={cn(
-              "hidden sm:flex items-center rounded-lg border p-0.5 text-xs font-black",
-              isDay ? "bg-slate-100 border-slate-300 text-slate-800" : "bg-zinc-800 border-zinc-700 text-zinc-300"
+              "flex items-center rounded-xl border-2 p-0.5 shadow-md transition-all",
+              isDay ? "bg-amber-100/80 border-amber-300 text-slate-800" : "bg-[#111A30] border-amber-500/50 text-amber-300"
             )}>
               <button
                 type="button"
                 onClick={() => setFontSize('normal')}
-                className={cn("px-2 py-0.5 rounded transition-colors", fontSize === 'normal' && (isDay ? "bg-slate-900 text-white" : "bg-amber-500 text-black font-black"))}
+                className={cn(
+                  "px-2.5 py-1 rounded-lg transition-all text-xs font-black cursor-pointer",
+                  fontSize === 'normal' 
+                    ? (isDay ? "bg-slate-900 text-white shadow" : "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-md") 
+                    : (isDay ? "text-slate-700 hover:text-slate-950" : "text-amber-400/70 hover:text-white")
+                )}
                 title="सामान्य फॉन्ट (Normal Font)"
               >
                 A
@@ -709,16 +816,26 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setFontSize('large')}
-                className={cn("px-2 py-0.5 rounded transition-colors", fontSize === 'large' && (isDay ? "bg-slate-900 text-white" : "bg-amber-500 text-black font-black"))}
-                title="बड़ा फॉन्ट - LP कैब अनुशंसित (Large Font - Recommended)"
+                className={cn(
+                  "px-2.5 py-1 rounded-lg transition-all text-xs font-black cursor-pointer",
+                  fontSize === 'large' 
+                    ? (isDay ? "bg-slate-900 text-white shadow" : "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-md") 
+                    : (isDay ? "text-slate-700 hover:text-slate-950" : "text-amber-400/70 hover:text-white")
+                )}
+                title="बड़ा फॉन्ट - अनुशंसित (Large Font)"
               >
                 A+
               </button>
               <button
                 type="button"
                 onClick={() => setFontSize('extra-large')}
-                className={cn("px-2 py-0.5 rounded transition-colors", fontSize === 'extra-large' && (isDay ? "bg-slate-900 text-white" : "bg-amber-500 text-black font-black"))}
-                title="विशाल फॉन्ट (Extra Large Font)"
+                className={cn(
+                  "px-2.5 py-1 rounded-lg transition-all text-xs font-black cursor-pointer",
+                  fontSize === 'extra-large' 
+                    ? (isDay ? "bg-slate-900 text-white shadow" : "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-md") 
+                    : (isDay ? "text-slate-700 hover:text-slate-950" : "text-amber-400/70 hover:text-white")
+                )}
+                title="अति विशाल फॉन्ट (Extra Large Font)"
               >
                 A++
               </button>
@@ -774,9 +891,9 @@ export default function App() {
 
       <main className="flex-1 max-w-3xl w-full mx-auto relative overflow-hidden flex flex-col">
         <AnimatePresence mode="wait">
-          {(!selectedFault || mode === 'voice') ? (
+          {!selectedFault ? (
             <motion.div 
-              key={mode === 'voice' ? 'voice' : 'list'}
+              key="catalog-main"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -785,7 +902,7 @@ export default function App() {
             >
               <div className="bg-[#0A0A0B] px-4 py-3 z-10 shrink-0 border-b border-[#27272A] flex flex-col gap-3">
                 {/* Primary 2-Tab Locomotive Switcher */}
-                <div className="grid grid-cols-2 p-1 bg-[#121214] rounded-xl border border-[#27272A] gap-1.5 shadow-inner">
+                <div className="grid grid-cols-2 p-1.5 bg-[#121214] rounded-xl border border-[#27272A] gap-2 shadow-inner">
                   <button
                     type="button"
                     onClick={() => {
@@ -794,16 +911,16 @@ export default function App() {
                       setSelectedFault(null);
                     }}
                     className={cn(
-                      "py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all",
+                      "py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold flex items-center justify-center gap-2 transition-all",
                       locoType === '3phase'
-                        ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg shadow-orange-950/50 border border-orange-400/40"
+                        ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg shadow-orange-950/50 border border-orange-400/40 font-black"
                         : "text-[#A1A1AA] hover:text-white hover:bg-[#1C1C1F]"
                     )}
                   >
                     <Activity className="w-4 h-4 text-orange-200" />
                     <div className="flex flex-col text-left sm:text-center leading-tight">
                       <span className="font-extrabold tracking-wide">3-फ़ेस लोको (3-Phase)</span>
-                      <span className="text-[10px] font-normal opacity-85">WAP-7 / WAG-9 / WAP-5 (254p)</span>
+                      <span className="text-xs font-normal opacity-85">WAP-7 / WAG-9 (254p)</span>
                     </div>
                   </button>
 
@@ -815,24 +932,24 @@ export default function App() {
                       setSelectedFault(null);
                     }}
                     className={cn(
-                      "py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all",
+                      "py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold flex items-center justify-center gap-2 transition-all",
                       locoType === 'amrit_bharat'
-                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-950/50 border border-emerald-400/40"
+                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-950/50 border border-emerald-400/40 font-black"
                         : "text-[#A1A1AA] hover:text-white hover:bg-[#1C1C1F]"
                     )}
                   >
                     <Layers className="w-4 h-4 text-emerald-200" />
                     <div className="flex flex-col text-left sm:text-center leading-tight">
                       <span className="font-extrabold tracking-wide">अमृत भारत (Amrit Bharat)</span>
-                      <span className="text-[10px] font-normal opacity-85">Push-Pull WAP-5 & Rake (67p)</span>
+                      <span className="text-xs font-normal opacity-85">Push-Pull WAP-5 (67p)</span>
                     </div>
                   </button>
                 </div>
 
-                {/* 4-Tab Navigation: Catalog, AI Assistant, LOUD Voice Instructor, Directory Reader */}
+                {/* 3-Tab Navigation: Catalog, AI Assistant, Directory Reader */}
                 <div className={cn(
-                  "flex p-1 rounded-xl border gap-1 shadow-sm transition-colors",
-                  isDay ? "bg-slate-200 border-slate-300" : "bg-[#121214] border-[#27272A]"
+                  "flex p-1.5 rounded-2xl border-2 gap-1.5 shadow-md transition-colors",
+                  isDay ? "bg-slate-200/80 border-slate-300" : "bg-[#0c1424] border-indigo-950"
                 )}>
                   <button 
                     onClick={() => {
@@ -840,44 +957,27 @@ export default function App() {
                       setSelectedFault(null);
                     }} 
                     className={cn(
-                      "flex-1 py-2 px-1 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                      "flex-1 py-2.5 px-2 text-sm sm:text-base rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm", 
                       mode === 'browse' 
-                        ? (isDay ? "bg-white text-slate-950 shadow-sm font-black" : "bg-[#27272A] text-white shadow-sm font-black") 
-                        : (isDay ? "text-slate-700 hover:text-slate-950" : "text-[#A1A1AA] hover:text-white")
+                        ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 font-black scale-[1.02]" 
+                        : (isDay ? "text-slate-700 hover:text-blue-700 hover:bg-blue-50/50 font-bold" : "text-slate-300 hover:text-white hover:bg-slate-800/50 font-bold")
                     )}
                   >
-                    <Search className="w-3.5 h-3.5" />
-                    <span>कैटलॉग</span>
+                    <Search className="w-4 h-4" />
+                    <span>कैटलॉग (TSD)</span>
                   </button>
                   <button 
                     onClick={() => setMode('ai')} 
                     className={cn(
-                      "flex-1 py-2 px-1 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                      "flex-1 py-2.5 px-2 text-sm sm:text-base rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm", 
                       mode === 'ai' 
-                        ? (locoType === 'amrit_bharat' ? "bg-emerald-500 text-black shadow font-black" : "bg-orange-500 text-black shadow font-black")
-                        : (isDay ? "text-slate-700 hover:text-orange-600" : "text-[#A1A1AA] hover:text-orange-400")
+                        ? (locoType === 'amrit_bharat' 
+                            ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-black shadow-lg shadow-emerald-500/30 font-black scale-[1.02]" 
+                            : "bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-500 text-black shadow-lg shadow-orange-500/30 font-black scale-[1.02]")
+                        : (isDay ? "text-slate-700 hover:text-orange-600 hover:bg-orange-50/50 font-bold" : "text-slate-300 hover:text-amber-400 hover:bg-slate-800/50 font-bold")
                     )}
                   >
-                    <Sparkles className="w-3.5 h-3.5"/> <span>AI सहायक</span>
-                  </button>
-                  
-                  {/* 🎙️ PROMINENT LP LOUD VOICE INSTRUCTOR TAB */}
-                  <button 
-                    onClick={() => setMode('voice')} 
-                    className={cn(
-                      "flex-1 py-2 px-1 text-xs sm:text-sm font-black rounded-lg transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer", 
-                      mode === 'voice' 
-                        ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/30 scale-102 font-black"
-                        : (isDay 
-                            ? "bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold" 
-                            : "bg-amber-950/60 text-amber-300 hover:bg-amber-900/60 border border-amber-500/40 font-bold")
-                    )}
-                  >
-                    <Volume2 className={cn("w-3.5 h-3.5", mode === 'voice' ? "animate-bounce text-black" : "text-amber-500")}/> 
-                    <span>वॉयस गाइड</span>
-                    <span className="text-[9px] bg-red-600 text-white px-1 py-0.2 rounded font-black uppercase tracking-wider hidden sm:inline">
-                      LOUD
-                    </span>
+                    <Sparkles className="w-4 h-4"/> <span>AI सहायक</span>
                   </button>
 
                   <button 
@@ -886,29 +986,29 @@ export default function App() {
                       if (!manualInfo) fetchManualInfo(locoType);
                     }} 
                     className={cn(
-                      "flex-1 py-2 px-1 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1", 
+                      "flex-1 py-2.5 px-2 text-sm sm:text-base rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm", 
                       mode === 'manual' 
-                        ? "bg-blue-600 text-white shadow-sm font-black" 
-                        : (isDay ? "text-slate-700 hover:text-blue-600" : "text-[#A1A1AA] hover:text-blue-400")
+                        ? "bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 font-black scale-[1.02]" 
+                        : (isDay ? "text-slate-700 hover:text-purple-600 hover:bg-purple-50/50 font-bold" : "text-slate-300 hover:text-purple-400 hover:bg-slate-800/50 font-bold")
                     )}
                   >
-                    <BookOpen className="w-3.5 h-3.5"/> <span>{locoType === 'amrit_bharat' ? 'TSD (67p)' : 'मेमोरी'}</span>
+                    <BookOpen className="w-4 h-4"/> <span>{locoType === 'amrit_bharat' ? 'TSD बुक (67p)' : 'TSD डायरेक्टरी'}</span>
                   </button>
                 </div>
 
                 {mode === 'browse' && (
                   <div className="relative">
-                    <Search className={cn("absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4", isDay ? "text-slate-500" : "text-zinc-400")} />
+                    <Search className={cn("absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4", isDay ? "text-amber-600" : "text-amber-400")} />
                     <input 
                       type="text" 
                       placeholder="दोष कोड या समस्या खोजें... (उदा. P56 BP, P55 Panto, P53 Brakes, CE, F0101P1)" 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className={cn(
-                        "w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-semibold transition-all outline-none shadow-sm",
+                        "w-full pl-10 pr-4 py-2.5 rounded-xl border-2 text-sm font-bold transition-all outline-none shadow-sm",
                         isDay 
-                          ? "bg-white border-slate-300 text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-200" 
-                          : "bg-[#121214] border-[#27272A] text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          ? "bg-white border-amber-300 text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-200" 
+                          : "bg-[#0d1424] border-indigo-900 text-white focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
                       )}
                     />
                   </div>
@@ -917,113 +1017,129 @@ export default function App() {
 
               {mode === 'browse' ? (
                 <>
-                  {/* Sub Systems Scroller */}
+                  {/* Sub Systems Scroller with Color-coded Badges */}
                   <div className={cn(
-                    "border-b shrink-0 transition-colors",
-                    isDay ? "bg-slate-200/70 border-slate-300" : "bg-[#121214] border-[#27272A]"
+                    "border-b shrink-0 transition-colors shadow-sm",
+                    isDay ? "bg-slate-200/60 border-slate-300" : "bg-[#0c1322] border-indigo-950/80"
                   )}>
                     <div className="overflow-x-auto hide-scrollbar flex gap-2 px-4 py-2.5">
                       <button
                         onClick={() => setSelectedSystem(null)}
                         className={cn(
-                          "px-3.5 py-1.5 rounded-lg text-xs font-black whitespace-nowrap transition-all shadow-sm",
+                          "px-4 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all shadow-sm border",
                           selectedSystem === null 
-                            ? (isDay ? "bg-slate-900 text-white" : "bg-amber-500 text-black shadow-amber-500/20") 
-                            : (isDay ? "bg-white text-slate-800 border border-slate-300 hover:bg-slate-100" : "bg-[#18181B] text-zinc-300 border border-transparent hover:bg-[#222226]")
+                            ? (isDay ? "bg-slate-900 text-white border-slate-900 shadow-md" : "bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-400 text-black border-amber-300 shadow-md shadow-amber-500/30 scale-105") 
+                            : (isDay ? "bg-white text-slate-800 border-slate-300 hover:bg-slate-100" : "bg-slate-900/80 text-zinc-300 border-slate-700 hover:bg-slate-800")
                         )}
                       >
-                        {locoType === 'amrit_bharat' ? 'सभी सिस्टम (All)' : 'All Systems'}
+                        {locoType === 'amrit_bharat' ? '🌟 सभी सिस्टम (All)' : '🌟 All Systems'}
                       </button>
-                      {currentSubSystems.map((sys) => (
-                        <button
-                          key={sys.id}
-                          onClick={() => setSelectedSystem(sys.id)}
-                          className={cn(
-                            "px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm",
-                            selectedSystem === sys.id 
-                              ? (locoType === 'amrit_bharat' 
-                                  ? (isDay ? "bg-emerald-700 text-white font-black" : "bg-emerald-950 text-emerald-300 border border-emerald-500 font-black") 
-                                  : (isDay ? "bg-orange-700 text-white font-black" : "bg-orange-500 text-black font-black"))
-                              : (isDay ? "bg-white text-slate-800 border border-slate-300 hover:bg-slate-100" : "bg-[#18181B] text-zinc-300 border border-transparent hover:bg-[#222226]")
-                          )}
-                        >
-                          {sys.id} - {sys.name}
-                        </button>
-                      ))}
+                      {currentSubSystems.map((sys) => {
+                        const isSelected = selectedSystem === sys.id;
+                        const badgeStyle = getSubsystemBadgeStyle(sys.id, isDay);
+                        return (
+                          <button
+                            key={sys.id}
+                            onClick={() => setSelectedSystem(sys.id)}
+                            className={cn(
+                              "px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all shadow-sm border cursor-pointer",
+                              isSelected 
+                                ? "ring-2 ring-amber-400 scale-105 " + badgeStyle
+                                : badgeStyle + " hover:scale-102 hover:shadow-md"
+                            )}
+                          >
+                            {sys.id} - {sys.name}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
                   {/* Faults List */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {filteredFaults.length > 0 ? (
-                      filteredFaults.map((fault) => (
+                      filteredFaults.map((fault, idx) => (
                         <div 
-                          key={fault.id}
+                          key={`${fault.id}-${idx}`}
                           onClick={() => setSelectedFault(fault)}
                           className={cn(
-                            "rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all active:scale-[0.99] shadow-sm",
+                            "rounded-2xl p-4 sm:p-5 border-2 border-l-[6px] cursor-pointer transition-all active:scale-[0.99] shadow-md",
+                            getSubsystemLeftAccent(fault.subSystem),
                             isDay 
-                              ? "bg-white border-slate-300 hover:border-amber-500 hover:shadow-md" 
-                              : "bg-[#131316] border-[#2A2A30] hover:border-amber-500/60 hover:bg-[#18181D]"
+                              ? "bg-white border-slate-200 hover:border-amber-500 hover:shadow-lg hover:shadow-amber-500/10" 
+                              : "bg-gradient-to-br from-[#0F1424] via-[#0E1320] to-[#0A0D16] border-[#1E2945] hover:border-amber-400/80 hover:shadow-xl hover:shadow-amber-500/10"
                           )}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="bg-red-600 text-white text-[11px] uppercase font-black px-2.5 py-0.5 rounded-lg shadow-sm">
+                              <span className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white text-[11px] uppercase font-black px-3 py-1 rounded-lg shadow-sm border border-red-400/30">
                                 {fault.id}
                               </span>
                               <span className={cn(
-                                "text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border",
-                                isDay ? "bg-slate-100 text-slate-800 border-slate-300" : "bg-zinc-900 text-zinc-300 border-zinc-700"
+                                "text-[11px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-lg border",
+                                getSubsystemBadgeStyle(fault.subSystem, isDay)
                               )}>
                                 {fault.subSystem}
                               </span>
+                              {fault.lamp && (
+                                <span className={cn(
+                                  "text-[10px] px-2 py-0.5 rounded-lg font-bold border inline-flex items-center gap-1",
+                                  isDay ? "bg-amber-50 text-amber-900 border-amber-300" : "bg-amber-950/70 text-amber-300 border-amber-500/50"
+                                )}>
+                                  <Lightbulb className="w-3 h-3 text-amber-400 fill-current" />
+                                  <span className="truncate max-w-[150px]">{fault.lamp.split('(')[0]}</span>
+                                </span>
+                              )}
                               {fault.masterEffect && (
                                 <span className={cn(
-                                  "text-[10px] px-2 py-0.5 rounded font-black border uppercase tracking-wider",
+                                  "text-[10px] px-2.5 py-0.5 rounded-lg font-black border uppercase tracking-wider",
                                   isDay ? "bg-blue-100 text-blue-900 border-blue-300" : "bg-blue-950 text-blue-300 border-blue-800"
                                 )}>
                                   Master / Slave
                                 </span>
                               )}
                             </div>
-                            <ChevronRight className={cn("w-5 h-5 shrink-0", isDay ? "text-slate-400" : "text-zinc-500")} />
+                            <ChevronRight className={cn("w-5 h-5 shrink-0 transition-transform group-hover:translate-x-1", isDay ? "text-amber-500" : "text-amber-400")} />
                           </div>
 
-                          <h3 className={cn("mt-2.5 text-base sm:text-lg font-black tracking-tight leading-snug line-clamp-2", isDay ? "text-slate-950" : "text-white")}>
+                          <h3 className={cn(
+                            "mt-2.5 font-black tracking-tight leading-snug line-clamp-2",
+                            fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base',
+                            isDay ? "text-slate-950" : "text-white"
+                          )}>
                             {fault.message.split('\n')[0]}
                           </h3>
 
-                          <p className={cn("mt-1 text-xs sm:text-sm font-semibold line-clamp-2 leading-relaxed", isDay ? "text-slate-700" : "text-zinc-300")}>
+                          <p className={cn(
+                            "mt-1 font-semibold line-clamp-2 leading-relaxed",
+                            fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm',
+                            isDay ? "text-slate-700" : "text-slate-300"
+                          )}>
                             {fault.effect}
                           </p>
 
-                          {/* Quick Card Footer with Loud Voice button */}
+                          {/* Quick Card Footer */}
                           <div className={cn(
                             "mt-3 pt-2.5 border-t flex items-center justify-between gap-2",
-                            isDay ? "border-slate-200" : "border-zinc-800"
+                            isDay ? "border-slate-200" : "border-slate-800/80"
                           )}>
-                            <span className={cn("text-[11px] font-bold", isDay ? "text-slate-600" : "text-zinc-400")}>
-                              {fault.actions.length} निवारण चरण
+                            <span className={cn(
+                              "font-black px-2.5 py-1 rounded-lg border",
+                              fontSize === 'extra-large' ? 'text-sm' : 'text-xs',
+                              isDay ? "bg-amber-100 text-amber-950 border-amber-300" : "bg-amber-950/50 text-amber-300 border-amber-500/40"
+                            )}>
+                              ⚡ {fault.actions.filter(a => typeof a === 'string' && a.trim() && !a.startsWith('═') && !a.startsWith('【')).length} निवारण चरण
                             </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedFault(fault);
-                                setMode('voice');
-                              }}
-                              className={cn(
-                                "text-xs font-black px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer",
-                                isDay 
-                                  ? "bg-amber-100 text-amber-950 border-amber-400 hover:bg-amber-200" 
-                                  : "bg-amber-950/80 text-amber-300 border-amber-500/50 hover:bg-amber-900"
-                              )}
-                              title="इस खराबी का निवारण जोर से बोलकर सुनें"
-                            >
-                              <Volume2 className="w-3.5 h-3.5 text-amber-500" />
-                              <span>🔊 वॉयस में सुनें</span>
-                            </button>
+                            <span className={cn(
+                              "font-black px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all shadow-sm",
+                              fontSize === 'extra-large' ? 'text-sm' : 'text-xs',
+                              isDay 
+                                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black border-amber-400 shadow-amber-200" 
+                                : "bg-gradient-to-r from-amber-500/30 to-orange-500/30 text-amber-300 border-amber-500/50 hover:bg-amber-500/40"
+                            )}>
+                              <span>निवारण देखें</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </span>
                           </div>
                         </div>
                       ))
@@ -1036,167 +1152,215 @@ export default function App() {
                 </>
               ) : mode === 'ai' ? (
                 <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5">
-                  {/* Strict Document Grounding Notice */}
-                  <div className="bg-[#0D1512] p-3.5 rounded-xl border border-emerald-800/80 shadow-sm flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-emerald-950 border border-emerald-700 text-emerald-400 shrink-0 mt-0.5">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                          केवल अपलोड TSD PDF विश्लेषण आधारित (Strict Document Grounding)
-                        </span>
-                        <span className="text-[10px] font-semibold bg-emerald-950/90 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 rounded-full">
-                          बिना मनगढ़ंत उत्तर (Zero Hallucination)
-                        </span>
+                  <div className={cn(
+                    "rounded-2xl p-5 sm:p-6 border-2 transition-all shadow-xl",
+                    isDay 
+                      ? "bg-gradient-to-br from-amber-50/90 via-white to-orange-50/50 border-amber-300 shadow-amber-500/10" 
+                      : "bg-gradient-to-br from-[#0c1427] via-[#0f172a] to-[#080d1a] border-amber-500/50 shadow-2xl shadow-black/50"
+                  )}>
+                    <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black font-black shadow-md border border-amber-300">
+                          <Bot className="w-5 h-5 text-black" />
+                        </div>
+                        <div>
+                          <h2 className={cn(
+                            "font-black tracking-tight",
+                            fontSize === 'extra-large' ? 'text-xl sm:text-2xl' : fontSize === 'large' ? 'text-lg sm:text-xl' : 'text-base sm:text-lg',
+                            isDay ? "text-slate-950" : "text-white"
+                          )}>
+                            Describe Loco Defect (समस्या का विवरण दें)
+                          </h2>
+                          <p className={cn("text-xs font-bold", isDay ? "text-slate-600" : "text-amber-400/90")}>
+                            {locoType === 'amrit_bharat' ? 'CLW 67-Page TSD (Push-Pull WAP-5)' : 'Vadodara 254-Page TSD (3-Phase WAP-7/WAG-9)'}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-[#D4D4D8] mt-1 leading-relaxed">
-                        AI सहायक अपने मन से उत्तर नहीं देता। यह केवल अपलोड की गई आधिकारिक TSD PDF (
-                        <span className="font-semibold text-emerald-300">
-                          {locoType === 'amrit_bharat'
-                            ? 'चित्तरंजन लोकोमोटिव वर्क्स - 67 पृष्ठ अमृत भारत TSD Final Copy PDF'
-                            : 'क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वड़ोदरा - 254 पृष्ठ 3-Phase TSD PDF'}
-                        </span>
-                        ) के पन्नों का गहराई से विश्लेषण करके ही नियम, स्विच, MCB व समाधान बताता है।
-                      </p>
+
+                      <span className={cn(
+                        "text-xs font-black px-3 py-1 rounded-xl border shadow-sm",
+                        locoType === 'amrit_bharat'
+                          ? (isDay ? "bg-emerald-100 text-emerald-900 border-emerald-300" : "bg-emerald-950/80 text-emerald-300 border-emerald-500/50")
+                          : (isDay ? "bg-orange-100 text-orange-900 border-orange-300" : "bg-orange-950/80 text-orange-300 border-orange-500/50")
+                      )}>
+                        {locoType === 'amrit_bharat' ? '⚡ पुश-पुल TSD मोड' : '⚡ 3-फेज TSD मोड'}
+                      </span>
                     </div>
-                  </div>
 
-                  <div className="bg-[#121214] rounded-lg p-5 border border-[#27272A]">
-                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                      <h2 className="text-[#E4E4E7] font-semibold flex items-center gap-2 text-base">
-                        <Bot className="w-5 h-5 text-orange-500"/> Describe Loco Defect (समस्या का विवरण दें)
-                      </h2>
-
-                      {/* Input Mode & Language Selector */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* Keyboard vs Voice Mode Toggle */}
-                        <div className="flex items-center bg-[#18181B] rounded border border-[#27272A] p-0.5 text-xs">
+                    {/* LOCO PILOT VOICE INPUT (SPEECH-TO-TEXT MIC BUTTON) */}
+                    <div className="mb-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2 px-1 text-xs">
+                        <span className="font-bold text-zinc-400 flex items-center gap-1.5">
+                          <span>🎙️</span> <span>लोको पायलट वॉयस इनपुट (बोलकर खोजें):</span>
+                        </span>
+                        <div className="flex items-center gap-1 bg-black/30 p-0.5 rounded-lg border border-zinc-700/60">
                           <button
                             type="button"
-                            onClick={() => {
-                              setInputMode('keyboard');
-                              if (isListening && recognitionRef.current) {
-                                try { recognitionRef.current.stop(); } catch (e) {}
-                                setIsListening(false);
-                              }
-                              setSpeechError(null);
-                              setShowMicPermissionGuide(false);
-                            }}
+                            onClick={() => setVoiceInputLang('hi-IN')}
                             className={cn(
-                              "px-2.5 py-1 rounded font-semibold transition-colors flex items-center gap-1",
-                              inputMode === 'keyboard' ? "bg-orange-500 text-black shadow-sm" : "text-[#A1A1AA] hover:text-white"
+                              "px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer",
+                              voiceInputLang === 'hi-IN'
+                                ? "bg-amber-400 text-amber-950 shadow-sm"
+                                : "text-zinc-400 hover:text-zinc-200"
                             )}
                           >
-                            <span>⌨️ टाइपिंग (Keyboard)</span>
+                            🇮🇳 हिंदी / Hinglish
                           </button>
                           <button
                             type="button"
-                            onClick={() => setInputMode('voice')}
+                            onClick={() => setVoiceInputLang('en-IN')}
                             className={cn(
-                              "px-2.5 py-1 rounded font-semibold transition-colors flex items-center gap-1",
-                              inputMode === 'voice' ? "bg-orange-500 text-black shadow-sm" : "text-[#A1A1AA] hover:text-white"
+                              "px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer",
+                              voiceInputLang === 'en-IN'
+                                ? "bg-amber-400 text-amber-950 shadow-sm"
+                                : "text-zinc-400 hover:text-zinc-200"
                             )}
                           >
-                            <Mic className="w-3.5 h-3.5" />
-                            <span>बोलकर (Voice)</span>
+                            🇬🇧 English
                           </button>
                         </div>
-
-                        {/* Language Selector when in voice mode */}
-                        {inputMode === 'voice' && (
-                          <div className="flex items-center bg-[#18181B] rounded border border-[#27272A] p-0.5 text-xs">
-                            <button
-                              type="button"
-                              onClick={() => setSpeechLang('hi-IN')}
-                              className={cn(
-                                "px-2 py-0.5 rounded font-medium transition-colors",
-                                speechLang === 'hi-IN' ? "bg-orange-500 text-black font-semibold" : "text-[#A1A1AA] hover:text-white"
-                              )}
-                            >
-                              हिंदी
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSpeechLang('en-IN')}
-                              className={cn(
-                                "px-2 py-0.5 rounded font-medium transition-colors",
-                                speechLang === 'en-IN' ? "bg-orange-500 text-black font-semibold" : "text-[#A1A1AA] hover:text-white"
-                              )}
-                            >
-                              Eng
-                            </button>
-                          </div>
-                        )}
-
-                        <span className="text-xs text-[#71717A] bg-[#18181B] px-2 py-0.5 rounded border border-[#27272A] hidden sm:inline">
-                          {locoType === 'amrit_bharat' ? 'CLW 67-Page TSD' : 'TSD 254-Page Directory'}
-                        </span>
                       </div>
-                    </div>
 
-                    {/* Non-intrusive Frame Mic notice when in voice mode */}
-                    {inputMode === 'voice' && speechError && (
-                      <div className="mb-3 p-3 bg-[#1C1412] border border-amber-800/80 rounded-xl text-xs text-[#FDE68A] shadow-md flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2">
-                          <MicOff className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                          <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-amber-200">
-                              प्रीव्यू फ्रेम (iframe) में ब्राउज़र ने माइक्रोफ़ोन रोक रखा है
+                      {isInIframe && (
+                        <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base shrink-0">💡</span>
+                            <span className="text-amber-200 font-semibold leading-tight">
+                              आप प्रीव्यू फ्रेम में हैं। ब्राउज़र सुरक्षा नीति (iFrame Sandbox) के कारण माइक <strong>सीधे अलग टैब</strong> में काम करता है।
                             </span>
-                            <span className="text-[11px] text-[#E4E4E7] leading-relaxed">
-                              बोलकर इनपुट देने के लिए नीचे दिए गए बटन से इसे <strong>नए टैब में खोलें</strong> (जहाँ ब्राउज़र सीधे माइक की अनुमति देता है) अथवा <strong>⌨️ टाइपिंग मोड</strong> में सीधे लिखकर सर्च करें।
-                            </span>
-                            <div className="flex items-center gap-2 mt-1">
+                          </div>
+                          <a
+                            href={typeof window !== 'undefined' ? window.location.href : '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs shrink-0 cursor-pointer shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-amber-300"
+                          >
+                            <span>अलग टैब में खोलें</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={toggleVoiceInput}
+                        className={cn(
+                          "w-full py-3.5 px-4 rounded-2xl font-black flex items-center justify-between gap-3 transition-all shadow-md active:scale-[0.98] border-2 cursor-pointer",
+                          isVoiceInputActive
+                            ? "bg-red-600 hover:bg-red-500 text-white border-red-300 ring-4 ring-red-400/50 shadow-red-500/50 animate-pulse"
+                            : isDay
+                              ? "bg-gradient-to-r from-rose-600 via-red-600 to-amber-600 hover:from-rose-700 hover:to-red-700 text-white border-rose-300 shadow-rose-950/10"
+                              : "bg-gradient-to-r from-rose-700 via-red-800 to-amber-900 hover:from-rose-600 hover:to-red-700 text-white border-rose-500/60 shadow-black/40"
+                        )}
+                        title="माइक दबाकर अपनी आवाज में लोको की समस्या बोलें"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border",
+                            isVoiceInputActive 
+                              ? "bg-white text-red-600 border-white shadow-inner animate-spin" 
+                              : "bg-white/20 text-white border-white/30"
+                          )}>
+                            {isVoiceInputActive ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-amber-200" />}
+                          </div>
+                          <div className="text-left">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-sm sm:text-base tracking-wide">
+                                {isVoiceInputActive ? "🔴 माइक सक्रिय: समस्या बोलिए..." : "🎙️ बोलकर बताएं (माइक चालू करें)"}
+                              </span>
+                              <span className={cn(
+                                "text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm",
+                                isVoiceInputActive ? "bg-white text-red-700 animate-pulse" : "bg-amber-400 text-amber-950"
+                              )}>
+                                {isVoiceInputActive ? "LISTENING" : "VOICE MIC"}
+                              </span>
+                            </div>
+                            <p className="text-xs text-rose-100 font-medium">
+                              {isVoiceInputActive ? "बोलना पूरा होने पर 'रोकें' दबाएं या थोड़ा रुकें" : "माइक दबाकर समस्या बोलें (उदा. 'VCB बंद नहीं हो रहा', 'स्पीडोमीटर फॉल्ट')"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/25 text-xs font-black border border-white/20">
+                          {isVoiceInputActive ? "रोकें (Stop)" : "बोलें (Speak)"}
+                        </div>
+                      </button>
+
+                      {voiceInputError && (
+                        <div className="text-xs text-rose-200 font-bold p-3 bg-rose-950/90 rounded-xl border border-rose-700 shadow-lg space-y-2">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                              <span>{voiceInputError}</span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
                               {isInIframe && (
                                 <a
                                   href={typeof window !== 'undefined' ? window.location.href : '#'}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-1 px-3 py-1 rounded bg-orange-600 hover:bg-orange-500 text-black font-bold text-[11px] transition-colors shadow-sm"
+                                  className="px-3 py-1 rounded-lg bg-orange-500 hover:bg-orange-400 text-white font-black text-xs shrink-0 cursor-pointer shadow-sm transition-all active:scale-95 flex items-center gap-1 border border-orange-400"
                                 >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                  <span>🔗 नए टैब में खोलें (माइक चालू करें)</span>
+                                  <span>🔗 अलग टैब में खोलें</span>
+                                  <ExternalLink className="w-3 h-3" />
                                 </a>
                               )}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setInputMode('keyboard');
-                                  dismissMicBanner(true);
-                                }}
-                                className="px-2.5 py-1 rounded bg-[#27272A] hover:bg-[#3F3F46] text-[#E4E4E7] text-[11px] transition-colors"
+                                onClick={handleRequestMicPermission}
+                                className="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs shrink-0 cursor-pointer shadow-sm transition-all active:scale-95 flex items-center gap-1"
                               >
-                                ⌨️ कीबोर्ड टाइपिंग पर जाएं
+                                <span>⚡</span>
+                                <span>अनुमति दें (Allow Mic)</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setVoicePermissionGuideOpen(!voicePermissionGuideOpen)}
+                                className="px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs shrink-0 cursor-pointer border border-zinc-600 transition-all"
+                              >
+                                {voicePermissionGuideOpen ? "छुपाएं" : "ℹ️ कैसे चालू करें?"}
                               </button>
                             </div>
                           </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => dismissMicBanner(true)}
-                          className="text-[#A1A1AA] hover:text-white text-xs font-bold p-1"
-                          title="बंद करें"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
 
-                    {/* Textarea with voice bar */}
-                    <div className="relative mb-3">
+                          {voicePermissionGuideOpen && (
+                            <div className="p-2.5 rounded-lg bg-black/40 border border-rose-800/80 text-[11px] space-y-1.5 font-normal text-zinc-300 mt-2">
+                              <p className="font-bold text-amber-300 text-xs flex items-center gap-1">
+                                <span>🔧</span> <span>ब्राउज़र में माइक अनुमति (Mic Permission) चालू करने के 3 आसान चरण:</span>
+                              </p>
+                              <p>• <strong>चरण 1:</strong> ब्राउज़र के सबसे ऊपर एड्रेस बार में वेबसाइट लिंक (URL) के पास 🔒 (ताला/लॉक) या ⚙️ आइकन दबाएं।</p>
+                              <p>• <strong>चरण 2:</strong> <strong>"Permissions" (अनुमतियाँ)</strong> में जाकर <strong>"Microphone" (माइक्रोफ़ोन)</strong> को <strong>Allow / चालू</strong> करें।</p>
+                              <p>• <strong>चरण 3:</strong> पेज को रिफ्रेश (Reload) करें और ऊपर माइक बटन दबाएं।</p>
+                              <div className="pt-1 flex items-center justify-between border-t border-zinc-800">
+                                <span>यदि आप प्रीव्यू/आईफ्रेम में हैं:</span>
+                                <a
+                                  href={typeof window !== 'undefined' ? window.location.href : '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-amber-400 hover:text-amber-300 font-bold underline flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>🔗 नए अलग टैब में खोलें (Open Full Tab)</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Textarea with colorful styling */}
+                    <div className="relative mb-3.5">
                       <textarea
                         value={aiQuery}
-                        onChange={e => {
-                          setAiQuery(e.target.value);
-                          if (speechError) setSpeechError(null);
-                        }}
-                        placeholder={isListening ? "सुन रहे हैं... कृपया स्पष्ट आवाज़ में बोलें (Listening... Speak now)..." : "बोलकर या लिखकर समस्या बताएं (जैसे: 'main compressure not working' या 'MCP 1 trip ho gaya hai')..."}
+                        onChange={e => setAiQuery(e.target.value)}
+                        placeholder="समस्या या फॉल्ट कोड यहाँ लिखें या ऊपर माइक दबाकर बोलें... (उदा. 'स्लेव लोको ब्रेक रिलीज नहीं हो रहा', 'F0903P2 बैटरी चार्जर करंट', 'VCB not closing', 'MCP 1 trip')..."
                         className={cn(
-                          "w-full h-24 bg-[#0A0A0B] border rounded-lg p-3 text-sm text-[#E4E4E7] focus:outline-none resize-none placeholder-[#52525B] transition-all",
-                          isListening 
-                            ? "border-red-500 ring-2 ring-red-500/30 bg-red-950/10 placeholder-red-400/70" 
-                            : "border-[#27272A] focus:border-orange-500"
+                          "w-full h-28 border-2 rounded-2xl p-4 font-bold focus:outline-none resize-none transition-all shadow-inner",
+                          fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base',
+                          isDay 
+                            ? "bg-white border-amber-300 text-slate-950 placeholder-slate-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-200" 
+                            : "bg-[#080d1a] border-indigo-900/80 text-zinc-100 placeholder-zinc-500 focus:border-amber-400 focus:ring-2 focus:ring-amber-500/30"
                         )}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -1205,84 +1369,88 @@ export default function App() {
                         }}
                       />
 
-                      {aiQuery && (
-                        <div className="absolute right-2 top-2 flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setAiQuery(cleanRailwayVoiceText(aiQuery))}
-                            title="तकनीकी शब्दों को सही करें"
-                            className="text-xs bg-[#18181B] text-orange-400 hover:text-orange-300 px-2 py-0.5 rounded border border-[#27272A] hover:bg-[#27272A] transition-colors flex items-center gap-1"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            <span>शब्द सुधारें</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setAiQuery('')}
-                            title="हटाएं"
-                            className="text-xs bg-[#18181B] text-[#71717A] hover:text-white px-2 py-0.5 rounded border border-[#27272A] hover:bg-[#27272A] transition-colors"
-                          >
-                            Clear
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Voice Input Action Button (only shown in Voice Mode) */}
-                    {inputMode === 'voice' && (
-                      <div className="flex gap-2 mb-4">
+                      <div className="absolute right-3 top-3 flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={toggleListening}
+                          onClick={toggleVoiceInput}
+                          title={isVoiceInputActive ? "माइक बंद करें" : "माइक से बोलें"}
                           className={cn(
-                            "flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2.5 transition-all border shadow-sm",
-                            isListening
-                              ? "bg-red-600 hover:bg-red-500 text-white border-red-400 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]"
-                              : "bg-[#18181B] hover:bg-[#222226] text-white border-[#3F3F46] hover:border-orange-500/50"
+                            "text-xs font-black px-2.5 py-1 rounded-lg border transition-colors flex items-center gap-1 cursor-pointer",
+                            isVoiceInputActive
+                              ? "bg-red-600 text-white border-red-400 animate-pulse"
+                              : "bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border-rose-500/40"
                           )}
                         >
-                          {isListening ? (
-                            <>
-                              <MicOff className="w-4 h-4 text-white" />
-                              <span>सुन रहा हूँ... (रोकने के लिए दबाएं)</span>
-                            </>
-                          ) : (
-                            <>
-                              <Mic className="w-4 h-4 text-orange-500" />
-                              <span>बोलकर बताएं (Tap to Speak in {speechLang === 'hi-IN' ? 'हिंदी' : 'English'})</span>
-                            </>
-                          )}
+                          <Mic className="w-3.5 h-3.5" />
+                          <span>{isVoiceInputActive ? 'Listening' : 'Mic'}</span>
                         </button>
+                        {aiQuery && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setAiQuery(cleanRailwayVoiceText(aiQuery))}
+                              title="तकनीकी शब्दों को सही करें"
+                              className="text-xs font-black bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-2.5 py-1 rounded-lg border border-amber-500/40 transition-colors flex items-center gap-1 cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                              <span>शब्द सुधारें</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAiQuery('')}
+                              title="हटाएं"
+                              className="text-xs font-black bg-zinc-800/80 text-zinc-300 hover:text-white px-2.5 py-1 rounded-lg border border-zinc-700 transition-colors cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          </>
+                        )}
                       </div>
-                    )}
+                    </div>
 
-                    {/* Quick suggestion chips */}
-                    <div className="mb-4">
-                      <p className="text-[11px] font-medium text-[#71717A] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <HelpCircle className="w-3.5 h-3.5 text-orange-500/70" /> सामान्य समस्याएं (Quick Prompts):
-                      </p>
+                    {/* Quick 1-Tap Defect Selection Chips for Fast LP Cab Operation */}
+                    <div className="mb-3">
+                      <div className="text-[11px] font-bold text-zinc-400 mb-1.5 flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <span className="text-amber-400">⚡</span>
+                          <span>1-टैप तुरंत समस्या चयन (माइक न चलने या शोर होने पर):</span>
+                        </span>
+                        <span className="text-[10px] text-amber-400 font-semibold">1-क्लिक समाधान</span>
+                      </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {activeQuickPrompts.map((qp, idx) => (
+                        {[
+                          { label: 'VCB क्लोज नहीं हो रहा / Trip', query: 'VCB close nahi ho raha ya VCB trip' },
+                          { label: 'Panto नहीं उठ रहा', query: 'Panto raise nahi ho raha' },
+                          { label: 'F1501P1 फायर अलार्म', query: 'F1501P1 Fire detection in machine room' },
+                          { label: 'F1601P1 स्पीडोमीटर', query: 'F1601P1 speed limit exceeded speedometer' },
+                          { label: 'SS19 ट्रेन बस', query: 'SS19 Train Bus isolated' },
+                          { label: 'MCB 112.1 ट्रिप', query: 'MCB 112.1 trip SB-2' },
+                          { label: 'BUR 1/2/3 फॉल्ट', query: 'BUR fault auxiliary converter' },
+                          { label: 'MR प्रेशर ड्रॉप', query: 'MR pressure drop compressor low' },
+                        ].map((chip, idx) => (
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => handleAiSubmit(qp.query)}
-                            disabled={aiLoading}
-                            className="text-xs px-2.5 py-1 rounded bg-[#18181B] text-[#A1A1AA] hover:text-white hover:bg-[#27272A] border border-[#27272A] hover:border-orange-500/40 transition-all text-left"
+                            onClick={() => {
+                              setAiQuery(chip.query);
+                              handleAiSubmit(chip.query);
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-zinc-800/90 hover:bg-amber-400 hover:text-amber-950 text-zinc-200 border border-zinc-700/80 transition-all cursor-pointer active:scale-95 shadow-sm"
                           >
-                            {qp.label}
+                            {chip.label}
                           </button>
                         ))}
                       </div>
                     </div>
 
+                    {/* AI Submit Button with vibrant colorful gradient */}
                     <button 
                       onClick={() => handleAiSubmit()}
                       disabled={aiLoading || !aiQuery.trim()}
-                      className="w-full bg-orange-500 text-black font-bold py-3 rounded-lg hover:bg-orange-400 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-colors shadow-sm"
+                      className="w-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:from-amber-300 hover:via-orange-400 hover:to-amber-400 text-black font-black py-3.5 px-6 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2.5 transition-all shadow-lg shadow-orange-500/30 active:scale-[0.99] border-2 border-amber-300 cursor-pointer text-base sm:text-lg"
                     >
                       {aiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                      {aiLoading ? "Analyzing Indian Railways TSD Manual..." : "Analyze Defect (जांच करें)"}
+                      <span>{aiLoading ? "TSD मैन्युअल से निवारण खोज रहे हैं..." : "⚡ Analyze Defect (निवारण कार्यवाही खोजें)"}</span>
                     </button>
                   </div>
 
@@ -1316,43 +1484,107 @@ export default function App() {
                     </div>
                   )}
 
+                  {!aiResult && !aiLoading && (
+                    <div className={cn(
+                      "border-2 rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3.5 shadow-xl transition-all",
+                      isDay 
+                        ? "bg-gradient-to-b from-white via-amber-50/40 to-white border-amber-300 shadow-amber-500/10" 
+                        : "bg-gradient-to-b from-[#0c1427] via-[#0e172e] to-[#080d1a] border-indigo-900/60 shadow-2xl"
+                    )}>
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black shadow-lg border-2 border-amber-300">
+                        <Bot className="w-7 h-7 text-black" />
+                      </div>
+                      <div className="max-w-md">
+                        <h3 className={cn(
+                          "font-black tracking-tight",
+                          fontSize === 'extra-large' ? 'text-xl sm:text-2xl' : fontSize === 'large' ? 'text-lg sm:text-xl' : 'text-base sm:text-lg',
+                          isDay ? "text-slate-950" : "text-white"
+                        )}>
+                          {locoType === 'amrit_bharat' ? 'अमृत भारत TSD AI दोष निवारक' : '3-फ़ेस लोको TSD सहायक'}
+                        </h3>
+                        <p className={cn(
+                          "mt-1 leading-relaxed font-semibold",
+                          isDay ? "text-slate-700" : "text-zinc-300",
+                          fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'
+                        )}>
+                          लोको में आ रही समस्या या फॉल्ट कोड ऊपर लिखें, या नीचे दिए गए किसी भी तकनीकी विकल्प पर क्लिक करें:
+                        </p>
+                      </div>
+                      <div className="w-full mt-2">
+                        <span className={cn(
+                          "font-black uppercase tracking-wider text-amber-500 mb-3 block text-center flex items-center justify-center gap-1.5",
+                          fontSize === 'extra-large' ? 'text-base' : 'text-sm'
+                        )}>
+                          <span>⚡</span> <span>त्वरित प्रश्न / आधिकारिक TSD विषय (Quick Prompts):</span>
+                        </span>
+                        <div className="flex flex-wrap justify-center gap-2.5 max-h-80 overflow-y-auto p-1.5">
+                          {activeQuickPrompts.map((qp, qIdx) => (
+                            <button
+                              key={qIdx}
+                              type="button"
+                              onClick={() => {
+                                setAiQuery(qp.query);
+                                handleAiSubmit(qp.query);
+                              }}
+                              className={cn(
+                                "font-bold px-4 py-2.5 rounded-xl border-2 transition-all text-left shadow-md active:scale-95 cursor-pointer flex items-center gap-2",
+                                getQuickPromptStyle(qp.label, isDay),
+                                fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'
+                              )}
+                            >
+                              <span className="shrink-0 text-base">⚡</span>
+                              <span className="leading-snug">{qp.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {aiResult && (
-                    <div className="bg-[#121214] rounded-lg p-5 border border-orange-500/40 shadow-[0_0_25px_rgba(249,115,22,0.08)] flex flex-col gap-5">
-                      {/* Fault Header with ID and Catalog Link and Read Aloud */}
-                      <div className="flex flex-col gap-2 border-b border-[#27272A] pb-4">
+                    <div className={cn(
+                      "rounded-2xl p-5 sm:p-6 border-2 transition-all flex flex-col gap-5 shadow-2xl",
+                      isDay 
+                        ? "bg-gradient-to-b from-amber-50/90 via-white to-blue-50/50 border-amber-400 shadow-xl" 
+                        : "bg-gradient-to-b from-[#0F172A] via-[#111C35] to-[#0A0F1D] border-amber-500/70 shadow-[0_0_35px_rgba(245,158,11,0.2)]"
+                    )}>
+                      {/* Fault Header with ID and Catalog Link */}
+                      <div className={cn(
+                        "flex flex-col gap-2.5 border-b pb-4",
+                        isDay ? "border-amber-200" : "border-indigo-950"
+                      )}>
                         <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center gap-2.5">
-                            <ShieldAlert className="w-5 h-5 text-orange-500" />
-                            <span className="text-[#A1A1AA] text-xs font-semibold uppercase tracking-wider">Identified Fault Code:</span>
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <ShieldAlert className="w-5 h-5 text-amber-500" />
+                            <span className={cn("text-xs font-black uppercase tracking-wider", isDay ? "text-slate-700" : "text-amber-400/90")}>
+                              Identified Fault Code:
+                            </span>
                             {aiResult.identifiedFaultId ? (
-                              <span className="bg-red-950 text-red-400 border border-red-900 font-bold px-2.5 py-0.5 rounded text-sm tracking-wide">
+                              <span className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white font-black px-3.5 py-1 rounded-xl text-sm tracking-wide shadow-md border border-red-400/40">
                                 {aiResult.identifiedFaultId}
                               </span>
                             ) : (
-                              <span className="bg-yellow-950/60 text-yellow-400 border border-yellow-800/80 px-2 py-0.5 rounded text-xs">
+                              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/50 px-3 py-1 rounded-xl text-xs font-bold">
                                 General Defect
+                              </span>
+                            )}
+                            {aiResult.verifiedFromPdf && (
+                              <span className="bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 text-xs font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5 shadow-sm">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
+                                <span>CLW TSD Verified</span>
                               </span>
                             )}
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {/* 🔊 Open in Voice Guide with step-by-step loud voice */}
-                            <button
-                              type="button"
-                              onClick={() => setMode('voice')}
-                              className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-black bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-md transition-all active:scale-95 cursor-pointer"
-                              title="इस पूरे समाधान को वॉयस गाइड में जोर से सुनें"
-                            >
-                              <Volume2 className="w-3.5 h-3.5 fill-current animate-bounce" />
-                              <span>🔊 वॉयस गाइड में सुनें</span>
-                            </button>
-
                             {matchedCatalogFault && (
                               <button
                                 onClick={() => setSelectedFault(matchedCatalogFault)}
                                 className={cn(
-                                  "text-xs flex items-center gap-1.5 border px-2.5 py-1.5 rounded-lg font-bold transition-colors",
-                                  isDay ? "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200" : "text-orange-400 bg-orange-950/40 border-orange-800/60 hover:bg-orange-900/50"
+                                  "text-xs flex items-center gap-1.5 border-2 px-3 py-1.5 rounded-xl font-black transition-all shadow-sm active:scale-95 cursor-pointer",
+                                  isDay 
+                                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black border-amber-400 hover:from-amber-400 hover:to-orange-400 shadow-amber-200" 
+                                    : "bg-gradient-to-r from-amber-500/30 to-orange-500/30 text-amber-300 border-amber-500/60 hover:bg-amber-500/40"
                                 )}
                               >
                                 <span>कैटलॉग में देखें</span>
@@ -1363,124 +1595,204 @@ export default function App() {
                         </div>
 
                         {aiResult.faultTitle && (
-                          <h3 className="text-base font-semibold text-white mt-1">
+                          <h3 className={cn(
+                            "font-black tracking-tight leading-snug mt-1",
+                            fontSize === 'extra-large' ? 'text-2xl sm:text-3xl' : fontSize === 'large' ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl',
+                            isDay ? "text-slate-950" : "text-white"
+                          )}>
                             {aiResult.faultTitle}
                           </h3>
                         )}
-
-                        {/* 🏛️ OFFICIAL HARD EVIDENCE CARD (आधिकारिक दस्तावेज़ का ठोस प्रमाण) */}
-                        <div className="bg-gradient-to-br from-emerald-950/90 via-[#0A1612] to-[#0A1118] border-2 border-emerald-500/70 rounded-xl p-4 shadow-xl flex flex-col gap-3 mt-1">
-                          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-emerald-800/60 pb-2.5">
-                            <div className="flex items-center gap-2">
-                              <span className="flex h-3 w-3 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                              </span>
-                              <h4 className="text-xs sm:text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
-                                <span>🏛️ आधिकारिक दस्तावेज़ का ठोस प्रमाण (OFFICIAL HARD EVIDENCE)</span>
-                              </h4>
-                            </div>
-                            <span className="bg-emerald-900/90 text-emerald-200 border border-emerald-500/80 text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
-                              ✓ 100% PDF सत्यापित (Verified)
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                            <div className="bg-[#0A0A0B]/90 p-3 rounded-lg border border-emerald-900/60 flex flex-col justify-center">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">आधिकारिक पुस्तक (Official Source Book):</span>
-                              <span className="text-emerald-200 font-bold mt-1 leading-snug">
-                                {aiResult.pdfDocumentName || (locoType === 'amrit_bharat' ? 'चित्तरंजन लोकोमोटिव वर्क्स (CLW) - 67 पृष्ठ अमृत भारत TSD Final Copy' : 'क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वड़ोदरा (BRC) - 254 पृष्ठ 3-फेज TSD')}
-                              </span>
-                            </div>
-
-                            <div className="bg-[#0A0A0B]/90 p-3 rounded-lg border border-emerald-900/60 flex items-center justify-between gap-2">
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">सटीक पृष्ठ संख्या (Exact Page No.):</span>
-                                <span className="text-xl font-black text-amber-400 mt-0.5">
-                                  {aiResult.pdfPage ? `पृष्ठ संख्या ${aiResult.pdfPage}` : (aiResult.manualReference || 'पृष्ठ 53')}
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setMode('manual');
-                                  let pageToLoad = aiResult.pdfPage;
-                                  if (!pageToLoad && aiResult.manualReference) {
-                                    const m = aiResult.manualReference.match(/(?:पृष्ठ|page)\s*(\d+)/i);
-                                    if (m) pageToLoad = parseInt(m[1], 10);
-                                  }
-                                  pageToLoad = pageToLoad || (locoType === 'amrit_bharat' ? 53 : 22);
-                                  loadManualPage(pageToLoad);
-                                }}
-                                className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-transform active:scale-95 shrink-0"
-                              >
-                                <BookOpen className="w-4 h-4" />
-                                <span>📖 TSD में पृष्ठ {aiResult.pdfPage || 53} अभी खोलें</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          {aiResult.manualReference && (
-                            <div className="text-[11px] text-gray-300 bg-[#0A0A0B]/70 px-3 py-1.5 rounded border border-emerald-950 flex items-center gap-2">
-                              <span className="text-emerald-400 font-bold shrink-0">अनुभाग / क्लॉज़ (Section):</span>
-                              <span className="font-medium text-emerald-100">{aiResult.manualReference}</span>
-                            </div>
-                          )}
-
-                          {/* Official Document Excerpt / Quote */}
-                          {aiResult.pdfQuote && (
-                            <div className="bg-[#050C10] p-3 rounded-lg border border-emerald-800/70">
-                              <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-bold mb-1.5">
-                                <FileText className="w-3.5 h-3.5" />
-                                <span>अपलोड TSD PDF से मूल पाठ (Verbatim PDF Quote):</span>
-                              </div>
-                              <pre className="text-xs text-gray-200 font-mono leading-relaxed whitespace-pre-wrap border-l-2 border-emerald-400 pl-3 py-1 bg-black/60 rounded-r">
-                                {aiResult.pdfQuote}
-                              </pre>
-                            </div>
-                          )}
-                        </div>
                       </div>
 
                       {/* Analysis Section */}
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <Activity className="w-4 h-4 text-blue-400" />
-                          <h4 className="font-bold text-xs uppercase tracking-widest text-[#71717A]">Analysis (कारण एवं विवरण)</h4>
+                          <h4 className="font-black text-xs uppercase tracking-widest text-blue-400">Analysis (कारण एवं विवरण)</h4>
                         </div>
-                        <p className="text-[#E4E4E7] text-sm leading-relaxed bg-[#0A0A0B] p-4 rounded-lg border border-[#27272A]">
+                        <div className={cn(
+                          "p-4 sm:p-5 rounded-2xl border-2 shadow-md leading-relaxed font-semibold transition-all",
+                          isDay 
+                            ? "bg-sky-50 border-sky-300 text-sky-950" 
+                            : "bg-[#0B132B]/90 border-blue-500/40 text-blue-100",
+                          fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                        )}>
                           {aiResult.analysis}
-                        </p>
+                        </div>
                       </div>
 
                       {/* Suggested Actions Section */}
                       <div>
-                        <div className="flex items-center gap-2 mb-2.5">
-                          <Wrench className="w-4 h-4 text-orange-500" />
-                          <h4 className="font-bold text-xs uppercase tracking-widest text-[#71717A]">Loco Pilot Troubleshooting Actions (दोष निवारण कार्यवाही)</h4>
+                        <div className="flex items-center justify-between gap-2 mb-3.5 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <Wrench className="w-5 h-5 text-amber-500" />
+                            <h4 className={cn(
+                              "font-black uppercase tracking-wider text-amber-500",
+                              fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                            )}>
+                              Loco Pilot Troubleshooting Actions (दोष निवारण कार्यवाही)
+                            </h4>
+                          </div>
                         </div>
-                        <div className="space-y-2.5">
-                          {aiResult.suggestedActions.map((action, idx) => (
-                            <div key={idx} className="flex gap-3.5 items-start bg-[#0A0A0B] p-3.5 rounded-lg border border-[#27272A] hover:border-orange-500/30 transition-colors">
-                              <div className="w-6 h-6 shrink-0 rounded-full bg-[#18181B] flex items-center justify-center text-xs font-bold text-orange-500 border border-[#3F3F46] mt-0.5">
-                                {idx + 1}
-                              </div>
-                              <p className="text-[#E4E4E7] text-sm leading-relaxed pt-0.5 whitespace-pre-wrap">
-                                {action}
-                              </p>
-                            </div>
-                          ))}
+
+                        {/* LOCO PILOT VOICE ASSISTANT BUTTON / PLAYER */}
+                        {aiResult.suggestedActions && aiResult.suggestedActions.length > 0 && (
+                          <div className="mb-4">
+                            <VoiceTroubleshooterPlayer
+                              steps={aiResult.suggestedActions}
+                              faultTitle={aiResult.faultTitle || "दोष निवारण कार्यवाही"}
+                              isDay={isDay}
+                              fontSize={fontSize}
+                              onActiveStepChange={setAiVoiceActiveIndex}
+                            />
+                          </div>
+                        )}
+
+                        <div className="space-y-3.5">
+                          {(() => {
+                            const validActions = (aiResult.suggestedActions || [])
+                              .map(a => (typeof a === 'string' ? a.trim() : ''))
+                              .filter(a => a.length > 0);
+
+                            let stepCounter = 0;
+
+                            return validActions.map((action, idx) => {
+                              const isHeader = action.startsWith('═') || action.startsWith('【') || action.endsWith('═') || action.startsWith('---');
+                              const isBullet = action.startsWith('•') || action.startsWith('-') || action.startsWith('*');
+                              const numberedMatch = action.match(/^(\d+)[\.\)]\s*(.*)/);
+                              const isSpeakingThis = aiVoiceActiveIndex === idx;
+
+                              if (isHeader) {
+                                const cleanTitle = action.replace(/^[═\s【\-\*]+|[═\s】\-\*]+$/g, '').trim();
+                                return (
+                                  <div 
+                                    key={`hdr-${idx}`}
+                                    className={cn(
+                                      "py-3 px-4 rounded-xl font-black tracking-wide border-2 shadow-md my-2.5 flex items-center justify-between gap-2.5 transition-all",
+                                      isSpeakingThis
+                                        ? "ring-4 ring-emerald-400 border-emerald-400 bg-emerald-950/60 text-emerald-300"
+                                        : isDay 
+                                          ? "bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-50 border-amber-300 text-amber-950" 
+                                          : "bg-gradient-to-r from-amber-950/60 via-orange-950/50 to-amber-950/40 border-amber-500/60 text-amber-300",
+                                      fontSize === 'extra-large' ? 'text-xl' : fontSize === 'large' ? 'text-lg' : 'text-base'
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0 shadow-sm" />
+                                      <span>{cleanTitle}</span>
+                                    </div>
+                                    {isSpeakingThis && (
+                                      <span className="text-xs font-black uppercase px-2 py-0.5 rounded bg-emerald-500 text-white flex items-center gap-1 shadow-sm animate-pulse">
+                                        <Volume2 className="w-3 h-3" />
+                                        बोल रहा है
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              if (isBullet) {
+                                const isMasterBullet = action.toLowerCase().includes('master') || action.includes('मास्टर');
+                                const isSlaveBullet = action.toLowerCase().includes('slave') || action.includes('स्लेव');
+
+                                return (
+                                  <div 
+                                    key={`bullet-${idx}`}
+                                    className={cn(
+                                      "flex items-start gap-3 p-4 rounded-xl border-2 transition-all shadow-sm relative",
+                                      isSpeakingThis
+                                        ? "ring-4 ring-emerald-400 border-emerald-400 bg-emerald-950/50 text-white"
+                                        : isMasterBullet
+                                          ? (isDay ? "bg-blue-50 border-blue-300 text-blue-950" : "bg-blue-950/50 border-blue-500/60 text-blue-200")
+                                          : isSlaveBullet
+                                            ? (isDay ? "bg-purple-50 border-purple-300 text-purple-950" : "bg-purple-950/50 border-purple-500/60 text-purple-200")
+                                            : (isDay ? "bg-slate-50 border-slate-200 text-slate-900" : "bg-[#141417] border-zinc-800 text-zinc-200"),
+                                      fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                                    )}
+                                  >
+                                    {isSpeakingThis && (
+                                      <div className="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md animate-pulse">
+                                        <Volume2 className="w-3 h-3" />
+                                        <span>अब बोला जा रहा है</span>
+                                      </div>
+                                    )}
+                                    <div className={cn(
+                                      "w-2.5 h-2.5 rounded-full shrink-0 mt-2 shadow-sm",
+                                      isSpeakingThis ? "bg-emerald-400 animate-ping" : isMasterBullet ? "bg-blue-400" : isSlaveBullet ? "bg-purple-400" : "bg-amber-400"
+                                    )} />
+                                    <p className="leading-relaxed whitespace-pre-wrap font-bold flex-1">
+                                      {action.replace(/^[•\-\*]\s*/, '')}
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              stepCounter++;
+                              const stepNum = numberedMatch ? numberedMatch[1] : stepCounter.toString();
+                              const stepText = numberedMatch ? numberedMatch[2] : action;
+
+                              return (
+                                <div 
+                                  key={`step-${idx}`} 
+                                  className={cn(
+                                    "flex gap-4 items-start p-4 sm:p-5 rounded-2xl border-2 transition-all shadow-md relative",
+                                    isSpeakingThis
+                                      ? (isDay ? "bg-amber-50/90 border-emerald-500 ring-4 ring-emerald-400 shadow-emerald-500/30" : "bg-emerald-950/40 border-emerald-400 ring-4 ring-emerald-500/60 shadow-emerald-500/40")
+                                      : isDay 
+                                        ? "bg-white border-slate-300 hover:border-amber-500" 
+                                        : "bg-gradient-to-r from-[#0E1528] to-[#121B33] border-indigo-900/60 hover:border-amber-400/80"
+                                  )}
+                                >
+                                  {isSpeakingThis && (
+                                    <div className="absolute -top-3 right-4 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md animate-pulse">
+                                      <Volume2 className="w-3 h-3" />
+                                      <span>अब बोला जा रहा है (Speaking)</span>
+                                    </div>
+                                  )}
+                                  <div className={cn(
+                                    "w-10 h-10 sm:w-11 sm:h-11 shrink-0 rounded-xl flex items-center justify-center text-sm sm:text-base font-black shadow-lg border-2 mt-0.5 transition-all",
+                                    isSpeakingThis
+                                      ? "bg-emerald-400 text-emerald-950 border-white scale-105"
+                                      : "bg-gradient-to-br from-amber-400 via-orange-500 to-amber-500 text-black border-amber-300"
+                                  )}>
+                                    {stepNum.padStart(2, '0')}
+                                  </div>
+                                  <p className={cn(
+                                    "font-black leading-relaxed whitespace-pre-wrap flex-1",
+                                    isDay ? "text-slate-950" : "text-[#F4F4F5]",
+                                    fontSize === 'extra-large' ? 'text-xl sm:text-2xl' : fontSize === 'large' ? 'text-lg sm:text-xl' : 'text-base sm:text-lg'
+                                  )}>
+                                    {stepText}
+                                  </p>
+                                </div>
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
 
                       {/* Precautions / TLC Advice Section */}
                       {aiResult.precautions && (
-                        <div className="bg-[#18181B] p-4 rounded-lg border border-[#27272A]">
-                          <div className="flex items-center gap-2 mb-1.5 text-yellow-500">
-                            <AlertTriangle className="w-4 h-4" />
-                            <h4 className="font-bold text-xs uppercase tracking-widest text-yellow-500">सावधानी एवं निर्देश (Precautions & TLC Advice)</h4>
+                        <div className={cn(
+                          "p-4 sm:p-5 rounded-2xl border-2 shadow-lg transition-all",
+                          isDay 
+                            ? "bg-emerald-50 border-emerald-300 text-emerald-950" 
+                            : "bg-gradient-to-r from-emerald-950/80 via-teal-950/70 to-emerald-950/80 border-emerald-500/70 text-emerald-100"
+                        )}>
+                          <div className="flex items-center gap-2 mb-2 text-emerald-400 font-black">
+                            <ShieldAlert className="w-5 h-5 text-emerald-400" />
+                            <h4 className={cn(
+                              "font-black uppercase tracking-wider text-emerald-400",
+                              fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                            )}>
+                              सावधानी एवं निर्देश (Precautions & TLC Advice)
+                            </h4>
                           </div>
-                          <p className="text-xs text-[#A1A1AA] leading-relaxed">
+                          <p className={cn(
+                            "leading-relaxed font-bold",
+                            fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                          )}>
                             {aiResult.precautions}
                           </p>
                         </div>
@@ -1488,22 +1800,6 @@ export default function App() {
                     </div>
                   )}
                 </div>
-              ) : mode === 'voice' ? (
-                <LPVoiceGuide
-                  locoType={locoType}
-                  currentFault={selectedFault}
-                  aiResult={aiResult}
-                  cabMode={cabMode}
-                  fontSize={fontSize}
-                  onSelectFault={(f) => {
-                    setSelectedFault(f);
-                  }}
-                  onOpenAi={() => setMode('ai')}
-                  onBackToCatalog={() => {
-                    setMode('browse');
-                    setSelectedFault(null);
-                  }}
-                />
               ) : (
                 /* Mode === 'manual' - Full Permanent Memory & Vadodara Directory */
                 <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5">
@@ -1663,7 +1959,7 @@ export default function App() {
                           <span className="text-[11px] text-[#71717A] self-center mr-1">त्वरित सर्च:</span>
                           {(locoType === 'amrit_bharat'
                             ? ["F1901P1", "ZNN", "Node 504", "Node 596", "UIC Jumper", "WTB", "Cock 136", "Cock 47", "BUR 1", "F0101P1", "Self Hold", "F1003P1 VCD"]
-                            : ["LSCE", "कूलिंग मोड", "MCP", "MCPA", "BUR 1", "BUR 2", "BUR 3", "VCB", "47.1/1", "48.1", "F0101P2", "E-70", "BOGIE 1"]
+                            : ["LSCE", "F0108P1", "F0109P1", "F0110P1", "कूलिंग मोड", "MCP", "MCPA", "BUR 1", "BUR 2", "BUR 3", "VCB", "47.1/1", "48.1", "F0101P2", "E-70", "BOGIE 1"]
                           ).map((term) => (
                             <button
                               key={term}
@@ -1764,15 +2060,7 @@ export default function App() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {activePageText && (
-                            <button
-                              onClick={() => handleSpeakText(activePageText.slice(0, 500))}
-                              className="text-xs bg-[#18181B] hover:bg-[#27272A] text-orange-400 border border-[#27272A] px-2.5 py-1.5 rounded flex items-center gap-1 transition-colors"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" />
-                              <span>पेज सुनें</span>
-                            </button>
-                          )}
+
                           {locoType === '3phase' && (
                             <a
                               href="/api/manual/pdf"
@@ -1979,57 +2267,9 @@ export default function App() {
                     </span>
                   </div>
                 </div>
-
-                {/* 🔊 LOUD VOICE INSTRUCTOR BUTTON */}
-                <button
-                  type="button"
-                  onClick={() => setMode('voice')}
-                  className="px-3 sm:px-4 py-2 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                  title="इस खराबी का निवारण जोर से बोलकर सुनें"
-                >
-                  <Volume2 className="w-4 h-4 fill-current animate-bounce" />
-                  <span>🔊 लाउड वॉयस में सुनें</span>
-                </button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-16 space-y-5">
-                {/* 📢 PROMINENT VOICE GUIDE BANNER */}
-                <div className={cn(
-                  "p-4 rounded-2xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg transition-all",
-                  isDay 
-                    ? "bg-gradient-to-r from-amber-100 via-orange-50 to-amber-100 border-amber-500 text-slate-950 shadow-amber-200/50" 
-                    : "bg-gradient-to-r from-amber-950/90 via-[#18140B] to-orange-950/90 border-amber-500/80 text-white shadow-[0_0_25px_rgba(245,158,11,0.2)]"
-                )}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shrink-0 shadow-md">
-                      <Volume2 className="w-6 h-6 animate-pulse" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500 text-black">
-                          📢 LP VOICE CO-PILOT
-                        </span>
-                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-600 text-white">
-                          हिंदी / English
-                        </span>
-                      </div>
-                      <h4 className="font-black text-sm sm:text-base mt-0.5">
-                        लोको पायलट वॉयस गाइड (Loud Voice Instructor)
-                      </h4>
-                      <p className={cn("text-xs font-semibold", isDay ? "text-slate-700" : "text-zinc-300")}>
-                        कैब में बिना स्क्रीन देखे 100% लाउड आवाज में एक-एक स्टेप सुनें
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setMode('voice')}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer shrink-0"
-                  >
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>▶️ जोर से बोलकर सुनें (Start Audio)</span>
-                  </button>
-                </div>
 
                 {/* Fault Message Title */}
                 <div className={cn(
@@ -2124,36 +2364,136 @@ export default function App() {
                         {selectedFault.slaveActions ? "मास्टर लोको / मुख्य निवारण कार्यवाही (Master Actions)" : "दोष निवारण कार्यवाही (Actions to Take)"}
                       </h3>
                     </div>
-                    <span className="text-xs font-bold text-amber-500">
-                      ({selectedFault.actions.length} चरण)
-                    </span>
                   </div>
+
+                  {/* LOCO PILOT VOICE ASSISTANT BUTTON / PLAYER FOR SELECTED FAULT */}
+                  {selectedFault.actions && selectedFault.actions.length > 0 && (
+                    <div className="mb-4">
+                      <VoiceTroubleshooterPlayer
+                        steps={selectedFault.actions}
+                        faultTitle={selectedFault.message || selectedFault.id}
+                        isDay={isDay}
+                        fontSize={fontSize}
+                        onActiveStepChange={setDetailVoiceActiveIndex}
+                      />
+                    </div>
+                  )}
                   
                   <div className="space-y-3.5">
-                    {selectedFault.actions.map((action, idx) => (
-                      <div 
-                        key={idx} 
-                        className={cn(
-                          "flex gap-3.5 items-start p-4 sm:p-5 rounded-2xl border-2 transition-all shadow-sm",
-                          isDay 
-                            ? "bg-white border-slate-300 hover:border-amber-500" 
-                            : "bg-[#131316] border-[#2A2A30] hover:border-amber-500/50"
-                        )}
-                      >
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-amber-500 text-black flex items-center justify-center text-xs sm:text-sm font-black shadow-md border-2 border-amber-300 mt-0.5">
-                          {(idx + 1).toString().padStart(2, '0')}
-                        </div>
-                        <div className="flex-1">
-                          <p className={cn(
-                            "leading-relaxed whitespace-pre-wrap font-bold",
-                            fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm',
-                            isDay ? "text-slate-950" : "text-zinc-100"
-                          )}>
-                            {action}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                    {(() => {
+                      const validActions = (selectedFault.actions || [])
+                        .map(a => typeof a === 'string' ? a.trim() : '')
+                        .filter(a => a.length > 0);
+                      let stepCounter = 0;
+                      return validActions.map((action, idx) => {
+                        const isHeader = action.startsWith('═') || action.startsWith('【') || action.endsWith('═') || action.startsWith('---');
+                        const isBullet = action.startsWith('•') || action.startsWith('-') || action.startsWith('*');
+                        const numberedMatch = action.match(/^(\d+)[\.\)]\s*(.*)/);
+                        const isSpeakingThis = detailVoiceActiveIndex === idx;
+
+                        if (isHeader) {
+                          const cleanTitle = action.replace(/^[═\s【\-\*]+|[═\s】\-\*]+$/g, '').trim();
+                          return (
+                            <div 
+                              key={`fa-hdr-${idx}`}
+                              className={cn(
+                                "py-2.5 px-4 rounded-xl font-black tracking-wide border shadow-sm my-2 flex items-center justify-between gap-2 transition-all",
+                                isSpeakingThis
+                                  ? "ring-4 ring-emerald-400 border-emerald-400 bg-emerald-950/60 text-emerald-300"
+                                  : isDay 
+                                    ? "bg-amber-100/90 border-amber-300 text-amber-950" 
+                                    : "bg-amber-950/40 border-amber-500/40 text-amber-300",
+                                fontSize === 'extra-large' ? 'text-lg' : fontSize === 'large' ? 'text-base' : 'text-sm'
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                                <span>{cleanTitle}</span>
+                              </div>
+                              {isSpeakingThis && (
+                                <span className="text-xs font-black uppercase px-2 py-0.5 rounded bg-emerald-500 text-white flex items-center gap-1 shadow-sm animate-pulse">
+                                  <Volume2 className="w-3 h-3" />
+                                  बोल रहा है
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        if (isBullet) {
+                          return (
+                            <div 
+                              key={`fa-bullet-${idx}`}
+                              className={cn(
+                                "flex items-start gap-3 p-3.5 rounded-xl border transition-all relative",
+                                isSpeakingThis
+                                  ? "ring-4 ring-emerald-400 border-emerald-400 bg-emerald-950/50 text-white"
+                                  : isDay 
+                                    ? "bg-slate-50 border-slate-200 text-slate-900" 
+                                    : "bg-[#141417] border-zinc-800 text-zinc-200",
+                                fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'
+                              )}
+                            >
+                              {isSpeakingThis && (
+                                <div className="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md animate-pulse">
+                                  <Volume2 className="w-3 h-3" />
+                                  <span>अब बोला जा रहा है</span>
+                                </div>
+                              )}
+                              <div className={cn(
+                                "w-2 h-2 rounded-full shrink-0 mt-2",
+                                isSpeakingThis ? "bg-emerald-400 animate-ping" : "bg-amber-500"
+                              )} />
+                              <p className="leading-relaxed whitespace-pre-wrap font-semibold flex-1">
+                                {action.replace(/^[•\-\*]\s*/, '')}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        stepCounter++;
+                        const stepNum = numberedMatch ? numberedMatch[1] : stepCounter.toString();
+                        const stepText = numberedMatch ? numberedMatch[2] : action;
+
+                        return (
+                          <div 
+                            key={`fa-step-${idx}`} 
+                            className={cn(
+                              "flex gap-3.5 items-start p-4 sm:p-5 rounded-2xl border-2 transition-all shadow-sm relative",
+                              isSpeakingThis
+                                ? (isDay ? "bg-amber-50/90 border-emerald-500 ring-4 ring-emerald-400 shadow-emerald-500/30" : "bg-emerald-950/40 border-emerald-400 ring-4 ring-emerald-500/60 shadow-emerald-500/40")
+                                : isDay 
+                                  ? "bg-white border-slate-300 hover:border-amber-500" 
+                                  : "bg-[#131316] border-[#2A2A30] hover:border-amber-500/50"
+                            )}
+                          >
+                            {isSpeakingThis && (
+                              <div className="absolute -top-3 right-4 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md animate-pulse">
+                                <Volume2 className="w-3 h-3" />
+                                <span>अब बोला जा रहा है (Speaking)</span>
+                              </div>
+                            )}
+                            <div className={cn(
+                              "w-10 h-10 sm:w-11 sm:h-11 shrink-0 rounded-xl flex items-center justify-center text-sm sm:text-base font-black shadow-md border-2 mt-0.5 transition-all",
+                              isSpeakingThis
+                                ? "bg-emerald-400 text-emerald-950 border-white scale-105"
+                                : "bg-gradient-to-br from-amber-400 via-orange-500 to-amber-500 text-black border-amber-300"
+                            )}>
+                              {stepNum.padStart(2, '0')}
+                            </div>
+                            <div className="flex-1">
+                              <p className={cn(
+                                "leading-relaxed whitespace-pre-wrap font-black",
+                                fontSize === 'extra-large' ? 'text-xl sm:text-2xl' : fontSize === 'large' ? 'text-lg sm:text-xl' : 'text-base sm:text-lg',
+                                isDay ? "text-slate-950" : "text-zinc-100"
+                              )}>
+                                {stepText}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
 
@@ -2166,31 +2506,95 @@ export default function App() {
                         स्लेव लोको में की जाने वाली कार्यवाही (Slave Loco Actions)
                       </h3>
                     </div>
+
+                    <div className="mb-4">
+                      <VoiceTroubleshooterPlayer
+                        steps={selectedFault.slaveActions}
+                        faultTitle={`स्लेव लोको: ${selectedFault.id}`}
+                        isDay={isDay}
+                        fontSize={fontSize}
+                      />
+                    </div>
                     <div className="space-y-3.5">
-                      {selectedFault.slaveActions.map((action, idx) => (
-                        <div 
-                          key={idx} 
-                          className={cn(
-                            "flex gap-3.5 items-start p-4 sm:p-5 rounded-2xl border-2 transition-all shadow-sm",
-                            isDay 
-                              ? "bg-emerald-50/60 border-emerald-300 hover:border-emerald-500" 
-                              : "bg-[#0E1714] border-emerald-900/60 hover:border-emerald-600"
-                          )}
-                        >
-                          <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-emerald-500 text-black flex items-center justify-center text-xs sm:text-sm font-black shadow-md border-2 border-emerald-300 mt-0.5">
-                            S{(idx + 1).toString().padStart(2, '0')}
-                          </div>
-                          <div className="flex-1">
-                            <p className={cn(
-                              "leading-relaxed whitespace-pre-wrap font-bold",
-                              fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm',
-                              isDay ? "text-slate-950" : "text-emerald-100"
-                            )}>
-                              {action}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                      {(() => {
+                        const validSlaveActions = (selectedFault.slaveActions || [])
+                          .map(a => typeof a === 'string' ? a.trim() : '')
+                          .filter(a => a.length > 0);
+                        let slaveStepCounter = 0;
+                        return validSlaveActions.map((action, idx) => {
+                          const isHeader = action.startsWith('═') || action.startsWith('【') || action.endsWith('═') || action.startsWith('---');
+                          const isBullet = action.startsWith('•') || action.startsWith('-') || action.startsWith('*');
+                          const numberedMatch = action.match(/^(\d+)[\.\)]\s*(.*)/);
+
+                          if (isHeader) {
+                            const cleanTitle = action.replace(/^[═\s【\-\*]+|[═\s】\-\*]+$/g, '').trim();
+                            return (
+                              <div 
+                                key={`sla-hdr-${idx}`}
+                                className={cn(
+                                  "py-2.5 px-4 rounded-xl font-black tracking-wide border shadow-sm my-2 flex items-center gap-2",
+                                  isDay 
+                                    ? "bg-emerald-100/90 border-emerald-300 text-emerald-950" 
+                                    : "bg-emerald-950/40 border-emerald-500/40 text-emerald-300",
+                                  fontSize === 'extra-large' ? 'text-lg' : fontSize === 'large' ? 'text-base' : 'text-sm'
+                                )}
+                              >
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                                <span>{cleanTitle}</span>
+                              </div>
+                            );
+                          }
+
+                          if (isBullet) {
+                            return (
+                              <div 
+                                key={`sla-bullet-${idx}`}
+                                className={cn(
+                                  "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
+                                  isDay 
+                                    ? "bg-emerald-50/60 border-emerald-300 text-emerald-950" 
+                                    : "bg-[#0E1714] border-emerald-900/60 text-emerald-200",
+                                  fontSize === 'extra-large' ? 'text-base sm:text-lg' : fontSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'
+                                )}
+                              >
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-2" />
+                                <p className="leading-relaxed whitespace-pre-wrap font-semibold flex-1">
+                                  {action.replace(/^[•\-\*]\s*/, '')}
+                                </p>
+                              </div>
+                            );
+                          }
+
+                          slaveStepCounter++;
+                          const stepNum = numberedMatch ? numberedMatch[1] : slaveStepCounter.toString();
+                          const stepText = numberedMatch ? numberedMatch[2] : action;
+
+                          return (
+                            <div 
+                              key={`sla-step-${idx}`} 
+                              className={cn(
+                                "flex gap-3.5 items-start p-4 sm:p-5 rounded-2xl border-2 transition-all shadow-sm",
+                                isDay 
+                                  ? "bg-emerald-50/60 border-emerald-300 hover:border-emerald-500" 
+                                  : "bg-[#0E1714] border-emerald-900/60 hover:border-emerald-600"
+                              )}
+                            >
+                              <div className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 text-black flex items-center justify-center text-sm sm:text-base font-black shadow-md border-2 border-emerald-300 mt-0.5">
+                                S{stepNum.padStart(2, '0')}
+                              </div>
+                              <div className="flex-1">
+                                <p className={cn(
+                                  "leading-relaxed whitespace-pre-wrap font-black",
+                                  fontSize === 'extra-large' ? 'text-xl sm:text-2xl' : fontSize === 'large' ? 'text-lg sm:text-xl' : 'text-base sm:text-lg',
+                                  isDay ? "text-slate-950" : "text-emerald-100"
+                                )}>
+                                  {stepText}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 )}
@@ -2373,7 +2777,7 @@ export default function App() {
                     🌟 मोबाइल पर चलाने के विशेष लाभ:
                   </p>
                   <ul className="space-y-1 list-disc list-inside text-emerald-200/90 text-[11px]">
-                    <li><strong>आवाज़ से तुरंत सर्च (Microphone):</strong> मोबाइल में बोलने पर माइक्रोफ़ोन 100% सीधे काम करता है।</li>
+                    <li><strong>बड़ा स्पष्ट फॉन्ट (High Readability):</strong> चलती ट्रेन या वाइब्रेशन में भी आसानी से पढ़ने योग्य विशाल फॉन्ट।</li>
                     <li><strong>फुल स्क्रीन रेलवे डेस्कटॉप:</strong> कोई ब्राउज़र टैब या झंझट नहीं, शुद्ध रेलवे TSD गाइड।</li>
                     <li><strong>321 पृष्ठों की डायरेक्टरी:</strong> ड्यूटी के दौरान किसी भी फॉल्ट, कॉक या नोड का समाधान सेकंडों में।</li>
                   </ul>

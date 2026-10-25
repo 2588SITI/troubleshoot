@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#09090b" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="goldBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="50%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <radialGradient id="headlightGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="40%" stop-color="#fef08a" stop-opacity="0.6" />
+      <stop offset="80%" stop-color="#f59e0b" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="pantoGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8" />
+      <stop offset="60%" stop-color="#0284c7" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="bodyOrange" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="25%" stop-color="#f97316" />
+      <stop offset="50%" stop-color="#fb923c" />
+      <stop offset="75%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+    <linearGradient id="navyStripe" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="windshieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="60%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.7" />
+    </linearGradient>
+    <linearGradient id="metalSilver" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="50%" stop-color="#94a3b8" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base Frame -->
+  <rect x="12" y="12" width="488" height="488" rx="108" fill="url(#bgGrad)" stroke="url(#goldBorder)" stroke-width="8" />
+
+  <!-- Speed Track / OHE Background Glow Lines -->
+  <line x1="256" y1="36" x2="256" y2="88" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+  <circle cx="256" cy="48" r="45" fill="url(#pantoGlow)" />
+
+  <!-- Overhead Catenary Wire -->
+  <line x1="120" y1="46" x2="392" y2="46" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
+  <line x1="140" y1="56" x2="372" y2="56" stroke="#cbd5e1" stroke-width="2" />
+
+  <!-- ==================== PANTOGRAPH ==================== -->
+  <g id="pantograph">
+    <!-- Base Insulators on roof -->
+    <rect x="216" y="96" width="14" height="18" rx="3" fill="#64748b" />
+    <rect x="282" y="96" width="14" height="18" rx="3" fill="#64748b" />
+    <rect x="208" y="110" width="96" height="8" rx="2" fill="#334155" />
+
+    <!-- Lower Pantograph Arms -->
+    <path d="M 224 104 L 256 68 L 288 104" fill="none" stroke="#f1f5f9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Upper Diamond & Collector Horn -->
+    <path d="M 256 68 L 236 48 L 276 48 Z" fill="none" stroke="#38bdf8" stroke-width="5" stroke-linejoin="round" />
+    
+    <!-- Collector Pan (Bow) -->
+    <path d="M 190 44 Q 256 46 322 44" fill="none" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round" />
+    <path d="M 175 48 L 195 44" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round" />
+    <path d="M 337 48 L 317 44" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round" />
+
+    <!-- Electric Spark / Star -->
+    <polygon points="256,38 259,44 265,46 259,48 256,54 253,48 247,46 253,44" fill="#38bdf8" />
+  </g>
+
+  <!-- ==================== LOCOMOTIVE BODY ==================== -->
+  <g id="loco-body">
+    <!-- Roof Dome (Curved Aerodynamic WAP-7 / Amrit Bharat top) -->
+    <path d="M 148 160 C 148 116, 364 116, 364 160 Z" fill="#334155" stroke="#475569" stroke-width="4" />
+    <!-- Roof AC units / vents -->
+    <rect x="180" y="128" width="152" height="14" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="2" />
+    <line x1="200" y1="135" x2="312" y2="135" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4" />
+
+    <!-- Main Aerodynamic Cab Structure (WAP-7 / WAP-5) -->
+    <!-- Base body shape -->
+    <path d="M 136 170 
+             C 136 155, 160 146, 256 146 
+             C 352 146, 376 155, 376 170 
+             L 384 310 
+             L 374 380 
+             L 138 380 
+             L 128 310 Z" 
+          fill="url(#bodyOrange)" stroke="#c2410c" stroke-width="4" />
+
+    <!-- Aerodynamic Cabin Slope / Dark Windshield Frame Area -->
+    <path d="M 148 168 L 364 168 L 358 248 L 154 248 Z" fill="#0f172a" stroke="#1e293b" stroke-width="3" />
+
+    <!-- Windshields (Left and Right with center divider) -->
+    <!-- Left Windshield -->
+    <path d="M 160 176 L 250 176 L 248 240 L 166 240 Z" fill="url(#windshieldGrad)" stroke="#38bdf8" stroke-width="2" />
+    <!-- Glass reflection line -->
+    <path d="M 166 182 L 230 182 L 210 234 L 172 234 Z" fill="#ffffff" opacity="0.12" />
+    <!-- Wiper Left -->
+    <line x1="200" y1="240" x2="224" y2="196" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" />
+
+    <!-- Right Windshield -->
+    <path d="M 262 176 L 352 176 L 346 240 L 264 240 Z" fill="url(#windshieldGrad)" stroke="#38bdf8" stroke-width="2" />
+    <!-- Glass reflection line -->
+    <path d="M 268 182 L 332 182 L 312 234 L 274 234 Z" fill="#ffffff" opacity="0.12" />
+    <!-- Wiper Right -->
+    <line x1="312" y1="240" x2="336" y2="196" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" />
+
+    <!-- Center Windshield Pillar -->
+    <rect x="250" y="174" width="12" height="68" fill="#1e293b" />
+
+    <!-- Prominent Saffron / Navy Blue Racing Band -->
+    <path d="M 152 254 L 360 254 L 364 286 L 148 286 Z" fill="url(#navyStripe)" stroke="#334155" stroke-width="2" />
+    <!-- White accent pin-stripes -->
+    <line x1="151" y1="258" x2="361" y2="258" stroke="#ffffff" stroke-width="3" />
+    <line x1="147" y1="282" x2="365" y2="282" stroke="#f59e0b" stroke-width="3" />
+
+    <!-- Indian Railways Crest / Chevron on Nose -->
+    <g id="ir-crest">
+      <!-- Chevron emblem -->
+      <path d="M 226 298 L 256 318 L 286 298 L 274 294 L 256 308 L 238 294 Z" fill="#ffffff" />
+      <circle cx="256" cy="270" r="12" fill="#ea580c" stroke="#ffffff" stroke-width="2" />
+      <!-- Ashoka chakra / wheel spokes hint -->
+      <circle cx="256" cy="270" r="5" fill="#1e3a8a" />
+    </g>
+
+    <!-- Twin High-Intensity LED Headlights (Upper Nose) -->
+    <!-- Headlight Housings -->
+    <circle cx="256" cy="216" r="38" fill="url(#headlightGlow)" />
+    
+    <!-- Left Main Headlight -->
+    <circle cx="238" cy="216" r="14" fill="#0f172a" stroke="#fbbf24" stroke-width="3" />
+    <circle cx="238" cy="216" r="10" fill="#ffffff" />
+    <circle cx="238" cy="216" r="5" fill="#fef08a" />
+
+    <!-- Right Main Headlight -->
+    <circle cx="274" cy="216" r="14" fill="#0f172a" stroke="#fbbf24" stroke-width="3" />
+    <circle cx="274" cy="216" r="10" fill="#ffffff" />
+    <circle cx="274" cy="216" r="5" fill="#fef08a" />
+
+    <!-- Lower Marker / Flasher Lights (Red & Amber) -->
+    <circle cx="166" cy="308" r="8" fill="#dc2626" stroke="#991b1b" stroke-width="2" />
+    <circle cx="166" cy="308" r="3" fill="#fecaca" />
+
+    <circle cx="346" cy="308" r="8" fill="#dc2626" stroke="#991b1b" stroke-width="2" />
+    <circle cx="346" cy="308" r="3" fill="#fecaca" />
+
+    <circle cx="186" cy="308" r="7" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
+    <circle cx="326" cy="308" r="7" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
+
+    <!-- Lower Body Panel / Number Plate "WAP-7" / "AMRIT BHARAT" -->
+    <rect x="180" y="326" width="152" height="28" rx="6" fill="#09090b" stroke="#475569" stroke-width="2" />
+    <text x="256" y="345" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="14" text-anchor="middle" letter-spacing="2">WAP-7 • TSD</text>
+
+    <!-- Locomotive Handrails -->
+    <line x1="140" y1="260" x2="140" y2="370" stroke="#f8fafc" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="372" y1="260" x2="372" y2="370" stroke="#f8fafc" stroke-width="3.5" stroke-linecap="round" />
+
+    <!-- ==================== COW CATCHER & BUFFERS ==================== -->
+    <!-- Buffers Left and Right -->
+    <rect x="144" y="374" width="32" height="14" rx="3" fill="#334155" stroke="#64748b" stroke-width="2" />
+    <circle cx="160" cy="381" r="15" fill="#0f172a" stroke="#94a3b8" stroke-width="3" />
+    
+    <rect x="336" y="374" width="32" height="14" rx="3" fill="#334155" stroke="#64748b" stroke-width="2" />
+    <circle cx="352" cy="381" r="15" fill="#0f172a" stroke="#94a3b8" stroke-width="3" />
+
+    <!-- Center CBC Coupler -->
+    <rect x="238" y="376" width="36" height="26" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="3" />
+    <circle cx="256" cy="389" r="6" fill="#09090b" stroke="#94a3b8" stroke-width="2" />
+
+    <!-- Cattle Guard / Cow Catcher (Yellow & Black Safety Stripes) -->
+    <path d="M 152 396 L 360 396 L 336 446 L 176 446 Z" fill="#eab308" stroke="#ca8a04" stroke-width="3" />
+    <!-- Diagonal Black warning stripes -->
+    <clipPath id="cowCatcherClip">
+      <path d="M 152 396 L 360 396 L 336 446 L 176 446 Z" />
+    </clipPath>
+    <g clip-path="url(#cowCatcherClip)">
+      <line x1="150" y1="390" x2="190" y2="455" stroke="#000000" stroke-width="12" />
+      <line x1="185" y1="390" x2="225" y2="455" stroke="#000000" stroke-width="12" />
+      <line x1="220" y1="390" x2="260" y2="455" stroke="#000000" stroke-width="12" />
+      <line x1="255" y1="390" x2="295" y2="455" stroke="#000000" stroke-width="12" />
+      <line x1="290" y1="390" x2="330" y2="455" stroke="#000000" stroke-width="12" />
+      <line x1="325" y1="390" x2="365" y2="455" stroke="#000000" stroke-width="12" />
+    </g>
+
+    <!-- Rail Tracks at bottom -->
+    <rect x="80" y="454" width="352" height="10" rx="3" fill="#475569" />
+    <line x1="120" y1="464" x2="140" y2="486" stroke="#334155" stroke-width="8" stroke-linecap="round" />
+    <line x1="190" y1="464" x2="205" y2="486" stroke="#334155" stroke-width="8" stroke-linecap="round" />
+    <line x1="256" y1="464" x2="256" y2="486" stroke="#334155" stroke-width="8" stroke-linecap="round" />
+    <line x1="322" y1="464" x2="307" y2="486" stroke="#334155" stroke-width="8" stroke-linecap="round" />
+    <line x1="392" y1="464" x2="372" y2="486" stroke="#334155" stroke-width="8" stroke-linecap="round" />
+  </g>
+
+  <!-- Bottom Badge: "LOCO PILOT TSD" -->
+  <rect x="136" y="456" width="240" height="28" rx="8" fill="#ea580c" stroke="#f59e0b" stroke-width="2" />
+  <text x="256" y="475" fill="#000000" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="13" text-anchor="middle" letter-spacing="1">⚡ LOCO PILOT TSD ⚡</text>
+</svg>

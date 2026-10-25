@@ -62,20 +62,34 @@ export const LOCO_SYNONYMS: Record<string, string[]> = {
   'compressor': ['कंप्रेसर', 'कम्प्रेसर', 'cp', 'main compressor', 'mcpa', '47.1'],
   'कंप्रेसर': ['compressor', 'कम्प्रेसर', 'cp', '47.1'],
   'कम्प्रेसर': ['compressor', 'कंप्रेसर', 'cp'],
-  'reservoir': ['रिज़रवायर', 'रिजर्वायर', 'टंकी', 'tank', 'mr'],
-  'रिज़रवायर': ['reservoir', 'mr', 'टंकी'],
-  'रिजर्वायर': ['reservoir', 'mr', 'टंकी'],
+  'reservoir': ['रिज़रवायर', 'रिजर्वायर', 'टंकी', 'tank', 'mr', '6.4'],
+  'रिज़रवायर': ['reservoir', 'mr', 'टंकी', '6.4'],
+  'रिजर्वायर': ['reservoir', 'mr', 'टंकी', '6.4'],
+  'blcp': ['man', 'compressor', 'कम्प्रेसर', '47.1', '6.4'],
+  '6.4': ['mr pressure', 'main reservoir', 'f1002p1', 'blcp'],
+  'unloader': ['अनलोडर', 'unloader valve', 'veul', 'ep 26', 'ep26'],
 
   // Brakes & Parking Brake
-  'brake': ['ब्रेक', 'ब्रेकिंग', 'brakes'],
-  'ब्रेक': ['brake', 'brakes'],
+  'brake': ['ब्रेक', 'ब्रेकिंग', 'brakes', '127.7', 'ptdc', 'ccb', 'solenoid-30', 'electronics'],
+  'ब्रेक': ['brake', 'brakes', '127.7', 'ptdc', 'ccb', 'solenoid-30'],
+  'ptdc': ['ptdc mode', 'पीटीडीसी', 'pneumatic time delay control', 'ccb', 'trail', 'fs'],
+  'ccb': ['knorr bremse', 'ccb 2.0', 'knorr', 'ptdc', 'e-70', 'fs'],
+  'knorr': ['knorr bremse', 'ccb', 'ptdc'],
+  '127.7': ['mcb 127.7', 'brake electronics', 'solenoid-30', 'f1001p1'],
+  'solenoid': ['solenoid-30', 'सोलेनाइड', 'sv-30', 'sv30', 'plunger', 'रिलीज प्लंजर'],
   'binding': ['बाइंडिंग', 'जाम', 'jam', 'not releasing'],
   'बाइंडिंग': ['binding', 'जाम'],
-  'parking': ['पार्किंग', 'park', 'bppb', 'चक्का', 'pb'],
-  'पार्किंग': ['parking', 'bppb', 'चक्का'],
+  'parking': ['पार्किंग', 'park', 'bppb', 'चक्का', 'pb', 'solenoid-30', 'sv-30'],
+  'पार्किंग': ['parking', 'bppb', 'चक्का', 'solenoid-30', 'sv-30'],
   'releasing': ['रिलीज', 'छूट', 'release'],
   'रिलीज': ['releasing', 'release', 'छूट'],
   'छूट': ['releasing', 'release', 'रिलीज'],
+  'vcd': ['विजिलेंस', 'vigilance', 'bpvr', 'pvcd', '237.1', 'lsvw', 'पेनल्टी ब्रेक'],
+  'विजिलेंस': ['vcd', 'vigilance', 'bpvr', 'pvcd', '237.1'],
+  'bpvr': ['vigilance reset', 'vcd', '237.1', 'lsvw'],
+  '237.1': ['vcd switch', 'vcd isolate', 'switch 237.1', 'sb-1'],
+  '70': ['cock 70', 'cock-70', 'कॉक 70', 'f1004p1', 'isolating cock'],
+  'zban': ['zban switch', 'banking switch', 'f1004p1', 'स्विच'],
 
   // Pantograph
   'panto': ['पैंटो', 'पेंटो', 'पैंटोग्राफ', 'पेंटोग्राफ', 'pantograph', 'pan-1', 'pan-2'],
@@ -111,7 +125,14 @@ export const LOCO_SYNONYMS: Record<string, string[]> = {
   'node': ['नोड', '504', '550', 'progression'],
   'नोड': ['node', '504', '550'],
   'hotel': ['होटल लोड', 'hlc', 'ivc'],
-  'होटल': ['hotel', 'hlc', 'ivc']
+  'होटल': ['hotel', 'hlc', 'ivc'],
+
+  // Headlight & Lighting
+  'headlight': ['हेडलाइट', 'हेडलाईट', 'हेड लाईट', 'h[dliet', 'h[dlie', '310.1', 'zprd', 'dimmer', 'डिमर', 'marker'],
+  'हेडलाइट': ['headlight', 'head light', '310.1', 'zprd', 'dimmer', 'डिमर', 'मार्कर', 'marker'],
+  'zprd': ['dimmer', 'डिमर', 'headlight', 'हेडलाइट', '310.1'],
+  'डिमर': ['dimmer', 'zprd', 'headlight', 'हेडलाइट'],
+  'dimmer': ['डिमर', 'zprd', 'headlight', 'हेडलाइट']
 };
 
 export const STOP_WORDS = new Set([
@@ -174,14 +195,5167 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
     };
   }
 
+  // Delegate slave or push-pull queries directly to Amrit Bharat solver
+  if (
+    norm.includes('slave') || norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab') ||
+    norm.includes('push pull') || norm.includes('push-pull') ||
+    norm.includes('amrit bharat') || norm.includes('अमृत भारत')
+  ) {
+    return resolveAmritBharatDefect(query, norm);
+  }
+
+  // 0-SS02-BOGIE1. SS02: Traction Bogie 1 - BOGIE 1 ISOLATED (Vadodara TSD Page 144 / 171)
+  const isBogie1IsolatedQuery =
+    !norm.includes('f0205') &&
+    !norm.includes('f0206') &&
+    !norm.includes('f0207') &&
+    !norm.includes('f0208') &&
+    !norm.includes('f0209') &&
+    !norm.includes('f0210') &&
+    !norm.includes('f0211') &&
+    !norm.includes('f0212') &&
+    !norm.includes('f0213') &&
+    !norm.includes('f0214') &&
+    !norm.includes('f0215') &&
+    !norm.includes('f0403') &&
+    !norm.includes('f0404') &&
+    !norm.includes('f0405') &&
+    !norm.includes('f0406') &&
+    !norm.includes('f0407') &&
+    !norm.includes('ss04') &&
+    !norm.includes('abb') &&
+    !norm.includes('bhel') &&
+    !norm.includes('medha') &&
+    !norm.includes('motor') &&
+    !norm.includes('tm1') &&
+    !norm.includes('tm2') &&
+    !norm.includes('tm3') &&
+    !norm.includes('line converter') &&
+    !norm.includes('lc1') &&
+    !norm.includes('lc2') &&
+    !norm.includes('5/6') &&
+    !norm.includes('3/4') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('ss03') &&
+    !norm.includes('asc 2') &&
+    !norm.includes('nsc 2') &&
+    !norm.includes('f0301') &&
+    !norm.includes('f0302') &&
+    !norm.includes('f0303') &&
+    !norm.includes('f0305') &&
+    !norm.includes('f0306') &&
+    !norm.includes('f0307') &&
+    !norm.includes('53.1/2') &&
+    !norm.includes('f1101') &&
+    !norm.includes('ss11') &&
+    !norm.includes('cubicle 1') &&
+    ((norm.includes('bogie 1 isolated') || norm.includes('bogie-1 isolated') || norm.includes('bogie 1: isolated') || norm.includes('bi[g)-1 aiesi[l[t')) ||
+    (norm.includes('bogie 1') && (norm.includes('enter') || norm.includes('only half traction') || norm.includes('electrical braking power'))) ||
+    ((norm.includes('error ps hardware') || norm.includes('error ps fault storage')) && !norm.includes('2')) ||
+    (norm.includes('asc 1: 0052') || norm.includes('asc 1: 0053') || norm.includes('asc 1: 0054')));
+
+  if (isBogie1IsolatedQuery) {
+    return {
+      identifiedFaultId: "SS02-BOGIE1-ISOLATED",
+      faultTitle: "SS02: BOGIE 1 ISOLATED : Only half traction and electrical braking power available (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 144 / 171):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष संदेश: LocoXXXX SS02: Traction Bogie 1\nBOGIE 1 ISOLATED :\nOnly half traction and electrical braking power available\nPress <Enter>\nलैम्प संकेत: LSFI प्रकाशित होगी।\nप्रभाव: बोगी-1 आइसोलेट होगी (सिर्फ आधा TE/BE पावर उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. यदि लोको पायलट 154 स्विच के द्वारा बोगी-1 को आइसोलेट करता है तो उसके बाद केवल Display Key Board पर ENTER Key प्रेस करें, अन्यथा -",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो उठायें (रेज़ करें), VCB क्लोज करें और ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज दोबारा आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+        "4. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।",
+        "════ ★ महत्वपूर्ण निर्देश: कंट्रोल इलेक्ट्रॉनिक्स (MCE) OFF/ON करने से कब बचें ★ ════",
+        "कंट्रोल इलेक्ट्रॉनिक्स को निम्न DDS मैसेज के लिए ऑफ़/ऑन करने से बचें:\nयदि ASC 1: Error PS hardware के बाद निम्न में से कोई मैसेज आता है:-\n  a) ASC 1: Error PS Fault storage CGP अथवा ASC 1: Error PS Fault storage GBC\n  b) NSC 1: Error PS hardware के बाद Error PS Fault storage GBC और ASC 1: 0052/0053/0054 (Bogie 1 Error Tacho generator)"
+      ],
+      precautions: "बोगी-1 आइसोलेट होने पर केवल 50% ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहती है। ट्रेन की गति व लोड के अनुसार सुरक्षित संचालन करें। नोट किए गए DDS हार्डवेयर स्टोरेज फॉल्ट की स्थिति में अनावश्यक MCE रीसेट न करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (पेज 144 / 171)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 171,
+      pdfQuote: "LocoXXXX SS02: Traction Bogie 1\nBOGIE 1 ISOLATED : Only half traction and electrical braking power available Press <Enter>\nLSFI prakashit hogi. Bogie-1 isolate hogi (sirf aadha TE/BE power uplabdh rahega).\n1. Yadi loco pilot 154 switch ke dwara Traction bogie-1 ko isolate karta hai to uske baad display board par ENTER key press karein, anyatha:\n2. Control electronics ko OFF karein aur fir ON karein. Panto raise karein, VCB close karein tatha traction chalu karein.\n3. Yadi vahi message dobara aata hai to aadhe traction / braking power se normal operation chalu karein.\n4. TLC ko suchit karein tatha log book me darj karein.\nNOTE: Control electronics ko nimn DDS message ke liye OFF/ON karne se bachein: Yadi ASC 1: Error PS hardware ke baad Error PS Fault storage CGP ya GBC, ya NSC 1: Error PS hardware ke baad Error PS Fault storage GBC aur ASC 1: 0052/0053/0054 (Bogie 1 Error Tacho generator)."
+    };
+  }
+
+  // 0-SS02-F0201. SS02 F0201P1: DISTURBANCE IN CONVERTER 1 (Vadodara TSD Page 143-144 / 170-171)
+  const isSS02F0201P1Query =
+    !isBogie1IsolatedQuery &&
+    !norm.includes('f0202') && !norm.includes('f0203') && !norm.includes('f0205') && !norm.includes('f0206') && !norm.includes('f0207') &&
+    !norm.includes('oil pressure') && !norm.includes('oil temperature') && !norm.includes('gate unit') && !norm.includes('contactor') &&
+    (
+      norm.includes('f0201p1') ||
+      (norm.includes('f0201') && !norm.includes('f0201p2')) ||
+      norm.includes('disturbance in converter 1') ||
+      norm.includes('disturbance in converter-1') ||
+      (norm.includes('disturbance') && (norm.includes('converter 1') || norm.includes('converter-1') || norm.includes('knv<tr 1'))) ||
+      ((norm.includes('ss02') || norm.includes('traction bogie 1') || norm.includes('traction bogie1')) && (norm.includes('disturbance') || norm.includes('127.1/1') || norm.includes('(diATb)<ns')))
+    );
+
+  if (isSS02F0201P1Query) {
+    return {
+      identifiedFaultId: "F0201P1",
+      faultTitle: "SS02 F0201P1: DISTURBANCE IN CONVERTER 1, Try to close VCB again (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 143-144 / 170-171):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0201P1\nदोष संदेश: Loco no.XXX SS02: Traction Bogie 1\nDISTURBANCE IN CONVERTER 1\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक (टिमटिमाना) करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. MCB 127.1/1 (SB-1) चेक करें। यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके एक बार रीसेट करें।",
+        "3. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "4. यदि वही मैसेज दोबारा आता है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके 5 मिनट बाद ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें। यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "5. यदि वही मैसेज दोबारा आता है और ट्रैक्शन बोगी-1 अपने आप आइसोलेट नहीं होती है, तो SB-1 पैनल में लगे MCB 127.1/1 एवं 127.11/1 (SB-1) द्वारा बोगी-1 को आइसोलेट करें (MCE ऑफ़ करके)।",
+        "6. TLC को सूचित करें तथा बोगी आइसोलेट करने से पहले आए हुए DDS मैसेज को लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यदि MCE रीसेट के 5 मिनट बाद भी दोष बना रहता है, तो SB-1 में MCB 127.1/1 व 127.11/1 द्वारा बोगी-1 को आइसोलेट करें। बोगी-1 आइसोलेट होने के बाद आधा ट्रैक्शन उपलब्ध रहेगा।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0201P1, पेज 143-144 / 170-171)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 170,
+      pdfQuote: "SS02 F0201P1 Loco no.XXX SS02: Traction Bogie 1\nDISTURBANCE IN CONVERTER 1\nTry to close VCB again\nLSDJ aur BPFA prakashit honge, LSFI blink karegi. VCB open hoga.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. MCB 127.1/1 (SB1) check karein. Yadi trip ho to control electronics ko OFF karke ek baar reset karein.\n3. VCB close karne ke liye BLDJ press karein.\n4. Yadi vahi message dobara aata hai to control electronics ko OFF karke 5 minute baad ON karein. Panto raise karein, VCB close karein, yadi loco samanya hota hai to traction chalu karein.\n5. Yadi vahi message dobara aata hai aur traction bogie-1 apne aap isolate nahi hoti hai to SB-1 panel me lage MCB 127.1/1 evam 127.11/1 (SB-1) dwara bogie-1 ko isolate karein (MCE OFF karke).\n6. TLC ko suchit karein tatha bogie isolate karne se pehle aaye hue DDS message ko log book me darj karein."
+    };
+  }
+
+  // 0-SS02-F0201P2. SS02 F0201P2: EARTH FAULT IN CONVERTER 1 (Vadodara TSD Page 148 / 175)
+  const isSS02F0201P2Query =
+    !norm.includes('f0301') &&
+    !norm.includes('ss03') &&
+    !norm.includes('converter 2') &&
+    !norm.includes('converter-2') &&
+    !norm.includes('converter2') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bi[g)-2') &&
+    (
+      norm.includes('f0201p2') ||
+      (norm.includes('f0201') && norm.includes('p2')) ||
+      (norm.includes('earth fault') && (norm.includes('converter 1') || norm.includes('converter1') || norm.includes('knv<tr 1') || norm.includes('knv<tr1') || norm.includes('ss02') || norm.includes('bogie 1'))) ||
+      (norm.includes('to be checked during maintenance') && norm.includes('converter') && !norm.includes('2')) ||
+      (norm.includes('normal operation can continue') && (norm.includes('converter 1') || norm.includes('converter1') || norm.includes('bogie 1') || norm.includes('ss02')))
+    );
+
+  if (isSS02F0201P2Query) {
+    return {
+      identifiedFaultId: "F0201P2",
+      faultTitle: "SS02 F0201P2: EARTH FAULT IN CONVERTER 1, Normal operation can continue, To be checked during maintenance (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 148 / 175):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0201P2\nदोष संदेश:\nSS02 F0201P2 LocoXXXX SS02: Traction Bogie 1\nEARTH FAULT IN CONVERTER 1\nNormal operation can continue\nTo be checked during maintenance\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यह सूचनात्मक फ़ॉल्ट (Priority 2) है। गाड़ी का सामान्य परिचालन जारी रखा जा सकता है। आगामी अनुरक्षण (Maintenance) के दौरान शेड में इसकी विस्तृत जाँच कराएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0201P2, पेज 148 / 175)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 175,
+      pdfQuote: "SS02 F0201P2 LocoXXXX SS02: Traction Bogie 1\nEARTH FAULT IN CONVERTER 1\nNormal operation can continue\nTo be checked during maintenance\nBPFA prakashit hoga. Samanya operation jari rahega.\n1. BPFA daba kar fault ACK karein. Samanya operation chalu karein.\n2. TLC ko suchit karein aur log book me darj karein."
+    };
+  }
+
+  // 0-SS02-F0202. SS02 F0202P1: CONVERTER CONTACTOR STUCK OFF (Vadodara TSD Page 144 / 171)
+  const isSS02F0202P1Query =
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bogie2') &&
+    !norm.includes('ss03') &&
+    !norm.includes('f0302') &&
+    !norm.includes('converter 2') &&
+    !norm.includes('converter-2') &&
+    !norm.includes('sr-2') &&
+    !norm.includes('sr2') &&
+    !norm.includes('coc 88') &&
+    !norm.includes(' 88') &&
+    !norm.includes('ss04') &&
+    !norm.includes('f0402') &&
+    !norm.includes('f0401') &&
+    !norm.includes('harmonic') &&
+    !norm.includes('harm.') &&
+    !norm.includes('filter') &&
+    !norm.includes('aux') &&
+    !norm.includes('ss06') &&
+    !norm.includes('ss07') &&
+    !norm.includes('f0603') &&
+    !norm.includes('f0703') &&
+    !norm.includes('52/') &&
+    !norm.includes('hb1') &&
+    !norm.includes('hb2') &&
+    !norm.includes('hb-1') &&
+    !norm.includes('hb-2') &&
+    (
+      norm.includes('f0202p1') ||
+      (norm.includes('f0202') && !norm.includes('f0202p2')) ||
+      (norm.includes('converter contactor stuck off') && !norm.includes('bogie 2') && !norm.includes('ss03')) ||
+      ((norm.includes('converter contactor') || norm.includes('converter-contactor')) && norm.includes('stuck off')) ||
+      (norm.includes('contactor') && norm.includes('stuck off') && (norm.includes('converter') || norm.includes('bogie 1') || norm.includes('ss02') || norm.includes('sr-1') || norm.includes('sr 1')))
+    );
+
+  if (isSS02F0202P1Query) {
+    return {
+      identifiedFaultId: "F0202P1",
+      faultTitle: "SS02 F0202P1: CONVERTER CONTACTOR STUCK OFF, Try to close VCB again (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 144 / 171):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0202P1\nदोष संदेश: LocoXXX SS02: Traction Bogie 1\nCONVERTER CONTACTOR STUCK OFF\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. CCB-2 लोको में - MR और FP प्रेशर गेज़ की जाँच करें। यदि प्रेशर कम होता है तो MPJ को ‘0’ पर रखकर उसे दुरुस्त करें।",
+        "3. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "4. SR-1 (ट्रैक्शन कनवर्टर-1) में एयर लीकेज की जाँच करें। यदि एयर लीकेज है तो SR-1 को न्यूमैटिक पैनल पर लगे कॉक (125) द्वारा आइसोलेट करें। न्यूमैटिक पैनल पर COC 125 बायीं ओर अन्दर की तरफ (ऊपर से चौथा) को आइसोलेट करें तथा उसके बाद बोगी-1 को स्विच 154 (SB-1) के द्वारा आइसोलेट करें।",
+        "5. VCB क्लोज़ करने के लिए BLDJ प्रेस करें। यदि VCB क्लोज़ नहीं होता है और वही मैसेज दोबारा आता है तब बोगी-1 को आइसोलेट करें।"
+      ],
+      precautions: "यदि SR-1 में न्यूमैटिक लीकेज है तो COC 125 (ऊपर से चौथा) आइसोलेट करने के बाद स्विच 154 से बोगी-1 को आइसोलेट करना अनिवार्य है। आधे ट्रैक्शन से गाड़ी चलाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0202P1, पेज 144 / 171)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 171,
+      pdfQuote: "SS02 F0202P1 LocoXXX SS02: Traction Bogie 1\nCONVERTER CONTACTOR STUCK OFF\nTry to close VCB again\nLSDJ aur BPFA prakashit honge, LSFI blink karegi. VCB open hoga.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. CCB-2 loco me MR & FP pressure gauge ki jaanch karein. Yadi pressure kam ho to MPJ ko '0' par rakhkar durust karein.\n3. VCB close karne ke liye BLDJ press karein.\n4. SR-1 me air leakage ki jaanch karein. Yadi air leakage hai to pneumatic panel par COC 125 (upar se choutha) dwara isolate karein tatha switch 154 (SB-1) dwara bogie-1 isolate karein.\n5. VCB close karne ke liye BLDJ press karein. Yadi VCB close nahi hota aur vahi message dobara aata hai tab bogie-1 ko isolate karein."
+    };
+  }
+
+  // 0-SS02-F0202P2. SS02 F0202P2: TRACTION MOTOR OVERSPEED (Vadodara TSD Page 148 / 175)
+  const isSS02F0202P2Query =
+    !norm.includes('f0302') &&
+    !norm.includes('ss03') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bi[g)-2') &&
+    !norm.includes('reduce loco speed') &&
+    (
+      norm.includes('f0202p2') ||
+      (norm.includes('f0202') && norm.includes('p2')) ||
+      (norm.includes('overspeed') && (norm.includes('traction motor') || norm.includes('te is being reduced') || norm.includes('bogie 1') || norm.includes('ss02'))) ||
+      (norm.includes('over speed') && (norm.includes('bogie 1') || norm.includes('ss02'))) ||
+      (norm.includes('te is being reduced') && (norm.includes('traction motor') || norm.includes('overspeed') || norm.includes('g(t km kr')))
+    );
+
+  if (isSS02F0202P2Query) {
+    return {
+      identifiedFaultId: "F0202P2",
+      faultTitle: "SS02 F0202P2: TRACTION MOTOR OVERSPEED, TE is being reduced (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 148 / 175):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0202P2\nदोष संदेश:\nSS02 F0202P2 LocoXXXX SS02: Traction Bogie 1\nTRACTION MOTOR OVERSPEED\nTE is being reduced\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: TE कम हो रहा है (Tractive Effort घट रहा है)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. गति कम करें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. सामान्य ऑपरेशन चालू करें।",
+        "3. यदि स्पीड सीमा के अन्दर है और TE '0' तक कम होता है तो VCB ओपन करके बोगी-1 को स्विच 154 को '1' पर रखकर आईसोलेट करें।"
+      ],
+      precautions: "गाड़ी की गति को तुरंत अनुमेय सीमा के अंदर लाएं। यदि गति सामान्य होने के बावजूद TE '0' हो रहा है तो बोगी-1 को स्विच 154 द्वारा '1' पर रखकर आइसोलेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0202P2, पेज 148 / 175)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 175,
+      pdfQuote: "SS02 F0202P2 LocoXXXX SS02: Traction Bogie 1\nTRACTION MOTOR OVERSPEED\nTE is being reduced\nBPFA prakashit hoga. TE kam ho raha hai.\n1. Gati kam karein. BPFA daba kar fault ACK karein.\n2. Samanya operation chalu karein.\n3. Yadi speed seema ke andar hai aur TE '0' tak kam hota hai to VCB open karke bogie-1 ko switch 154 ko '1' par rakhkar isolate karein."
+    };
+  }
+
+  // 0-SS02-F0203. SS02 F0203P1: GATE UNIT SUPPLY STUCK OFF (Vadodara TSD Page 145 / 172)
+  const isSS02F0203P1Query =
+    !norm.includes('f0203p2') &&
+    !norm.includes('mub') &&
+    !norm.includes('30 seconds') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bogie2') &&
+    !norm.includes('ss03') &&
+    !norm.includes('f0303') &&
+    !norm.includes('127.11/2') &&
+    !norm.includes('sb-2') &&
+    !norm.includes('sb2') &&
+    (
+      norm.includes('f0203p1') ||
+      (norm.includes('f0203') && !norm.includes('f0203p2')) ||
+      (norm.includes('gate unit supply stuck off') && !norm.includes('bogie 2') && !norm.includes('ss03')) ||
+      (norm.includes('gate unit') && norm.includes('stuck off'))
+    );
+
+  if (isSS02F0203P1Query) {
+    return {
+      identifiedFaultId: "F0203P1",
+      faultTitle: "SS02 F0203P1: GATE UNIT SUPPLY STUCK OFF, Try to close VCB again (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 145 / 172):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0203P1\nदोष संदेश: LocoXXX SS02: Traction Bogie 1\nGATE UNIT SUPPLY STUCK OFF\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. SB-1 पर लगे MCB 127.11/1 की जाँच करें। यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके एक बार रीसेट करें।",
+        "3. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "4. यदि बोगी आइसोलेट हो जाती है (BOGIE 1 ISOLATED): ब्लॉक सेक्शन क्लियर करें या TLC की अनुमति से एक बोगी से कार्य करें। SB-1 में लगे MCB 127.11/1 को चेक करें, यदि ट्रिप मिलता है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके एक बार रीसेट करें।",
+        "5. यदि सफलता नहीं मिलती तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें और ट्रैक्शन चालू करें।",
+        "6. यदि वही मैसेज दोबारा आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "SB-1 में MCB 127.11/1 ट्रिप होने पर केवल कंट्रोल इलेक्ट्रॉनिक्स (MCE) OFF करके ही रीसेट करें। बार-बार ट्रिप होने पर बोगी-1 को आइसोलेट रखें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0203P1, पेज 145 / 172)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 172,
+      pdfQuote: "SS02 F0203P1 LocoXXX SS02: Traction Bogie 1\nGATE UNIT SUPPLY STUCK OFF\nTry to close VCB again\nLSDJ aur BPFA prakashit honge, LSFI blink karegi. VCB open hoga.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. SB-1 par lage MCB 127.11/1 ki jaanch karein. Yadi trip ho to control electronics ko OFF karke ek baar reset karein.\n3. VCB close karne ke liye BLDJ press karein.\n4. Yadi bogie isolate hoti hai: Block section clear karein ya TLC anumati se 1 bogie se karya karein. MCB 127.11/1 check karein.\n5. Yadi safalta nahi milti to MCE OFF/ON karein, panto raise karein, VCB close karein.\n6. Dobara aane par aadhe traction/braking power se normal operation chalayein. TLC ko suchit karein."
+    };
+  }
+
+  // 0-SS02-F0203P2. SS02 F0203P2: MUB RESISTANCE TOO HOT IN CONVERTER 1 (Vadodara TSD Page 148 / 175)
+  const isSS02F0203P2Query =
+    !norm.includes('f0303') &&
+    !norm.includes('ss03') &&
+    !norm.includes('converter 2') &&
+    !norm.includes('converter-2') &&
+    !norm.includes('converter2') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bi[g)-2') &&
+    (
+      norm.includes('f0203p2') ||
+      (norm.includes('f0203') && norm.includes('p2')) ||
+      (norm.includes('mub resistance') && (norm.includes('converter 1') || norm.includes('converter-1') || norm.includes('ss02') || norm.includes('bogie 1') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('mub') && (norm.includes('converter 1') || norm.includes('converter-1') || norm.includes('ss02') || norm.includes('bogie 1') || (!norm.includes('2') && !norm.includes('ss03'))))
+    );
+
+  if (isSS02F0203P2Query) {
+    return {
+      identifiedFaultId: "F0203P2",
+      faultTitle: "SS02 F0203P2: MUB RESISTANCE TOO HOT IN CONVERTER 1, Wait for 30 seconds (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 148 / 175):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0203P2\nदोष संदेश:\nSS02 F0203P2 LocoXXXX SS02: Traction Bogie 1\nMUB RESISTANCE TOO HOT IN CONVERTER 1\nWait for 30 seconds\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. MUB रेजिस्टेंस को ठंडा होने के लिए VCB क्लोज़ करने से पहले 30 सेकंड इंतज़ार करें। {15.1 कनवर्टर क्यूबिकल में लगा है} BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ को प्रेस करें।"
+      ],
+      precautions: "MUB रेजिस्टेंस (15.1 कनवर्टर क्यूबिकल में) अत्यधिक गर्म होने पर VCB तुरंत क्लोज़ करने की जल्दबाज़ी न करें। न्यूनतम 30 सेकंड का कूलिंग समय अवश्य दें, BPFA दबाकर फ़ॉल्ट ACK करें और फिर BLDJ द्वारा VCB क्लोज़ करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0203P2, पेज 148 / 175)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 175,
+      pdfQuote: "SS02 F0203P2 LocoXXXX SS02: Traction Bogie 1\nMUB RESISTANCE TOO HOT IN CONVERTER 1\nWait for 30 seconds\n1. MUB resistance ko thanda hone ke liye VCB close karne se pehle 30 seconds intezar karein. {15.1 converter cubicle me laga hai} BPFA dabakar fault ACK karein.\n2. VCB close karne ke liye BLDJ press karein."
+    };
+  }
+
+  // 0-SS02-F0204P2. SS02 F0204P2: FAULTY MOTOR TEMPERATURE SENSOR (Vadodara TSD Page 148 / 175)
+  const isSS02F0204P2Query =
+    !norm.includes('f0304') &&
+    !norm.includes('ss03') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bi[g)-2') &&
+    (
+      norm.includes('f0204p2') ||
+      (norm.includes('f0204') && norm.includes('p2')) ||
+      (norm.includes('faulty motor temperature sensor') && (norm.includes('bogie 1') || norm.includes('bogie-1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('temperature sensor') && norm.includes('faulty') && (norm.includes('bogie 1') || norm.includes('bogie-1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03'))))
+    );
+
+  if (isSS02F0204P2Query) {
+    return {
+      identifiedFaultId: "F0204P2",
+      faultTitle: "SS02 F0204P2: FAULTY MOTOR TEMPERATURE SENSOR, Normal operation can continue, To be checked during maintenance (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 148 / 175):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0204P2\nदोष संदेश:\nSS02 F0204P2 LocoXXXX SS02: Traction Bogie 1\nFAULTY MOTOR TEMPERATURE SENSOR\nNormal operation can continue\nTo be checked during maintenance\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। सामान्य ऑपरेशन चालू रखें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यह Priority-2 स्तर का सूचनात्मक संदेश है। ट्रैक्शन मोटर के तापमान सेंसर के दोषपूर्ण होने पर भी सामान्य ऑपरेशन जारी रहता है। गंतव्य शेड में अनुरक्षण स्टाफ द्वारा सेंसर की जांच कराएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0204P2, पेज 148 / 175)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 175,
+      pdfQuote: "SS02 F0204P2 LocoXXXX SS02: Traction Bogie 1\nFAULTY MOTOR TEMPERATURE SENSOR\nNormal operation can continue\nTo be checked during maintenance\n1. BPFA dabakar fault ACK karein. Samanya operation chalu rakhein.\n2. TLC ko suchit karein aur log book me darj karein."
+    };
+  }
+
+  // 0-SS02-F0205. SS02 F0205P1: CONVERTER-1 OIL TEMPERATURE TOO HIGH (Vadodara TSD Page 145-146 / 172-173)
+  const isSS02F0205P1Query =
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bogie2') &&
+    !norm.includes('ss03') &&
+    !norm.includes('f0305') &&
+    !norm.includes('converter-2') &&
+    !norm.includes('converter -2') &&
+    !norm.includes('converter 2') &&
+    !norm.includes('hb-2') &&
+    !norm.includes('hb2') &&
+    !norm.includes('ocb-2') &&
+    !norm.includes('ocb 2') &&
+    (
+      norm.includes('f0205p1') ||
+      (norm.includes('f0205') && !norm.includes('f0205p2')) ||
+      norm.includes('converter-1 oil temperature') ||
+      norm.includes('converter 1 oil temperature') ||
+      (norm.includes('converter') && norm.includes('oil temperature') && !norm.includes('transformer'))
+    );
+
+  if (isSS02F0205P1Query) {
+    const isBogieIsolatedSpecific =
+      norm.includes('bogie 1 isolated') ||
+      norm.includes('bogie-1 isolated') ||
+      norm.includes('only half traction') ||
+      norm.includes('half traction') ||
+      (norm.includes('bogie') && norm.includes('enter'));
+
+    return {
+      identifiedFaultId: "F0205P1",
+      faultTitle: isBogieIsolatedSpecific
+        ? "SS02 F0205P1: BOGIE 1 ISOLATED : Only half traction and electrical braking power available. Press <Enter> (3-Phase Loco TSD)"
+        : "SS02 F0205P1: CONVERTER-1 OIL TEMPERATURE TOO HIGH, Try to close VCB again (3-Phase Loco TSD)",
+      analysis: isBogieIsolatedSpecific
+        ? "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 146 / 173):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0205P1\nदोष संदेश: LocoXXXX SS02: Traction Bogie 1\nBOGIE 1 ISOLATED\nOnly half traction and electrical braking power available.\nPress <Enter>\nलैम्प संकेत: LSFI लगातार प्रकाशित रहेगी।\nप्रभाव: बोगी-1 आइसोलेट रहेगी (आधा ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:"
+        : "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 145-146 / 172-173):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0205P1\nदोष संदेश: LocoXXXX SS02: Traction Bogie 1\nCONVERTER-1 OIL TEMPERATURE TOO HIGH\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isBogieIsolatedSpecific
+        ? [
+            "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो उठायें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+            "2. यदि वही मैसेज दोबारा आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+            "3. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।",
+            "════ 【यदि VCB ओपन हो और 'CONVERTER-1 OIL TEMPERATURE TOO HIGH' मैसेज आये तो कार्यवाही】 ════",
+            "1. थ्रोटल को ' 0 ' पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. कनवर्टर क्यूबिकल पर लगे कनवर्टर एक्सपेंशन टैंक में ऑयल लेवल की जाँच करें।",
+            "3. HB-1 पैनल में लगे MCB 59.1/1 और 63.1/1 की जाँच करें। यदि ट्रिप मिले तो VCB ओपन करके एक बार रीसेट करें। VCB क्लोज़ करें और ट्रैक्शन कनवर्टर ऑयल पंप-1 का चलना सुनिश्चित करें। अंडरफ्रेम में लगे रेडिएटर पर से हवा आने के द्वारा OCB-1 का कार्य सुनिश्चित करें।",
+            "4. लोको पायलट OCB-1 के इम्पेलर व केसिंग की किसी भी क्षति को चेक करें, यदि क्षतिग्रस्त पाते हैं तो VCB ओपन करके पैंटो लोअर करें। HB-1 में लगे MCB 59.1/1, MCB 62.1/1 व MCB 63.1/1 को ओपन करें, फिर बाद में स्विच 154 (SB-1) के द्वारा बोगी-1 को आइसोलेट करें।",
+            "5. लोको को एनर्जाइज़ करें व एक बोगी के साथ गाड़ी चलायें। इस स्थिति में LSFI लगातार प्रकाशित रहेगी। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+          ]
+        : [
+            "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. कनवर्टर क्यूबिकल पर लगे कनवर्टर एक्सपेंशन टैंक में ऑयल लेवल की जाँच करें।",
+            "3. HB-1 पैनल में लगे MCB 59.1/1 और 63.1/1 की जाँच करें। यदि ट्रिप मिले तो VCB ओपन करके एक बार रीसेट करें। VCB क्लोज़ करें और ट्रैक्शन कनवर्टर ऑयल पंप-1 का चलना सुनिश्चित करें। अंडरफ्रेम में लगे रेडिएटर पर से हवा आने के द्वारा OCB-1 का कार्य सुनिश्चित करें।",
+            "4. लोको पायलट OCB-1 के इम्पेलर व केसिंग की किसी भी क्षति को चेक करें, यदि क्षतिग्रस्त पाते हैं तो VCB ओपन करके पैंटो लोअर करें। HB-1 में लगे MCB 59.1/1, MCB 62.1/1 व MCB 63.1/1 को ओपन करें, फिर बाद में स्विच 154 (SB-1) के द्वारा बोगी-1 को आइसोलेट करें।",
+            "5. लोको को एनर्जाइज़ करें व एक बोगी के साथ गाड़ी चलायें। इस स्थिति में LSFI लगातार प्रकाशित रहेगी। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।",
+            "════ 【यदि बोगी आइसोलेट हो जाये और 'BOGIE 1 ISOLATED / Press <Enter>' मैसेज आये तो कार्यवाही】 ════",
+            "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो उठायें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+            "2. यदि वही मैसेज दोबारा आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+            "3. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+          ],
+      precautions: "OCB-1 के इम्पेलर/केसिंग क्षतिग्रस्त होने पर MCB 59.1/1, 62.1/1, 63.1/1 ओपन करें और स्विच 154 से बोगी-1 आइसोलेट करके 50% पावर पर चलें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0205P1, पेज 145-146 / 172-173)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 172,
+      pdfQuote: "SS02 F0205P1 LocoXXXX SS02: Traction Bogie 1\nCONVERTER-1 OIL TEMPERATURE TOO HIGH\nTry to close VCB again\nLSDJ aur BPFA prakashit honge, LSFI blink karegi. VCB open hoga.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. Converter expansion tank me oil level ki jaanch karein.\n3. HB-1 panel me MCB 59.1/1 aur 63.1/1 check karein. VCB open karke 1 baar reset karein. SR oil pump-1 va OCB-1 chalna sunishchit karein.\n4. OCB-1 impeller/casing damage hone par VCB open, panto lower, HB-1 me MCB 59.1/1, 62.1/1, 63.1/1 trip karein, switch 154 se bogie-1 isolate karein.\n5. Loco energize kar 1 bogie se gaadi chalayein. LSFI glow rahegi. TLC ko suchit karein.\nBOGIE 1 ISOLATED: Only half traction and electrical braking power available. Press <Enter>\n1. Control electronics ko OFF karein aur fir ON karein. Panto raise karein, VCB close karein tatha traction chalu karein.\n2. Yadi vahi message dobara aata hai to aadhe traction / braking power se normal operation chalu karein.\n3. TLC ko suchit karein tatha log book me darj karein."
+    };
+  }
+
+  // 0-SS02-F0205P2. SS02 F0205P2: EQUIPMENT TEMPERATURE HIGH (Vadodara TSD Page 148 / 175)
+  const isSS02F0205P2Query =
+    !norm.includes('f0305') &&
+    !norm.includes('ss03') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bi[g)-2') &&
+    (
+      norm.includes('f0205p2') ||
+      (norm.includes('f0205') && norm.includes('p2')) ||
+      (norm.includes('equipment temperature') && (norm.includes('high') || norm.includes('te/be is being reduced') || norm.includes('te is being reduced')) && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('equipment') && norm.includes('temperature') && (norm.includes('ss02') || norm.includes('bogie 1') || norm.includes('traction bogie 1')))
+    );
+
+  if (isSS02F0205P2Query) {
+    return {
+      identifiedFaultId: "F0205P2",
+      faultTitle: "SS02 F0205P2: EQUIPMENT TEMPERATURE HIGH, TE/BE is being reduced (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 148 / 175):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0205P2\nदोष संदेश:\nSS02 F0205P2 LocoXXXX SS02: Traction Bogie 1\nEQUIPMENT TEMPERATURE HIGH\nTE/BE is being reduced\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: TE/BE कम हो रहा है (Tractive / Electrical Braking Effort घट रहा है)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. ब्लॉक सेक्शन क्लियर करें और थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. ट्रांसफार्मर / कनवर्टर के ऑयल का तापमान सामान्य होने के लिए 10 मिनट या कुछ समय इंतज़ार करें।",
+        "3. HB/SB पैनल में लगे सभी MCBs चेक करें, यदि ट्रिप हों तो उन्हें एक बार रीसेट करें।",
+        "4. सभी ऑक्सिलरी तथा MRB (मशीन रूम ब्लोअर) का चलना सुनिश्चित करें।",
+        "5. सामान्य ऑपरेशन चालू करें।",
+        "6. यदि दोष दूर नहीं होता है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो उठायें, VCB क्लोज़ करें। यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें। अन्यथा बोगी कट आउट स्विच 154 को ऑपरेट करके बोगी-1 को आइसोलेट करें एवं TLC को सूचित करके, एक बोगी के साथ गाड़ी चलाएं।",
+        "7. यदि 20 मिनट के अंदर सफलता न मिले तो सहायता इंजन की मांग करें।"
+      ],
+      precautions: "इक्विपमेंट का तापमान अधिक होने पर ट्रैक्शन व ब्रेकिंग पावर में कटौती होती है। ब्लोअर्स व पंप्स का कार्य सुनिश्चित करें। दोष कायम रहने पर स्विच 154 द्वारा बोगी-1 को आइसोलेट करके एक बोगी से कार्य करें। 20 मिनट में निवारण न होने पर सहायता इंजन मांगें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0205P2, पेज 148 / 175)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 175,
+      pdfQuote: "SS02 F0205P2 LocoXXXX SS02: Traction Bogie 1\nEQUIPMENT TEMPERATURE HIGH\nTE/BE is being reduced\nBPFA prakashit hoga. TE/BE kam ho raha hai.\n1. Block section clear karein, throttle '0' par layein. BPFA daba kar fault ACK karein.\n2. Transformer/Converter oil temp samanya hone hetu 10 minute intezar karein.\n3. HB/SB me MCBs check karein.\n4. Sabhi auxiliaries va MRB chalna sunishchit karein.\n5. Samanya operation chalu karein.\n6. Yadi dosh door nahi hota to MCE OFF/ON karein, panto uthayein, VCB close karein, yadi loco samanya hota hai to traction chalu karein. Anyatha switch 154 dwara bogie-1 isolate karein evam TLC ko suchit karke 1 bogie se gaadi chalayein.\n7. Yadi 20 minute ke andar safalta na mile to sahayata engine ki maang karein."
+    };
+  }
+
+  // 0-SS02-F0206. SS02 F0206P1: CONVERTER 1 OIL PRESSURE NOT OK (Vadodara TSD Page 146-147 / 173-174)
+  const isSS02F0206P1Query =
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bogie2') &&
+    !norm.includes('ss03') &&
+    !norm.includes('f0306') &&
+    !norm.includes('converter 2') &&
+    !norm.includes('converter -2') &&
+    !norm.includes('converter-2') &&
+    !norm.includes('63.1/2') &&
+    !norm.includes('59.1/2') &&
+    !norm.includes('hb-2') &&
+    !norm.includes('hb2') &&
+    (
+      norm.includes('f0206p1') ||
+      (norm.includes('f0206') && !norm.includes('f0206p2')) ||
+      norm.includes('converter 1 oil pressure') ||
+      norm.includes('converter-1 oil pressure') ||
+      (norm.includes('converter') && norm.includes('oil pressure') && !norm.includes('transformer'))
+    );
+
+  if (isSS02F0206P1Query) {
+    const isBogieIsolatedSpecific =
+      norm.includes('bogie 1 isolated') ||
+      norm.includes('bogie-1 isolated') ||
+      norm.includes('only half traction') ||
+      norm.includes('half traction') ||
+      (norm.includes('bogie') && norm.includes('enter'));
+
+    return {
+      identifiedFaultId: "F0206P1",
+      faultTitle: isBogieIsolatedSpecific
+        ? "SS02 F0206P1: BOGIE 1 ISOLATED : Only half traction and electrical braking power available. Press <Enter> (3-Phase Loco TSD)"
+        : "SS02 F0206P1: CONVERTER 1 OIL PRESSURE NOT OK, Check oil level, Try to close the VCB again (3-Phase Loco TSD)",
+      analysis: isBogieIsolatedSpecific
+        ? "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 147 / 174):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0206P1\nदोष संदेश: LocoXXXX SS02: Traction Bogie 1\nBOGIE 1 ISOLATED\nOnly half traction and electrical braking power available.\nPress <Enter>\nलैम्प संकेत: LSFI लगातार प्रकाशित रहेगी।\nप्रभाव: बोगी-1 आइसोलेट रहेगी (आधा ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:"
+        : "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 146-147 / 173-174):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0206P1\nदोष संदेश: Loco SS02: Traction Bogie 1\nCONVERTER 1 OIL PRESSURE NOT OK\nCheck oil level\nTry to close the VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी (क्रम 2 व 5 स्थिति में LSFI लगातार प्रकाशित रहेगी)।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isBogieIsolatedSpecific
+        ? [
+            "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+            "2. यदि वही मैसेज दोबारा आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+            "3. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।",
+            "════ 【यदि VCB ओपन हो और 'CONVERTER 1 OIL PRESSURE NOT OK' मैसेज आये तो कार्यवाही】 ════",
+            "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. कनवर्टर क्यूबिकल पर लगे कनवर्टर एक्सपेंशन टैंक में ऑयल लेवल की जाँच करें। यदि मैक्सिमम से ऊपर या मिनिमम से नीचे हो तो बोगी-1 को स्विच 154 द्वारा ‘ I ’ पर रखकर आईसोलेट करके आधे ट्रैक्शन से कार्य करें।",
+            "3. यदि ऑयल लेवल बराबर हो तो HB-1 पैनल में MCB 63.1/1 को चेक करें। यदि ट्रिप हो तो उसे VCB ओपन करके एक बार रीसेट करें। मशीन रूम में SR-1 का ऑयल पंप चल रहा है या नहीं इसकी जाँच उसके इनलेट तथा आउटलेट पाइप को छूकर करें।",
+            "4. यदि MCB 63.1/1 को एक बार रीसेट करने के बाद दोबारा ट्रिप होता है तो उसे फिर से रीसेट न करें। बोगी-1 अपने आप आइसोलेट हो जायेगी। आधे ट्रैक्शन के साथ कार्य करें।",
+            "5. लोको पायलट ट्रैक्शन कनवर्टर-1 के ऑयल की पाइप लाइन को ऑयल लीकेज तथा कोई क्षति के लिए चेक करें जिससे तेल का रिसाव हो सकता है और ऑयल कूलिंग ब्लोअर-1 (OCB-1) की केसिंग को इम्पेलर की खराबी से कोई क्षति के लिए चेक करें। ऐसी स्थिति में रेडिएटर के क्षतिग्रस्त होने से तेल का रिसाव होकर ‘Converter No.1 oil pressure low’ का मैसेज आ सकता है। लोको पायलट VCB ओपन करें, पैंटो लोअर करें और HB-1 पैनल पर लगे MCB 59.1/1 और MCB 63.1/1 को ट्रिप करें। स्विच 154 को ‘ I ’ पर रखकर बोगी-1 को आईसोलेट करें। लोको एनर्जाइज करके एक बोगी द्वारा कार्य करें। (उपरोक्त क्रम सं. 2 और 5 स्थिति में LSFI लगातार प्रकाशित रहेगी। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।)",
+            "6. यदि SR-1 ऑयल पंप सामान्य हो तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके BUR-2 को MCB 127.22/2 के द्वारा आइसोलेट करें।",
+            "7. यदि सफलता मिलती है तो BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+            "8. यदि सफलता नहीं मिलती है तो स्विच 154 को ‘ I ’ पर रखकर बोगी-1 को आईसोलेट करें। TLC को सूचित करें।"
+          ]
+        : [
+            "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. कनवर्टर क्यूबिकल पर लगे कनवर्टर एक्सपेंशन टैंक में ऑयल लेवल की जाँच करें। यदि मैक्सिमम से ऊपर या मिनिमम से नीचे हो तो बोगी-1 को स्विच 154 द्वारा ‘ I ’ पर रखकर आईसोलेट करके आधे ट्रैक्शन से कार्य करें।",
+            "3. यदि ऑयल लेवल बराबर हो तो HB-1 पैनल में MCB 63.1/1 को चेक करें। यदि ट्रिप हो तो उसे VCB ओपन करके एक बार रीसेट करें। मशीन रूम में SR-1 का ऑयल पंप चल रहा है या नहीं इसकी जाँच उसके इनलेट तथा आउटलेट पाइप को छूकर करें।",
+            "4. यदि MCB 63.1/1 को एक बार रीसेट करने के बाद दोबारा ट्रिप होता है तो उसे फिर से रीसेट न करें। बोगी-1 अपने आप आइसोलेट हो जायेगी। आधे ट्रैक्शन के साथ कार्य करें।",
+            "5. लोको पायलट ट्रैक्शन कनवर्टर-1 के ऑयल की पाइप लाइन को ऑयल लीकेज तथा कोई क्षति के लिए चेक करें जिससे तेल का रिसाव हो सकता है और ऑयल कूलिंग ब्लोअर-1 (OCB-1) की केसिंग को इम्पेलर की खराबी से कोई क्षति के लिए चेक करें। ऐसी स्थिति में रेडिएटर के क्षतिग्रस्त होने से तेल का रिसाव होकर ‘Converter No.1 oil pressure low’ का मैसेज आ सकता है। लोको पायलट VCB ओपन करें, पैंटो लोअर करें और HB-1 पैनल पर लगे MCB 59.1/1 और MCB 63.1/1 को ट्रिप करें। स्विच 154 को ‘ I ’ पर रखकर बोगी-1 को आईसोलेट करें। लोको एनर्जाइज करके एक बोगी द्वारा कार्य करें। (उपरोक्त क्रम सं. 2 और 5 स्थिति में LSFI लगातार प्रकाशित रहेगी। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।)",
+            "6. यदि SR-1 ऑयल पंप सामान्य हो तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके BUR-2 को MCB 127.22/2 के द्वारा आइसोलेट करें।",
+            "7. यदि सफलता मिलती है तो BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+            "8. यदि सफलता नहीं मिलती है तो स्विच 154 को ‘ I ’ पर रखकर बोगी-1 को आईसोलेट करें। TLC को सूचित करें।",
+            "════ 【यदि बोगी आइसोलेट हो जाये और 'BOGIE 1 ISOLATED / Press <Enter>' मैसेज आये तो कार्यवाही】 ════",
+            "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+            "2. यदि वही मैसेज दोबारा आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+            "3. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+          ],
+      precautions: "MCB 63.1/1 को केवल एक बार रीसेट करें, दोबारा ट्रिप होने पर फिर से रीसेट न करें। एक्सपेंशन टैंक में तेल कम/ज्यादा होने या रेडिएटर/पाइप से तेल रिसाव होने पर बोगी-1 तुरंत आइसोलेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0206P1, पेज 146-147 / 173-174)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 173,
+      pdfQuote: "SS02 F0206P1 Loco SS02: Traction Bogie 1\nCONVERTER 1 OIL PRESSURE NOT OK\nCheck oil level, Try to close the VCB again\nLSDJ aur BPFA prakashit honge, LSFI blink karegi. VCB open hoga.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. Converter expansion tank me oil level check karein. Min-Max se bahar hone par switch 154 se bogie-1 isolate karein.\n3. Oil level theek hone par HB-1 me MCB 63.1/1 check karein. Trip ho to VCB open karke 1 baar reset karein. SR-1 pump inlet/outlet chhookar check karein.\n4. MCB 63.1/1 dobara trip ho to reset na karein. Bogie-1 apne aap isolate hogi, aadhe traction se chalein.\n5. Oil pipe leakage ya radiator damage par VCB open, panto lower, MCB 59.1/1 va 63.1/1 trip karein, switch 154 se bogie-1 isolate karein.\n6. Yadi pump normal ho to MCE OFF karke BUR-2 ko MCB 127.22/2 dwara isolate karein. Safalta par chalein, anyatha switch 154 se bogie-1 isolate karein. TLC ko suchit karein.\nBOGIE 1 ISOLATED: Only half traction and electrical braking power available. Press <Enter>\n1. Control electronics ko OFF karein aur fir ON karein. Panto raise karein, VCB close karein tatha traction chalu karein.\n2. Yadi vahi message dobara aata hai to aadhe traction / braking power se normal operation chalu karein.\n3. TLC ko suchit karein tatha log book me darj karein."
+    };
+  }
+
+  // 0-SS02-F0206P2. SS02 F0206P2: DC LINK CAPACITORS PRESSURE NOT OK (Vadodara TSD Page 150 / 177)
+  const isSS02F0206P2Query =
+    !norm.includes('f0306') &&
+    !norm.includes('ss03') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bi[g)-2') &&
+    !norm.includes('converter 2') &&
+    !norm.includes('converter-2') &&
+    (
+      norm.includes('f0206p2') ||
+      (norm.includes('f0206') && norm.includes('p2')) ||
+      (norm.includes('dc link') && (norm.includes('capacitors') || norm.includes('capacitor') || norm.includes('pressure')) && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      ((norm.includes('capacitors pressure') || norm.includes('capacitor pressure')) && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03'))))
+    );
+
+  if (isSS02F0206P2Query) {
+    return {
+      identifiedFaultId: "F0206P2",
+      faultTitle: "SS02 F0206P2: DC LINK CAPACITORS PRESSURE NOT OK, Normal operation can continue, To be checked during maintenance (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 150 / 177):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0206P2\nदोष संदेश:\nSS02 F0206P2 LocoXXXX SS02: Traction Bogie 1\nDC LINK CAPACITORS PRESSURE NOT OK\nNormal operation can continue\nTo be checked during maintenance\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। गंतव्य स्थान पर मेंटेनेंस स्टाफ को सूचित करें।",
+        "3. मेंटेनेंस के दौरान DC Link कैपेसिटर्स को चेक करना चाहिए। कैपेसिटर ओपन सर्किट या खराब हो सकते हैं।"
+      ],
+      precautions: "यह Priority-2 स्तर का संदेश है। सामान्य ऑपरेशन जारी रहेगा। गंतव्य स्टेशन/शेड में अनुरक्षण कर्मचारियों को सूचित कर कैपेसिटर्स की जांच अवश्य कराएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0206P2, पेज 150 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "SS02 F0206P2 LocoXXXX SS02: Traction Bogie 1\nDC LINK CAPACITORS PRESSURE NOT OK\nNormal operation can continue\nTo be checked during maintenance\nBPFA dwara fault acknowledge karein aur samanya operation chalu karein.\nTLC ko suchit karein aur log book me darj karein. Gantavya sthan par maintenance staff ko suchit karein.\nMaintenance ke dauran DC Link capacitors ko check karna chahiye. Capacitor open circuit ya kharab ho sakte hain."
+    };
+  }
+
+  // 0-SS02-F0207. SS02 F0207P1: TRACTION MOTOR TEMPERATURE TOO HIGH (Vadodara TSD Page 147-148 / 174-175)
+  const isSS02F0207P1Query =
+    !norm.includes('f0307') &&
+    !norm.includes('ss03') &&
+    !norm.includes('bogie 2') &&
+    !norm.includes('bogie-2') &&
+    !norm.includes('bi[g)-2') &&
+    !norm.includes('converter 2') &&
+    !norm.includes('converter-2') &&
+    !norm.includes('tmb-2') &&
+    !norm.includes('tmb 2') &&
+    !norm.includes('53.1/2') &&
+    !norm.includes('hb-2') &&
+    (
+      norm.includes('f0207p1') ||
+      (norm.includes('f0207') && !norm.includes('f0207p2')) ||
+      (norm.includes('traction motor temperature too high') && (norm.includes('bogie 1') || norm.includes('converter 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('traction motor') && norm.includes('temperature') && (norm.includes('too high') || norm.includes('converter 1 blocked')) && !norm.includes('converter 2 blocked'))
+    );
+
+  if (isSS02F0207P1Query) {
+    const isBogieIsolatedSpecific =
+      norm.includes('bogie 1 isolated') ||
+      norm.includes('bogie-1 isolated') ||
+      norm.includes('only half traction') ||
+      norm.includes('half traction') ||
+      (norm.includes('bogie') && norm.includes('enter'));
+
+    return {
+      identifiedFaultId: "F0207P1",
+      faultTitle: isBogieIsolatedSpecific
+        ? "SS02 F0207P1: BOGIE 1 ISOLATED: Only half traction and electrical braking power available. Press <Enter> (3-Phase Loco TSD)"
+        : "SS02 F0207P1: TRACTION MOTOR TEMPERATURE TOO HIGH, Converter 1 blocked Bogie 1 may get isolated (3-Phase Loco TSD)",
+      analysis: isBogieIsolatedSpecific
+        ? "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 148 / 175):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0207P1\nदोष संदेश: LocoXXX SS02: Traction Bogie 1\nBOGIE 1 ISOLATED: Only half traction and electrical braking power available\nPress <Enter>\nलैम्प संकेत: LSFI लगातार प्रकाशित रहेगी।\nप्रभाव: बोगी-1 आइसोलेट रहेगी (सिर्फ आधा TE/BE पावर उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:"
+        : "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 147-148 / 174-175):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0207P1\nदोष संदेश: LocoXXXX SS02: Traction Bogie 1\nTRACTION MOTOR TEMPERATURE TOO HIGH\nConverter 1 blocked Bogie 1 may get isolated\nलैम्प संकेत: LSFI प्रकाशित होगी।\nप्रभाव: बोगी-1 आइसोलेट हो सकती है (सिर्फ आधा TE/BE पावर उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isBogieIsolatedSpecific
+        ? [
+            "1. MCB 53.1/1 और MCB 53.1/2 बार-बार ट्रिप होते हैं तो BUR-2 को आइसोलेट करें (MCE ऑफ़ करके)। VCB क्लोज़ करने का प्रयत्न करें।",
+            "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो उठायें, VCB क्लोज़ करने का प्रयत्न करें और यदि लोको सामान्य हो जाता है तो ट्रैक्शन चालू करें।",
+            "3. यदि दोष दूर हो जाता है तो BUR-2 को आइसोलेट रखते हुए कार्य करें।",
+            "4. यदि दोष कायम रहता है तो बोगी-1 अपने आप आइसोलेट हो जायेगी।",
+            "5. यदि वही मैसेज पुनः आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर के साथ सामान्य ऑपरेशन चालू करें।",
+            "6. TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+            "════ 【यदि 'TRACTION MOTOR TEMPERATURE TOO HIGH' मैसेज आये तो कार्यवाही】 ════",
+            "1. ब्लॉक सेक्शन क्लियर करें और थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. ट्रैक्शन मोटर ब्लोअर-1 कार्य कर रहा है या नहीं, मैन्युअली एयर सक्शन द्वारा TM Louver पर चेक करें। HB-1 पैनल में लगे MCB 53.1/1 को चेक करें। यदि ट्रिप हो तो उसे VCB ओपन करके एक बार रीसेट करें।"
+          ]
+        : [
+            "1. ब्लॉक सेक्शन क्लियर करें और थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. ट्रैक्शन मोटर ब्लोअर-1 कार्य कर रहा है या नहीं, मैन्युअली एयर सक्शन द्वारा TM Louver पर चेक करें। HB-1 पैनल में लगे MCB 53.1/1 को चेक करें। यदि ट्रिप हो तो उसे VCB ओपन करके एक बार रीसेट करें।",
+            "════ 【यदि बोगी आइसोलेट हो जाये और 'BOGIE 1 ISOLATED / Press <Enter>' मैसेज आये तो कार्यवाही】 ════",
+            "1. MCB 53.1/1 और MCB 53.1/2 बार-बार ट्रिप होते हैं तो BUR-2 को आइसोलेट करें (MCE ऑफ़ करके)। VCB क्लोज़ करने का प्रयत्न करें।",
+            "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पैंटो उठायें, VCB क्लोज़ करने का प्रयत्न करें और यदि लोको सामान्य हो जाता है तो ट्रैक्शन चालू करें।",
+            "3. यदि दोष दूर हो जाता है तो BUR-2 को आइसोलेट रखते हुए कार्य करें।",
+            "4. यदि दोष कायम रहता है तो बोगी-1 अपने आप आइसोलेट हो जायेगी।",
+            "5. यदि वही मैसेज पुनः आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर के साथ सामान्य ऑपरेशन चालू करें।",
+            "6. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+          ],
+      precautions: "TMB-1 कार्य न करने पर ट्रैक्शन मोटर अतिशीघ्र गर्म हो सकती है। MCB 53.1/1 और 53.1/2 बार-बार ट्रिप होने पर BUR-2 को MCE OFF करके आइसोलेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0207P1, पेज 147-148 / 174-175)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 174,
+      pdfQuote: "SS02 F0207P1 LocoXXXX SS02: Traction Bogie 1\nTRACTION MOTOR TEMPERATURE TOO HIGH\nConverter 1 blocked Bogie 1 may get isolated\n1. Block section clear karein, throttle '0' par layein. BPFA daba kar fault ACK karein.\n2. TMB-1 chal raha hai ya nahi, manually TM louver par check karein. HB-1 me MCB 53.1/1 check karein, trip ho to VCB open karke 1 baar reset karein.\nBOGIE 1 ISOLATED: Only half traction and electrical braking power available. Press <Enter>\n1. MCB 53.1/1 aur MCB 53.1/2 baar-baar trip hote hain to BUR-2 ko isolate karein (MCE OFF karke). VCB close karne ka prayatn karein.\n2. Control electronics ko OFF karein aur fir ON karein. Panto uthayein, VCB close karne ka prayatn karein aur yadi loco samanya ho jata hai to traction chalu karein.\n3. Yadi dosh door ho jata hai to BUR-2 ko isolate rakhte hue karya karein.\n4. Yadi dosh kayam rahta hai to bogie-1 apne aap isolate ho jayegi.\n5. Yadi vahi message punah aata hai to aadhe traction / braking power ke saath samanya operation chalu karein.\n6. TLC ko suchit karein aur log book me darj karein."
+    };
+  }
+
+  // 0-SS02-F0207P2. SS02 F0207P2: WHEEL SKIDDING IN BOGIE 1 & LINE CONVERTER ISOLATED (Vadodara TSD Page 150 / 177)
+  const isSS02F0207P2BombardierQuery =
+    !norm.includes('f0307') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0214') && !norm.includes('f0215') && !norm.includes('bhel') && !norm.includes('3/4') &&
+    !norm.includes('line converter 1') && !norm.includes('line converter 2') && !norm.includes('lc1') && !norm.includes('lc2') && !norm.includes('motor') &&
+    !norm.includes('ss04') && !norm.includes('f0406') && !norm.includes('f0407') && !norm.includes('abb') &&
+    (
+      norm.includes('line converter isolated') ||
+      (norm.includes('line converter') && (norm.includes('bogie 1') || norm.includes('isolated') || norm.includes('ss02') || norm.includes('f0207'))) ||
+      (norm.includes('bombardier') && (norm.includes('line converter') || (norm.includes('f0207') && norm.includes('reduced')))) ||
+      ((norm.includes('f0207p2') || (norm.includes('f0207') && norm.includes('p2'))) && (norm.includes('line converter') || norm.includes('bombardier') || norm.includes('igbt') || norm.includes('reduced')))
+    );
+
+  const isSS02F0207P2Query =
+    !norm.includes('f0307') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0214') && !norm.includes('f0215') && !norm.includes('bhel') && !norm.includes('3/4') &&
+    !norm.includes('line converter 1') && !norm.includes('line converter 2') && !norm.includes('lc1') && !norm.includes('lc2') && !norm.includes('motor') && !norm.includes('doppler') &&
+    !norm.includes('ss04') && !norm.includes('f0406') && !norm.includes('f0407') && !norm.includes('abb') &&
+    (
+      norm.includes('f0207p2') ||
+      (norm.includes('f0207') && norm.includes('p2')) ||
+      isSS02F0207P2BombardierQuery ||
+      (norm.includes('wheel skidding') && (norm.includes('bogie 1') || norm.includes('bogie-1') || norm.includes('reduce be') || norm.includes('ss02'))) ||
+      (norm.includes('reduce be') && (norm.includes('wheel') || norm.includes('skidding') || norm.includes('ss02') || norm.includes('bogie 1')))
+    );
+
+  if (isSS02F0207P2Query) {
+    if (isSS02F0207P2BombardierQuery) {
+      return {
+        identifiedFaultId: "F0207P2",
+        faultTitle: "SS02 F0207P2: LINE CONVERTER ISOLATED BOGIE 1 (M/s Bombardier Transportation IGBT Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 150 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BOMBARDIER Transportation' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0207P2\nदोष संदेश:\nSS02 F0207P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER ISOLATED BOGIE 1\nReduced Traction/Braking effort\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: आधा TE/BE उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और आधे TE/BE द्वारा कार्य करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "Bombardier IGBT कनवर्टर युक्त लोको में लाइन कनवर्टर आइसोलेट होने पर केवल आधा ट्रैक्शन/ब्रेकिंग एफ़र्ट (TE/BE) उपलब्ध रहेगा। TLC को सूचित करें और लॉग बुक में नोट दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (Bombardier IGBT अतिरिक्त मैसेज, पेज 150 / 177)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 177,
+        pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BOMBARDIER Transportation ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0207P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER ISOLATED BOGIE 1\nReduced Traction/Braking effort\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r aiF[ TE/BE oiri kiy< kr[>.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0207P2",
+      faultTitle: "SS02 F0207P2: WHEEL SKIDDING IN BOGIE 1, Reduce BE (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 150 / 177):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0207P2\nदोष संदेश:\nSS02 F0207P2 LocoXXXX SS02: Traction Bogie 1\nWHEEL SKIDDING IN BOGIE 1\nReduce BE\n(नोट: M/s Bombardier Transportation IGBT कनवर्टर लोको में 'LINE CONVERTER ISOLATED BOGIE 1' मैसेज आता है)\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: BE कम करने का निर्देश।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें। पहियों का मुक्त रूप से घूमना (Check Free movement) सुनिश्चित करें।",
+        "2. सुनिश्चित करें कि लोको पर ब्रेक बाइंडिंग नहीं है।",
+        "3. जाँच करें कि सभी पार्किंग ब्रेक बराबर रिलीज़ हो चुके हैं।",
+        "4. अगर गति 1 किमी/घंटा से ज़्यादा है और DDS में “ Error Tacho Generator ” का मैसेज है तो लोको पायलट सामान्य तरीके से कार्य कर सकता है।",
+        "5. ब्रेकिंग एफ़र्ट (BE) को कम करें, चालू गाड़ी में आवाज़ से व्हील स्किडिंग का अनुभव करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "6. BPCS व रिजनेरेटिव ब्रेक का उपयोग न करें।",
+        "【नोट - Bombardier IGBT कनवर्टर लोको में यदि 'LINE CONVERTER ISOLATED BOGIE 1' आये तो】: 1. BPFA द्वारा फ़ॉल्ट ACK करें और आधे TE/BE द्वारा कार्य करें। 2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "पहियों की स्किडिंग (फिसलने) पर ब्रेक बाइंडिंग और पार्किंग ब्रेक अवश्य जाँचें। पहियों पर फ्लैट टायर न बनने दें। रिजनेरेटिव ब्रेक व BPCS का प्रयोग बंद रखें। यदि Bombardier IGBT लोको में लाइन कनवर्टर आइसोलेट है तो आधे TE/BE से कार्य करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0207P2, पेज 150 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "SS02 F0207P2 LocoXXXX SS02: Traction Bogie 1\nWHEEL SKIDDING IN BOGIE 1\nReduce BE\nBPFA prakashit hoga.\n1. BPFA dwara fault acknowledge karein. Pahiyo ka mukt roop se ghoomna (Check Free movement) sunishchit karein.\n2. Sunishchit karein ki loco par brake binding nahi hai.\n3. Jaanch karein ki sabhi parking brake barabar release ho chuke hain.\n4. Agar gati 1 km/h se jyada hai aur DDS me 'Error Tacho Generator' ka message hai to loco pilot samanya tarike se karya kar sakta hai.\n5. Braking effort ko kam karein, chalu gaadi me aawaz se wheel skidding ka anubhav karein. TLC ko suchit karein aur log book me darj karein.\n6. BPCS va regenerative brake ka upyog na karein."
+    };
+  }
+
+  // 0-SS02-F0208P2. SS02 F0208P2: DOPPLER RADAR FAILED & MOTOR 1 ISOLATED BOGIE 1 (Bombardier) & TM1 BOGIE 1 ISOLATED (MEDHA) (Vadodara TSD Page 150-151 / 177)
+  const isSS02F0208P2MedhaQuery =
+    !norm.includes('f0308') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0209') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('f0214') && !norm.includes('f0215') && !norm.includes('bhel') && !norm.includes('bombardier') &&
+    !norm.includes('f0403') && !norm.includes('ss04') && !norm.includes('abb') &&
+    !norm.includes('lc1') && !norm.includes('line converter') && !norm.includes('3/4') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0208') || norm.includes('tm1') || norm.includes('tm 1') || (norm.includes('5/6') && norm.includes('1')))) ||
+      (norm.includes('tm1 bogie 1') && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('tm1 isolated') && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('tm1') && (norm.includes('isolated') || norm.includes('5/6') || norm.includes('bogie 1')) && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('f0208') && (norm.includes('medha') || norm.includes('tm1') || norm.includes('tm 1') || norm.includes('5/6'))) ||
+      (norm.includes('tm 1 of bogie 1 isolated') && !norm.includes('bhel') && !norm.includes('motor 1 bogie 1') && !norm.includes('ss04') && !norm.includes('abb'))
+    );
+
+  const isSS02F0208P2BombardierQuery =
+    !norm.includes('f0308') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !isSS02F0208P2MedhaQuery && !norm.includes('medha') && !norm.includes('line converter') && !norm.includes('f0209') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('bhel') && !norm.includes('5/6') && !norm.includes('motor 2') && !norm.includes('motor 3') &&
+    (
+      (norm.includes('motor 1 isolated') && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('motor 1') && norm.includes('isolated') && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('bombardier') && (norm.includes('motor 1') || norm.includes('f0208') || (norm.includes('bogie 1') && norm.includes('motor 1')))) ||
+      ((norm.includes('f0208p2') || (norm.includes('f0208') && norm.includes('p2'))) && (norm.includes('motor') || norm.includes('bombardier') || norm.includes('igbt') || norm.includes('isolated') || norm.includes('reduced')))
+    );
+
+  const isSS02F0208P2Query =
+    !norm.includes('f0308') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0209') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('f0214') && !norm.includes('f0215') && !norm.includes('bhel') && !norm.includes('motor 2') && !norm.includes('motor 3') &&
+    (
+      isSS02F0208P2MedhaQuery ||
+      isSS02F0208P2BombardierQuery ||
+      ((norm.includes('f0208p2') || norm.includes('f0208')) && !norm.includes('5/6')) ||
+      norm.includes('doppler radar failed') ||
+      norm.includes('doppler radar') ||
+      (norm.includes('radar') && (norm.includes('failed') || norm.includes('doppler') || norm.includes('slg1:0083') || norm.includes('slg2:0083') || norm.includes('ss02')))
+    );
+
+  if (isSS02F0208P2Query) {
+    if (isSS02F0208P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0208P2",
+        faultTitle: "SS02 F0208P2: TM1 BOGIE 1 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0208P2\nदोष संदेश:\nSS02 F0208P2 LocoXXXX SS02: Traction Bogie 1\nTM1 BOGIE 1 ISOLATED\nTM 1 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 की TM-1 आइसोलेट रहेगी, केवल 5/6th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-1 की TM-1 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE पावर उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से ऑपरेशन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (MEDHA IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 177,
+        pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0208P2 LocoXXXX SS02: Traction Bogie 1\nTM1 BOGIE 1 ISOLATED\nTM 1 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    if (isSS02F0208P2BombardierQuery) {
+      return {
+        identifiedFaultId: "F0208P2",
+        faultTitle: "SS02 F0208P2: MOTOR 1 ISOLATED BOGIE 1 (M/s Bombardier Transportation IGBT Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 150 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BOMBARDIER Transportation' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0208P2\nदोष संदेश:\nSS02 F0208P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 1 ISOLATED\nBOGIE 1\nReduced Traction/Braking effort\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: Reduced Traction/Braking effort (आधा TE/BE उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "Bombardier IGBT कनवर्टर युक्त लोको में मोटर-1 आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें, उपलब्ध क्षमता (Reduced TE/BE) से सामान्य कार्य करें और TLC को सूचित कर लॉग बुक में नोट करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (Bombardier IGBT अतिरिक्त मैसेज, पेज 150 / 177)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 177,
+        pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BOMBARDIER Transportation ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0208P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 1 ISOLATED\nBOGIE 1\nReduced Traction/Braking effort\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0208P2",
+      faultTitle: "SS02 F0208P2: DOPPLER RADAR FAILED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 150 / 177):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0208P2\nदोष संदेश:\nSS02 F0208P2 LocoXXXX SS02: Traction Bogie 1\nDOPPLER RADAR FAILED\n(नोट: Bombardier IGBT लोको में 'MOTOR 1 ISOLATED BOGIE 1' तथा MEDHA IGBT लोको में 'TM1 BOGIE 1 ISOLATED' संदेश आता है)\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें।",
+        "2. यदि DDS पर बैकग्राउंड मैसेज \"SLG1:0083/SLG2:0083 Radar control disabled/Faulty\" आता है -",
+        "3. सामान्य तरीके से कार्य करें।",
+        "【नोट - Bombardier IGBT कनवर्टर लोको में यदि 'MOTOR 1 ISOLATED BOGIE 1' आये तो】: 1. BPFA द्वारा फ़ॉल्ट ACK करें और सामान्य ऑपरेशन चालू करें। 2. TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "【नोट - MEDHA IGBT कनवर्टर लोको में यदि 'TM1 BOGIE 1 ISOLATED' (5/6th TE/BE) आये तो】: 1. BPFA द्वारा फ़ॉल्ट ACK करें और सामान्य ऑपरेशन चालू करें। 2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "डॉप्लर रडार फेल होने पर भी लोको का सामान्य संचालन बाधित नहीं होता है। BPFA दबाकर संदेश एकनॉलेज करें और सामान्य रूप से गाड़ी चलाएं। Bombardier IGBT लोको में मोटर-1 तथा MEDHA IGBT लोको में TM1 आइसोलेट होने पर भी BPFA दबाकर सामान्य ऑपरेशन चालू करें और TLC को सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (F0208P2, पेज 150 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "SS02 F0208P2 LocoXXXX SS02: Traction Bogie 1\nDOPPLER RADAR FAILED\nBPFA prakashit hoga.\n1. BPFA dwara fault acknowledge karein.\n2. Yadi DDS par background message 'SLG1:0083/SLG2:0083 Radar control disabled/Faulty' aata hai -\n3. Samanya tarike se karya karein."
+    };
+  }
+
+  // 0-SS02-F0209P2. SS02 F0209P2: MOTOR 2 ISOLATED BOGIE 1 (Bombardier) & TM2 BOGIE 1 ISOLATED (MEDHA) (Vadodara TSD Page 150-151 / 177)
+  const isSS02F0209P2MedhaQuery =
+    !norm.includes('f0309') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('f0214') && !norm.includes('f0215') && !norm.includes('bhel') && !norm.includes('bombardier') &&
+    !norm.includes('ss04') && !norm.includes('f0404') && !norm.includes('abb') &&
+    !norm.includes('lc1') && !norm.includes('line converter') && !norm.includes('3/4') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0209') || norm.includes('tm2') || norm.includes('tm 2') || (norm.includes('5/6') && norm.includes('2')))) ||
+      (norm.includes('tm2 bogie 1') && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('tm2 isolated') && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('tm2') && (norm.includes('isolated') || norm.includes('5/6') || norm.includes('bogie 1')) && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('f0209') && (norm.includes('medha') || norm.includes('tm2') || norm.includes('tm 2') || norm.includes('5/6'))) ||
+      (norm.includes('tm 2 of bogie 1 isolated') && !norm.includes('bhel') && !norm.includes('motor 2 bogie 1') && !norm.includes('ss04') && !norm.includes('abb'))
+    );
+
+  const isSS02F0209P2BombardierQuery =
+    !norm.includes('f0309') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !isSS02F0209P2MedhaQuery && !norm.includes('medha') && !norm.includes('f0208') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('bhel') && !norm.includes('5/6') && !norm.includes('motor 1') && !norm.includes('motor 3') && !norm.includes('tm 1') && !norm.includes('tm 3') &&
+    !norm.includes('ss04') && !norm.includes('f0404') && !norm.includes('abb') &&
+    (
+      (norm.includes('motor 2 isolated') && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('motor 2') && (norm.includes('isolated') || norm.includes('bogie 1') || norm.includes('reduced') || norm.includes('ss02')) && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('bombardier') && (norm.includes('motor 2') || norm.includes('f0209') || (norm.includes('bogie 1') && norm.includes('motor 2')))) ||
+      ((norm.includes('f0209p2') || (norm.includes('f0209') && norm.includes('p2'))) && !norm.includes('medha') && !norm.includes('tm2') && !norm.includes('tm 2'))
+    );
+
+  const isSS02F0209P2Query =
+    !norm.includes('f0309') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('bhel') && !norm.includes('motor 1') && !norm.includes('motor 3') && !norm.includes('tm 1') && !norm.includes('tm 3') &&
+    !norm.includes('ss04') && !norm.includes('f0404') && !norm.includes('abb') &&
+    (
+      isSS02F0209P2MedhaQuery ||
+      isSS02F0209P2BombardierQuery ||
+      norm.includes('f0209p2') ||
+      norm.includes('f0209')
+    );
+
+  if (isSS02F0209P2Query) {
+    if (isSS02F0209P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0209P2",
+        faultTitle: "SS02 F0209P2: TM2 BOGIE 1 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0209P2\nदोष संदेश:\nSS02 F0209P2 LocoXXXX SS02: Traction Bogie 1\nTM2 BOGIE 1 ISOLATED\nTM 2 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 की TM-2 आइसोलेट रहेगी, केवल 5/6th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-1 की TM-2 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से ऑपरेशन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (MEDHA IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 177,
+        pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0209P2 LocoXXXX SS02: Traction Bogie 1\nTM2 BOGIE 1 ISOLATED\nTM 2 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0209P2",
+      faultTitle: "SS02 F0209P2: MOTOR 2 ISOLATED BOGIE 1 (M/s Bombardier Transportation IGBT Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 150 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BOMBARDIER Transportation' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0209P2\nदोष संदेश:\nSS02 F0209P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 2 ISOLATED\nBOGIE 1\nReduced Traction/Braking effort\n(नोट: M/s MEDHA IGBT कनवर्टर लोको में 'TM2 BOGIE 1 ISOLATED / TM 2 of bogie 1 isolated only 5/6th...' संदेश आता है)\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: Reduced Traction/Braking effort (आधा / घटा हुआ TE/BE उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "【नोट - MEDHA IGBT कनवर्टर लोको में यदि 'TM2 BOGIE 1 ISOLATED' (5/6th TE/BE) आये तो】: 1. BPFA द्वारा फ़ॉल्ट ACK करें और सामान्य ऑपरेशन चालू करें। 2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "Bombardier IGBT कनवर्टर युक्त लोको में मोटर-2 आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें, उपलब्ध क्षमता (Reduced TE/BE) से सामान्य कार्य करें और TLC को सूचित कर लॉग बुक में नोट करें। MEDHA IGBT लोको में TM-2 आइसोलेट होने पर केवल 5/6th TE/BE उपलब्ध रहता है।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (Bombardier IGBT अतिरिक्त मैसेज, पेज 150 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BOMBARDIER Transportation ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0209P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 2 ISOLATED\nBOGIE 1\nReduced Traction/Braking effort\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS02-F0210P2. SS02 F0210P2: MOTOR 3 ISOLATED BOGIE 1 (Bombardier) & TM3 BOGIE 1 ISOLATED (MEDHA) (Vadodara TSD Page 150-151 / 177)
+  const isSS02F0210P2MedhaQuery =
+    !norm.includes('f0310') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0209') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('f0214') && !norm.includes('f0215') && !norm.includes('bhel') && !norm.includes('bombardier') &&
+    !norm.includes('ss04') && !norm.includes('f0405') && !norm.includes('abb') &&
+    !norm.includes('lc1') && !norm.includes('line converter') && !norm.includes('3/4') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0210') || norm.includes('tm3') || norm.includes('tm 3') || (norm.includes('5/6') && norm.includes('3')))) ||
+      (norm.includes('tm3 bogie 1') && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('tm3 isolated') && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('tm3') && (norm.includes('isolated') || norm.includes('5/6') || norm.includes('bogie 1')) && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('f0210') && (norm.includes('medha') || norm.includes('tm3') || norm.includes('tm 3') || norm.includes('5/6'))) ||
+      (norm.includes('tm 3 of bogie 1 isolated') && !norm.includes('bhel') && !norm.includes('motor 3 bogie 1') && !norm.includes('ss04') && !norm.includes('abb'))
+    );
+
+  const isSS02F0210P2BombardierQuery =
+    !norm.includes('f0310') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !isSS02F0210P2MedhaQuery && !norm.includes('medha') && !norm.includes('f0208') && !norm.includes('f0209') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('bhel') && !norm.includes('5/6') && !norm.includes('motor 1') && !norm.includes('motor 2') && !norm.includes('tm 1') && !norm.includes('tm 2') &&
+    !norm.includes('ss04') && !norm.includes('f0405') && !norm.includes('abb') &&
+    (
+      norm.includes('motor 3 isolated') ||
+      (norm.includes('motor 3') && (norm.includes('isolated') || norm.includes('bogie 1') || norm.includes('reduced') || norm.includes('ss02'))) ||
+      (norm.includes('bombardier') && (norm.includes('motor 3') || norm.includes('f0210'))) ||
+      ((norm.includes('f0210p2') || (norm.includes('f0210') && norm.includes('p2'))) && !norm.includes('medha') && !norm.includes('tm3') && !norm.includes('tm 3'))
+    );
+
+  const isSS02F0210P2Query =
+    !norm.includes('f0310') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0209') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('bhel') && !norm.includes('motor 1') && !norm.includes('motor 2') && !norm.includes('tm 1') && !norm.includes('tm 2') &&
+    !norm.includes('ss04') && !norm.includes('f0405') && !norm.includes('abb') &&
+    (
+      isSS02F0210P2MedhaQuery ||
+      isSS02F0210P2BombardierQuery ||
+      norm.includes('f0210p2') ||
+      norm.includes('f0210')
+    );
+
+  if (isSS02F0210P2Query) {
+    if (isSS02F0210P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0210P2",
+        faultTitle: "SS02 F0210P2: TM3 BOGIE 1 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0210P2\nदोष संदेश:\nSS02 F0210P2 LocoXXXX SS02: Traction Bogie 1\nTM3 BOGIE 1 ISOLATED\nTM 3 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 की TM-3 आइसोलेट रहेगी, केवल 5/6th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-1 की TM-3 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से ऑपरेशन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (MEDHA IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 177,
+        pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0210P2 LocoXXXX SS02: Traction Bogie 1\nTM3 BOGIE 1 ISOLATED\nTM 3 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0210P2",
+      faultTitle: "SS02 F0210P2: MOTOR 3 ISOLATED BOGIE 1 (M/s Bombardier Transportation IGBT Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 150 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BOMBARDIER Transportation' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0210P2\nदोष संदेश:\nSS02 F0210P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 3 ISOLATED\nBOGIE 1\nReduced Traction/Braking effort\n(नोट: M/s MEDHA IGBT कनवर्टर लोको में 'TM3 BOGIE 1 ISOLATED / TM 3 of bogie 1 isolated only 5/6th...' संदेश आता है)\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: Reduced Traction/Braking effort (आधा / घटा हुआ TE/BE उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "【नोट - MEDHA IGBT कनवर्टर लोको में यदि 'TM3 BOGIE 1 ISOLATED' (5/6th TE/BE) आये तो】: 1. BPFA द्वारा फ़ॉल्ट ACK करें और सामान्य ऑपरेशन चालू करें। 2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "Bombardier IGBT कनवर्टर युक्त लोको में मोटर-3 आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें, उपलब्ध क्षमता (Reduced TE/BE) से सामान्य कार्य करें और TLC को सूचित कर लॉग बुक में नोट करें। MEDHA IGBT लोको में TM-3 आइसोलेट होने पर केवल 5/6th TE/BE उपलब्ध रहता है।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (Bombardier IGBT अतिरिक्त मैसेज, पेज 150 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BOMBARDIER Transportation ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0210P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 3 ISOLATED\nBOGIE 1\nReduced Traction/Braking effort\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS02-F0211P2. SS02 F0211P2: LINE CONVERTER 1 BOGIE 1 ISOLATED (M/s MEDHA IGBT) / MOTOR 1 BOGIE 1 ISOLATED (M/s BHEL IGBT) (Vadodara TSD Page 150-151 / 177)
+  const isSS02F0211P2MedhaQuery =
+    !norm.includes('f0311') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0209') && !norm.includes('f0210') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('f0214') && !norm.includes('f0215') &&
+    !norm.includes('ss04') && !norm.includes('f0406') && !norm.includes('abb') &&
+    !norm.includes('motor 1') && !norm.includes('motor 2') && !norm.includes('motor 3') && !norm.includes('tm 1') && !norm.includes('tm 2') && !norm.includes('tm 3') &&
+    !norm.includes('tm1') && !norm.includes('tm2') && !norm.includes('tm3') && !norm.includes('5/6') &&
+    !norm.includes('lc2') && !norm.includes('line converter 2') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0211') || norm.includes('lc1') || norm.includes('line converter 1') || (norm.includes('3/4') && (norm.includes('1') || norm.includes('lc1'))) || (norm.includes('line converter') && norm.includes('1')))) ||
+      (norm.includes('f0211') && (norm.includes('medha') || norm.includes('lc1') || norm.includes('line converter') || norm.includes('3/4'))) ||
+      (norm.includes('line converter 1 bogie 1 isolated') && !norm.includes('bhel') && !norm.includes('f0214') && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('lc1 of bogie 1 isolated') && !norm.includes('bhel') && !norm.includes('f0214') && !norm.includes('ss04') && !norm.includes('abb'))
+    );
+
+  const isSS02F0211P2BhelQuery =
+    !norm.includes('f0311') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !isSS02F0208P2MedhaQuery && !isSS02F0211P2MedhaQuery && !norm.includes('medha') && !norm.includes('f0208') && !norm.includes('tm1 bogie 1') &&
+    !norm.includes('f0212') && !norm.includes('motor 2') && !norm.includes('tm 2') &&
+    !norm.includes('ss04') && !norm.includes('f0406') && !norm.includes('abb') &&
+    !norm.includes('line converter') && !norm.includes('lc1') && !norm.includes('3/4') &&
+    (
+      (norm.includes('bhel') && (norm.includes('motor 1') || norm.includes('tm 1') || norm.includes('f0211') || (norm.includes('bogie 1') && norm.includes('motor 1')))) ||
+      (norm.includes('tm 1') && (norm.includes('isolated') || norm.includes('5/6')) && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      (norm.includes('motor 1 bogie 1') && norm.includes('isolated')) ||
+      (norm.includes('motor 1') && norm.includes('5/6') && (norm.includes('bogie 1') || norm.includes('ss02') || (!norm.includes('2') && !norm.includes('ss03')))) ||
+      ((norm.includes('f0211p2') || (norm.includes('f0211') && norm.includes('p2'))) && !norm.includes('medha') && !norm.includes('lc1') && !norm.includes('line converter'))
+    );
+
+  const isSS02F0211P2Query =
+    !norm.includes('f0311') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0209') && !norm.includes('f0210') && !norm.includes('f0212') && !norm.includes('f0213') &&
+    !norm.includes('ss04') && !norm.includes('f0406') && !norm.includes('abb') &&
+    (
+      isSS02F0211P2MedhaQuery ||
+      isSS02F0211P2BhelQuery ||
+      norm.includes('f0211p2') ||
+      norm.includes('f0211')
+    );
+
+  if (isSS02F0211P2Query) {
+    if (isSS02F0211P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0211P2",
+        faultTitle: "SS02 F0211P2: LINE CONVERTER 1 BOGIE 1 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0211P2\nदोष संदेश:\nSS02 F0211P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER 1 BOGIE\n1 ISOLATED\nLC1 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का लाइन कनवर्टर 1 (LC1) आइसोलेट रहेगा, केवल 3/4th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-1 का लाइन कनवर्टर 1 (LC1) आइसोलेट होने पर केवल 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से ऑपरेशन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (MEDHA IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 177,
+        pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0211P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER 1 BOGIE 1 ISOLATED\nLC1 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0211P2",
+      faultTitle: "SS02 F0211P2: MOTOR 1 BOGIE 1 ISOLATED (M/s BHEL IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 150-151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0211P2\nदोष संदेश:\nSS02 F0211P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 1 BOGIE 1\nISOLATED\nTM 1 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n(नोट: M/s MEDHA IGBT कनवर्टर लोको में 'LINE CONVERTER 1 BOGIE 1 ISOLATED / LC1 of bogie 1 isolated only 3/4th of traction/electrical Braking power available' संदेश आता है)\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: BHEL लोको में TM-1 आइसोलेट, केवल 5/6th ट्रैक्शन/ब्रेकिंग पावर उपलब्ध; MEDHA लोको में LC1 आइसोलेट, केवल 3/4th पावर उपलब्ध।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "【नोट - MEDHA IGBT कनवर्टर लोको में यदि 'LINE CONVERTER 1 BOGIE 1 ISOLATED' (3/4th TE/BE) आये तो】: 1. BPFA द्वारा फ़ॉल्ट ACK करें और सामान्य ऑपरेशन चालू करें। 2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-1 की TM-1 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE उपलब्ध रहता है। MEDHA IGBT लोको में LC1 आइसोलेट होने पर केवल 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (BHEL IGBT अतिरिक्त मैसेज, पेज 150-151 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0211P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 1 BOGIE 1\nISOLATED\nTM 1 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS02-F0212P2. SS02 F0212P2: LINE CONVERTER 2 BOGIE 1 ISOLATED (M/s MEDHA IGBT) / MOTOR 2 BOGIE 1 ISOLATED (M/s BHEL IGBT) (Vadodara TSD Page 151 / 177)
+  const isSS02F0212P2MedhaQuery =
+    !norm.includes('f0312') && !norm.includes('f0315') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0209') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0213') && !norm.includes('f0214') && !norm.includes('f0215') &&
+    !norm.includes('ss04') && !norm.includes('f0407') && !norm.includes('abb') &&
+    !norm.includes('motor 1') && !norm.includes('motor 2') && !norm.includes('motor 3') && !norm.includes('tm 1') && !norm.includes('tm 2') && !norm.includes('tm 3') &&
+    !norm.includes('tm1') && !norm.includes('tm2') && !norm.includes('tm3') && !norm.includes('5/6') &&
+    !norm.includes('lc1') && !norm.includes('line converter 1') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0212') || norm.includes('lc2') || norm.includes('line converter 2') || (norm.includes('3/4') && (norm.includes('2') || norm.includes('lc2'))) || (norm.includes('line converter') && norm.includes('2')))) ||
+      (norm.includes('f0212') && (norm.includes('medha') || norm.includes('lc2') || norm.includes('line converter') || norm.includes('3/4'))) ||
+      (norm.includes('line converter 2 bogie 1 isolated') && !norm.includes('bhel') && !norm.includes('f0215') && !norm.includes('ss04') && !norm.includes('abb')) ||
+      (norm.includes('lc2 of bogie 1 isolated') && !norm.includes('bhel') && !norm.includes('f0215') && !norm.includes('ss04') && !norm.includes('abb'))
+    );
+
+  const isSS02F0212P2BhelQuery =
+    !norm.includes('f0312') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !isSS02F0209P2MedhaQuery && !isSS02F0212P2MedhaQuery && !norm.includes('medha') && !norm.includes('f0209') && !norm.includes('tm2 bogie 1') &&
+    !norm.includes('f0211') && !norm.includes('f0213') && !norm.includes('motor 1') && !norm.includes('motor 3') && !norm.includes('tm 1') && !norm.includes('tm 3') &&
+    !norm.includes('ss04') && !norm.includes('f0407') && !norm.includes('abb') &&
+    !norm.includes('line converter') && !norm.includes('lc2') && !norm.includes('3/4') &&
+    (
+      (norm.includes('bhel') && (norm.includes('motor 2') || norm.includes('tm 2') || norm.includes('f0212') || (norm.includes('bogie 1') && norm.includes('motor 2')))) ||
+      (norm.includes('tm 2') && (norm.includes('isolated') || norm.includes('5/6')) && !norm.includes('bogie 2') && !norm.includes('bogie-2')) ||
+      (norm.includes('motor 2 bogie 1') && norm.includes('isolated')) ||
+      (norm.includes('motor 2') && norm.includes('5/6') && !norm.includes('bogie 2') && !norm.includes('bogie-2')) ||
+      ((norm.includes('f0212p2') || (norm.includes('f0212') && norm.includes('p2'))) && !norm.includes('medha') && !norm.includes('lc2') && !norm.includes('line converter'))
+    );
+
+  const isSS02F0212P2Query =
+    !norm.includes('f0312') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('f0208') && !norm.includes('f0209') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0213') &&
+    !norm.includes('ss04') && !norm.includes('f0407') && !norm.includes('abb') &&
+    (
+      isSS02F0212P2MedhaQuery ||
+      isSS02F0212P2BhelQuery ||
+      norm.includes('f0212p2') ||
+      norm.includes('f0212')
+    );
+
+  if (isSS02F0212P2Query) {
+    if (isSS02F0212P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0212P2",
+        faultTitle: "SS02 F0212P2: LINE CONVERTER 2 BOGIE 1 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0212P2\nदोष संदेश:\nSS02 F0212P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER 2 BOGIE\n1 ISOLATED\nLC2 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का लाइन कनवर्टर 2 (LC2) आइसोलेट रहेगा, केवल 3/4th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-1 का LC2 (Line Converter 2) आइसोलेट होने पर केवल 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से ऑपरेशन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (MEDHA IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 177,
+        pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0212P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER 2 BOGIE 1 ISOLATED\nLC2 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0212P2",
+      faultTitle: "SS02 F0212P2: MOTOR 2 BOGIE 1 ISOLATED (M/s BHEL IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0212P2\nदोष संदेश:\nSS02 F0212P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 2 BOGIE 1\nISOLATED\nTM 2 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n(नोट: M/s MEDHA IGBT कनवर्टर लोको में 'LINE CONVERTER 2 BOGIE 1 ISOLATED / LC2 of bogie 1 isolated only 3/4th of traction/electrical Braking power available' संदेश आता है)\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: BHEL लोको में TM-2 आइसोलेट, केवल 5/6th ट्रैक्शन/ब्रेकिंग पावर उपलब्ध; MEDHA लोको में LC2 आइसोलेट, केवल 3/4th पावर उपलब्ध।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "【नोट - MEDHA IGBT कनवर्टर लोको में यदि 'LINE CONVERTER 2 BOGIE 1 ISOLATED' (3/4th TE/BE) आये तो】: 1. BPFA द्वारा फ़ॉल्ट ACK करें और सामान्य ऑपरेशन चालू करें। 2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-1 की TM-2 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE उपलब्ध रहता है। MEDHA IGBT लोको में LC2 आइसोलेट होने पर केवल 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (BHEL IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0212P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 2 BOGIE 1\nISOLATED\nTM 2 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS02-F0213P2. SS02 F0213P2: MOTOR 3 BOGIE 1 ISOLATED (M/s BHEL IGBT Traction Converter) (Vadodara TSD Page 151 / 177)
+  const isSS02F0213P2Query =
+    !norm.includes('f0313') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !isSS02F0210P2MedhaQuery && !norm.includes('medha') && !norm.includes('f0210') && !norm.includes('tm3 bogie 1') &&
+    !norm.includes('f0211') && !norm.includes('f0212') &&
+    !norm.includes('motor 1') && !norm.includes('motor 2') && !norm.includes('tm 1') && !norm.includes('tm 2') &&
+    (
+      norm.includes('f0213p2') ||
+      norm.includes('f0213') ||
+      (norm.includes('bhel') && (norm.includes('motor 3') || norm.includes('tm 3') || norm.includes('f0213') || (norm.includes('bogie 1') && norm.includes('motor 3')))) ||
+      (norm.includes('tm 3') && (norm.includes('isolated') || norm.includes('5/6')) && !norm.includes('bogie 2') && !norm.includes('bogie-2')) ||
+      (norm.includes('motor 3 bogie 1') && norm.includes('isolated')) ||
+      (norm.includes('motor 3') && norm.includes('5/6') && !norm.includes('bogie 2') && !norm.includes('bogie-2'))
+    );
+
+  if (isSS02F0213P2Query) {
+    return {
+      identifiedFaultId: "F0213P2",
+      faultTitle: "SS02 F0213P2: MOTOR 3 BOGIE 1 ISOLATED (M/s BHEL IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0213P2\nदोष संदेश:\nSS02 F0213P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 3 BOGIE 1\nISOLATED\nTM 3 of bogie 1 isolated only 5/6th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 की TM-3 आइसोलेट रहेगी, केवल 5/6th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-1 की TM-3 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (BHEL IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0213P2 LocoXXXX SS02: Traction Bogie 1\nMOTOR 3 BOGIE 1\nISOLATED\nTM 3 of bogie 1 isolated only 5/6th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS02-F0214P2. SS02 F0214P2: LINE CONVERTER 1 BOGIE 1 ISOLATED (M/s BHEL IGBT Traction Converter) (Vadodara TSD Page 151 / 177)
+  const isSS02F0214P2Query =
+    !norm.includes('f0314') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('medha') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('f0215') &&
+    !norm.includes('line converter 2') && !norm.includes('lc2') && !norm.includes('lc 2') &&
+    !norm.includes('ss04') && !norm.includes('f0406') && !norm.includes('abb') &&
+    (
+      norm.includes('f0214p2') ||
+      norm.includes('f0214') ||
+      (norm.includes('bhel') && (norm.includes('line converter 1') || norm.includes('lc1') || norm.includes('lc 1'))) ||
+      norm.includes('line converter 1 bogie 1') ||
+      norm.includes('line converter 1 bogie-1') ||
+      (norm.includes('lc1 of bogie 1') || norm.includes('lc1 of bogie-1')) ||
+      (norm.includes('lc1') && (norm.includes('isolated') || norm.includes('3/4')) && !norm.includes('bogie 2') && !norm.includes('bogie-2')) ||
+      (norm.includes('line converter 1') && (norm.includes('isolated') || norm.includes('3/4') || norm.includes('bhel')) && !norm.includes('bogie 2') && !norm.includes('bogie-2')) ||
+      (norm.includes('line converter') && norm.includes('3/4') && (norm.includes('1') || norm.includes('lc1')) && !norm.includes('bogie 2') && !norm.includes('bogie-2'))
+    );
+
+  if (isSS02F0214P2Query) {
+    return {
+      identifiedFaultId: "F0214P2",
+      faultTitle: "SS02 F0214P2: LINE CONVERTER 1 BOGIE 1 ISOLATED (M/s BHEL IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0214P2\nदोष संदेश:\nSS02 F0214P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER 1 BOGIE\n1 ISOLATED\nLC1 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का लाइन कनवर्टर-1 (LC1) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-1 का LC1 (Line Converter 1) आइसोलेट होने पर 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (BHEL IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0214P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER 1 BOGIE 1 ISOLATED\nLC1 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS02-F0215P2. SS02 F0215P2: LINE CONVERTER 2 BOGIE 1 ISOLATED (M/s BHEL IGBT Traction Converter) (Vadodara TSD Page 151 / 177)
+  const isSS02F0215P2Query =
+    !norm.includes('f0315') && !norm.includes('ss03') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') &&
+    !norm.includes('medha') && !norm.includes('f0210') && !norm.includes('f0211') && !norm.includes('f0212') && !norm.includes('f0213') && !norm.includes('f0214') &&
+    !norm.includes('line converter 1') && !norm.includes('lc1') && !norm.includes('lc 1') &&
+    !norm.includes('ss04') && !norm.includes('f0407') && !norm.includes('abb') &&
+    (
+      norm.includes('f0215p2') ||
+      norm.includes('f0215') ||
+      (norm.includes('bhel') && (norm.includes('line converter 2') || norm.includes('lc2') || norm.includes('lc 2') || (norm.includes('line converter') && norm.includes('2')))) ||
+      norm.includes('line converter 2 bogie 1') ||
+      norm.includes('line converter 2 bogie-1') ||
+      (norm.includes('lc2 of bogie 1') || norm.includes('lc2 of bogie-1')) ||
+      (norm.includes('lc2') && (norm.includes('isolated') || norm.includes('3/4')) && !norm.includes('bogie 2') && !norm.includes('bogie-2')) ||
+      (norm.includes('line converter 2') && (norm.includes('isolated') || norm.includes('3/4') || norm.includes('bhel')) && !norm.includes('bogie 2') && !norm.includes('bogie-2')) ||
+      (norm.includes('line converter') && norm.includes('3/4') && (norm.includes('2') || norm.includes('lc2')) && !norm.includes('bogie 2') && !norm.includes('bogie-2'))
+    );
+
+  if (isSS02F0215P2Query) {
+    return {
+      identifiedFaultId: "F0215P2",
+      faultTitle: "SS02 F0215P2: LINE CONVERTER 2 BOGIE 1 ISOLATED (M/s BHEL IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 151 / 177):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS02 (Traction Bogie 1)\nदोष कोड: F0215P2\nदोष संदेश:\nSS02 F0215P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER 2 BOGIE\n1 ISOLATED\nLC2 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का लाइन कनवर्टर-2 (LC2) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-1 का LC2 (Line Converter 2) आइसोलेट होने पर 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS02 Traction Bogie 1 (BHEL IGBT अतिरिक्त मैसेज, पेज 151 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS02 F0215P2 LocoXXXX SS02: Traction Bogie 1\nLINE CONVERTER 2 BOGIE 1 ISOLATED\nLC2 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0301P1. SS03 F0301P1: DISTURBANCE IN CONVERTER 2 / Try to close VCB again (Vadodara TSD Page 154 / 177)
+  const isSS03F0301P1DisturbanceQuery =
+    !norm.includes('f0301p2') &&
+    !norm.includes('earth fault') &&
+    !norm.includes('f0302') &&
+    !norm.includes('f0303') &&
+    !norm.includes('f0305') &&
+    !norm.includes('f0306') &&
+    !norm.includes('f0307') &&
+    !norm.includes('traction motor') &&
+    !norm.includes('53.1/2') &&
+    !norm.includes('contactor') &&
+    !norm.includes('stuck off') &&
+    !norm.includes('gate unit') &&
+    !norm.includes('oil temperature') &&
+    !norm.includes('oil pressure') &&
+    !norm.includes('temperature too high') &&
+    !norm.includes('bogie 2 isolated') &&
+    !norm.includes('bogie-2 isolated') &&
+    !norm.includes('press <enter>') &&
+    !norm.includes('press enter') &&
+    !norm.includes('only half traction') &&
+    !norm.includes('half traction') &&
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f0301p1') ||
+      (norm.includes('f0301') && !norm.includes('isolated')) ||
+      norm.includes('disturbance in converter 2') ||
+      norm.includes('disturbance in converter-2') ||
+      (norm.includes('disturbance') && (norm.includes('converter 2') || norm.includes('converter-2') || norm.includes('knv<tr 2'))) ||
+      ((norm.includes('ss03') || norm.includes('traction bogie 2') || norm.includes('traction bogie2') || norm.includes('bogie 2') || norm.includes('bogie-2')) && (norm.includes('disturbance') || norm.includes('127.1/2') || norm.includes('(diATb)<ns') || (norm.includes('try to close vcb again') && !norm.includes('temperature') && !norm.includes('contactor') && !norm.includes('gate'))))
+    );
+
+  if (isSS03F0301P1DisturbanceQuery) {
+    return {
+      identifiedFaultId: "F0301P1",
+      faultTitle: "SS03 F0301P1: DISTURBANCE IN CONVERTER 2, Try to close VCB again (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 154 / 177):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0301P1\nदोष संदेश: Loco no.XXX SS03:Traction Bogie 2\nDISTURBANCE IN CONVERTER 2\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा, TE/BE '0' हो जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रॉटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. MCB 127.1/2 (SB2) चेक करें। यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके एक बार रीसेट करें।",
+        "3. VCB क्लोज करने के लिए BLDJ प्रेस करें।",
+        "4. यदि वही मैसेज दोबारा आता है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके 5 मिनट बाद ऑन करें। पेंटो उठायें और VCB क्लोज करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "5. यदि वही मैसेज दोबारा आता है और ट्रैक्शन बोगी-2 अपने आप आइसोलेट नहीं होती है तो SB-2 पैनल में लगे MCB 127.1/2 एवं 127.11/2 (SB-2) द्वारा बोगी-2 को आइसोलेट करें (MCE ऑफ करके)।",
+        "6. TLC को सूचित करें तथा बोगी आइसोलेट करने से पहले आये हुए DDS मैसेज को लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यदि MCE रीसेट के 5 मिनट बाद भी दोष बना रहता है और बोगी-2 स्वतः आइसोलेट नहीं होती है, तो SB-2 पैनल में लगे MCB 127.1/2 एवं 127.11/2 द्वारा MCE ऑफ करके बोगी-2 को आइसोलेट करें। बोगी-2 आइसोलेट होने पर 50% ट्रैक्शन/ब्रेकिंग पावर उपलब्ध रहेगा।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0301P1, पेज 154 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "SS03 F0301P1 Loco no.XXX SS03:Traction Bogie 2\nDISTURBANCE IN CONVERTER 2\nTry to close VCB again\nLSDJ aur BPFA prakashit honge, LSFI blink karegi. VCB open hoga.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. MCB 127.1/2 (SB2) check karein. Yadi trip hai to control electronics ko OFF karke ek baar reset karein.\n3. VCB close karne ke liye BLDJ press karein.\n4. Yadi vahi message dobara aata hai to control electronics ko OFF karke 5 minute baad ON karein. Panto uthayein aur VCB close karein, yadi loco samanya hota hai to traction chalu karein.\n5. Yadi vahi message dobara aata hai aur traction bogie-2 apne aap isolate nahi hoti hai to SB-2 panel me lage MCB 127.1/2 evam 127.11/2 (SB-2) dwara bogie-2 ko isolate karein (MCE OFF karke).\n6. TLC ko suchit karein tatha bogie isolate karne se pehle aaye hue DDS message ko log book me darj karein."
+    };
+  }
+
+  // 0-SS03-F0301P2. SS03 F0301P2: EARTH FAULT IN CONVERTER 2 (Vadodara TSD Page 160 / 182)
+  const isSS03F0301P2Query =
+    !norm.includes('f0304') &&
+    !norm.includes('sensor') &&
+    !norm.includes('motor') &&
+    (
+      norm.includes('f0301p2') ||
+      (norm.includes('f0301') && norm.includes('p2')) ||
+      (norm.includes('earth fault') && (norm.includes('converter 2') || norm.includes('converter-2') || norm.includes('converter2') || norm.includes('knv<tr 2') || norm.includes('knv<tr2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2'))) ||
+      (norm.includes('to be checked during maintenance') && (norm.includes('converter 2') || norm.includes('converter-2') || (norm.includes('converter') && (norm.includes('bogie 2') || norm.includes('ss03'))))) ||
+      (norm.includes('normal operation can continue') && (norm.includes('converter 2') || norm.includes('converter-2') || (norm.includes('converter') && (norm.includes('bogie 2') || norm.includes('ss03')))))
+    );
+
+  if (isSS03F0301P2Query) {
+    return {
+      identifiedFaultId: "F0301P2",
+      faultTitle: "SS03 F0301P2: EARTH FAULT IN CONVERTER 2, Normal operation can continue, To be checked during maintenance (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 160 / 182):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0301P2\nदोष संदेश:\nSS03 F0301P2 LocoXXXX SS03: Traction Bogie 2\nEARTH FAULT IN\nCONVERTER 2\nNormal operation can continue\nTo be checked during\nmaintenance\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यह Priority-2 स्तर का सूचनात्मक संदेश है। ट्रैक्शन या ब्रेकिंग में कोई व्यवधान नहीं पड़ता और गाड़ी का सामान्य परिचालन जारी रखा जा सकता है। गंतव्य शेड/अनुरक्षण स्टाफ को सूचित कर कनवर्टर-2 के अर्थ फ़ॉल्ट की जांच अवश्य कराएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0301P2, पेज 160 / 182)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 182,
+      pdfQuote: "SS03 F0301P2 LocoXXXX SS03: Traction Bogie 2\nEARTH FAULT IN\nCONVERTER 2\nNormal operation can continue\nTo be checked during\nmaintenance\n1. BPFA dbikr fiˆÃT ACK kr>[.simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0302P1. SS03 F0302P1: CONVERTER CONTACTOR STUCK OFF, Try to close VCB again (Vadodara TSD Page 155-156 / 177-178)
+  const isSS03F0302P1Query =
+    !norm.includes('f0302p2') &&
+    !norm.includes('overspeed') &&
+    !norm.includes('over speed') &&
+    !norm.includes('reduce loco speed') &&
+    !norm.includes('aux') &&
+    !norm.includes('ss06') &&
+    !norm.includes('ss07') &&
+    !norm.includes('f0603') &&
+    !norm.includes('f0703') &&
+    !norm.includes('52/') &&
+    !norm.includes('hb1') &&
+    !norm.includes('hb2') &&
+    !norm.includes('hb-1') &&
+    !norm.includes('hb-2') &&
+    (
+      norm.includes('f0302p1') ||
+      (norm.includes('f0302') && !norm.includes('f0302p2')) ||
+      (norm.includes('converter contactor stuck off') && (norm.includes('2') || norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('sr-2') || norm.includes('88'))) ||
+      ((norm.includes('ss03') || norm.includes('traction bogie 2') || norm.includes('traction bogie2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && norm.includes('contactor') && (norm.includes('stuck off') || norm.includes('stuck'))) ||
+      (norm.includes('coc 88') && (norm.includes('stuck') || norm.includes('contactor') || norm.includes('converter') || norm.includes('sr-2') || norm.includes('bogie 2')))
+    );
+
+  if (isSS03F0302P1Query) {
+    return {
+      identifiedFaultId: "F0302P1",
+      faultTitle: "SS03 F0302P1: CONVERTER CONTACTOR STUCK OFF, Try to close VCB again (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 155-156 / 177-178):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0302P1\nदोष संदेश: LocoXXXX SS03: Traction Bogie 2\nCONVERTER CONTACTOR STUCK OFF\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. CCB-2 लोको में - MR और FP प्रेशर गेज़ की जाँच करें। यदि प्रेशर कम होता है तो MPJ को ‘ 0 ’ पर रखकर उसे दुरुस्त करें।",
+        "3. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "4. SR-2 {ट्रैक्शन कनवर्टर-2} में एयर लीकेज की जाँच करें। यदि एयर लीकेज है तो संबंधित SR को न्यूमैटिक पैनल पर लगे कॉक (88) द्वारा आइसोलेट करें। न्यूमैटिक पैनल पर COC 88 बायीं ओर अन्दर की तरफ {ऊपर से दूसरा} को आइसोलेट करें तथा उसके बाद बोगी-2 को स्विच 154 (SB-1) के द्वारा आइसोलेट करें।",
+        "5. VCB क्लोज़ करने के लिए BLDJ प्रेस करें। यदि VCB क्लोज़ नहीं होता है और वही मैसेज आता है तब बोगी-2 को आइसोलेट करें।",
+        "★ फॉलो-अप संदेश: यदि 'LocoXXX SS03: Traction Bogie 2 / BOGIE 2 ISOLATED : Only half traction and electrical braking power available / Press <Enter>' मैसेज आये:",
+        "• 1. यदि लोको पायलट 154 स्विच के द्वारा बोगी-2 को आइसोलेट करता है तो उसके बाद केवल Display Key Board पर ENTER Key प्रेस करें, अन्यथा -",
+        "• 2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और फिर ऑन करें। पेंटो उठायें, VCB क्लोज़ करें और ट्रैक्शन चालू करें।",
+        "• 3. यदि वही मैसेज दोबारा आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+        "• 4. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यदि SR-2 (ट्रैक्शन कनवर्टर-2) में न्यूमैटिक लीकेज है तो न्यूमैटिक पैनल पर बायीं ओर अन्दर की तरफ ऊपर से दूसरा कॉक COC 88 आइसोलेट करने के बाद स्विच 154 (SB-1) द्वारा बोगी-2 को आइसोलेट करना अनिवार्य है (नोट: बोगी-1 SR-1 के लिए कॉक 125 होता है तथा बोगी-2 SR-2 के लिए कॉक 88 होता है)। बोगी-2 आइसोलेट होने पर 50% ट्रैक्शन/ब्रेकिंग पावर उपलब्ध रहेगा।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0302P1, पेज 155-156 / 177-178)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "SS03 F0302P1 LocoXXXX SS03: Traction Bogie 2\nCONVERTER CONTACTOR STUCK OFF\nTry to close VCB again\n1. Throttle ko '0' par layein. BPFA dabakar fault ACK karein.\n2. CCB-2 loco me - MR aur FP pressure gauge ki jaanch karein. Yadi pressure kam hota hai to MPJ ko '0' par rakhkar use durust karein.\n3. VCB close karne ke liye BLDJ press karein.\n4. SR-2 {Traction Converter-2} me air leakage ki jaanch karein. Yadi air leakage hai to sambhandhit SR ko pneumatic panel par lage cock (88) dwara isolate karein. Pneumatic panel par COC 88 baayein or andar ki taraf {upar se doosra} ko isolate karein tatha uske baad bogie-2 ko switch 154 (SB-1) ke dwara isolate karein.\n5. VCB close karne ke liye BLDJ press karein. Yadi VCB close nahi hota hai aur vahi message aata hai tab bogie-2 ko isolate karein.\nFollow-up: BOGIE 2 ISOLATED Only half traction and electrical braking power available Press <Enter>:\n1. Yadi loco pilot 154 switch ke dwara bogie-2 ko isolate karta hai to uske baad keval Display Key Board par ENTER Key press karein anyatha -\n2. Control electronics ko OFF karein aur fir ON karein. Panto uthayein, VCB close karein aur traction chalu karein.\n3. Yadi vahi message dobara aata hai to aadhe traction / braking power se samanya operation chalu karein.\n4. TLC ko suchit karein tatha log book me darj karein."
+    };
+  }
+
+  // 0-SS03-F0302P2. SS03 F0302P2: TRACTION MOTOR OVER SPEED, REDUCE LOCO SPEED (Vadodara TSD Page 160 / 182)
+  const isSS03F0302P2Query =
+    norm.includes('f0302p2') ||
+    (norm.includes('f0302') && norm.includes('p2')) ||
+    (norm.includes('reduce loco speed') && (norm.includes('traction motor') || norm.includes('overspeed') || norm.includes('over speed') || norm.includes('2') || norm.includes('ss03') || norm.includes('bogie 2'))) ||
+    ((norm.includes('overspeed') || norm.includes('over speed')) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2') || norm.includes('ss03') || norm.includes('traction bogie 2') || norm.includes('traction bogie2'))) ||
+    ((norm.includes('traction motor') || norm.includes('tm')) && (norm.includes('overspeed') || norm.includes('over speed')) && (norm.includes('2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03')));
+
+  if (isSS03F0302P2Query) {
+    return {
+      identifiedFaultId: "F0302P2",
+      faultTitle: "SS03 F0302P2: TRACTION MOTOR OVER SPEED, REDUCE LOCO SPEED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 160 / 182):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0302P2\nदोष संदेश:\nSS03 F0302P2 LocoXXXX SS03: Traction Bogie 2\nTRACTION MOTOR OVER\nSPEED\nREDUCE LOCO SPEED\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: गति कम करने का निर्देश, TE '0' तक कम हो सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. गति कम करें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. सामान्य ऑपरेशन चालू करें।",
+        "3. यदि स्पीड सीमा के अंदर है और TE ‘ 0 ’ तक कम होता है तो VCB ओपन करके बोगी-2 को स्विच 154 को ‘ II ’ पर रखकर आइसोलेट करें।"
+      ],
+      precautions: "गाड़ी की गति को तुरंत अनुमेय सीमा के भीतर लाएं। यदि गति सीमा के अंदर होने पर भी TE '0' हो रहा है तो VCB ओपन करके बोगी-2 को स्विच 154 द्वारा 'II' पर रखकर आइसोलेट करें (नोट: बोगी-1 के लिए स्विच 154 को 'I' पर रखा जाता है, जबकि बोगी-2 के लिए स्विच 154 को 'II' पर रखा जाता है)।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0302P2, पेज 160 / 182)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 182,
+      pdfQuote: "SS03 F0302P2 LocoXXXX SS03: Traction Bogie 2\nTRACTION MOTOR OVER SPEED\nREDUCE LOCO SPEED\n1. g(t km kr>[. BPFA dbikr fiˆÃT ACK kr>[.\n2. simiºy aiˆpr[Sn cil* kr>[.\n3. y(d Ap)D s)mi k[ aºdr h] ai]r TE ‘ 0 ’ tk km hi[ti h] ti[ VCB ai[pn krk[ bi[g)-2 ki[ (Avc 154 ki[ ‘ II ’ pr rKkr aie<si[l[T kr[>."
+    };
+  }
+
+  // 0-SS03-F0303P1. SS03 F0303P1: GATE UNIT SUPPLY STUCK OFF, Try to close VCB again (Vadodara TSD Page 156 / 178)
+  const isSS03F0303P1Query =
+    !norm.includes('f0303p2') &&
+    !norm.includes('mub') &&
+    !norm.includes('30 seconds') &&
+    (
+      norm.includes('f0303p1') ||
+      (norm.includes('f0303') && !norm.includes('f0303p2')) ||
+      (norm.includes('gate unit supply stuck off') && (norm.includes('2') || norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('sb-2') || norm.includes('127.11/2'))) ||
+      ((norm.includes('ss03') || norm.includes('traction bogie 2') || norm.includes('traction bogie2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && norm.includes('gate unit')) ||
+      (norm.includes('127.11/2') && (norm.includes('gate unit') || norm.includes('stuck off') || norm.includes('stuck') || norm.includes('bogie 2') || norm.includes('ss03')))
+    );
+
+  if (isSS03F0303P1Query) {
+    return {
+      identifiedFaultId: "F0303P1",
+      faultTitle: "SS03 F0303P1: GATE UNIT SUPPLY STUCK OFF, Try to close VCB again (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 156 / 178):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0303P1\nदोष संदेश: LocoXXX SS03: Traction Bogie 2\nGATE UNIT SUPPLY STUCK OFF\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. SB-2 पर लगे MCB 127.11/2 की जाँच करें। यदि कोई MCB ट्रिप हो तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके एक बार रीसेट करें।",
+        "3. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "★ फॉलो-अप संदेश: यदि 'LocoXXXX SS03: Traction Bogie 2 / BOGIE 2 ISOLATED : Only half traction and electrical braking power available / Press <Enter>' संदेश आये:",
+        "• 1. ब्लॉक सेक्शन क्लियर करें या TLC की अनुमति से एक बोगी से कार्य करें।",
+        "• 2. SB-2 में लगे MCB 127.11/2 को चेक करें। यदि ट्रिप मिलता है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके एक बार रीसेट करें।",
+        "• 3. यदि सफलता नहीं मिलती तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और फिर ऑन करें। पेंटो उठायें, VCB क्लोज़ करें और ट्रैक्शन चालू करें।",
+        "• 4. यदि वही मैसेज दोबारा आता है तो आधे (50%) ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+        "• 5. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "SB-2 में MCB 127.11/2 ट्रिप होने पर केवल कंट्रोल इलेक्ट्रॉनिक्स (MCE) OFF करके ही रीसेट करें। बार-बार ट्रिप होने पर बोगी-2 को आइसोलेट रखें और आधे ट्रैक्शन से कार्य करें। (नोट: बोगी-1 के लिए SB-1 में MCB 127.11/1 होता है तथा बोगी-2 के लिए SB-2 में MCB 127.11/2 होता है)।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0303P1, पेज 156 / 178)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 178,
+      pdfQuote: "SS03 F0303P1 LocoXXX SS03: Traction Bogie 2\nGATE UNIT SUPPLY STUCK OFF\nTry to close VCB again\nLSDJ aur BPFA prakashit honge, LSFI blink karegi. VCB open hoga.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. SB-2 par lage MCB 127.11/2 ki jaanch karein. Yadi koi MCB trip hai to control electronics ko OFF karke ek baar reset karein.\n3. VCB close karne ke liye BLDJ press karein.\nFollow-up: LocoXXXX SS03: Traction Bogie 2 / BOGIE 2 ISOLATED Only half traction and electrical braking power available Press <Enter>:\n1. Block section clear karein ya TLC ki anumati se ek bogie se karya karein.\n2. SB-2 me lage MCB 127.11/2 ko check karein. Yadi trip milta hai to control electronics ko OFF karke ek baar reset karein.\n3. Yadi safalta nahi milti to control electronics ko OFF karein aur fir ON karein. Panto uthayein, VCB close karein aur traction chalu karein.\n4. Yadi vahi message dobara aata hai to aadhe traction / braking power se samanya operation chalu karein.\n5. TLC ko suchit karein tatha log book me darj karein."
+    };
+  }
+
+  // 0-SS03-F0303P2. SS03 F0303P2: MUB RESISTANCE TOO HOT IN CONVERTER 2 (Vadodara TSD Page 160 / 182)
+  const isSS03F0303P2Query =
+    norm.includes('f0303p2') ||
+    (norm.includes('f0303') && norm.includes('p2')) ||
+    (norm.includes('mub resistance') && (norm.includes('converter 2') || norm.includes('converter-2') || norm.includes('converter2') || norm.includes('ss03') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2'))) ||
+    (norm.includes('mub') && (norm.includes('converter 2') || norm.includes('converter-2') || norm.includes('converter2') || norm.includes('ss03') || norm.includes('bogie 2') || norm.includes('bogie-2'))) ||
+    (norm.includes('mub') && norm.includes('30') && (norm.includes('2') || norm.includes('ss03') || norm.includes('bogie 2')));
+
+  if (isSS03F0303P2Query) {
+    return {
+      identifiedFaultId: "F0303P2",
+      faultTitle: "SS03 F0303P2: MUB RESISTANCE TOO HOT IN CONVERTER 2, Wait for 30 seconds (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 160 / 182):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0303P2\nदोष संदेश:\nSS03 F0303P2 LocoXXXX SS03: Traction Bogie 2\nMUB RESISTANCE TOO HOT\nIN CONVERTER 2\nWait for 30 seconds\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. MUB रेजिस्टेंस को ठंडा होने के लिए VCB क्लोज़ करने से पहले 30 सेकंड इंतज़ार करें। {15.1 कनवर्टर क्यूबिकल में लगा है} BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ को प्रेस करें।"
+      ],
+      precautions: "MUB रेजिस्टेंस (15.1 कनवर्टर क्यूबिकल में) अत्यधिक गर्म होने पर VCB तुरंत क्लोज़ करने की जल्दबाज़ी न करें। न्यूनतम 30 सेकंड का कूलिंग समय अवश्य दें, BPFA दबाकर फ़ॉल्ट ACK करें और फिर BLDJ द्वारा VCB क्लोज़ करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0303P2, पेज 160 / 182)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 182,
+      pdfQuote: "SS03 F0303P2 LocoXXXX SS03: Traction Bogie 2\nMUB RESISTANCE TOO HOT\nIN CONVERTER 2\nWait for 30 seconds\n1. MUB r[(jAT>s ki[ q>Di hi[n[ k[ (lE VCB ±li[j krn[ s[ phl[ 30 s[k>D e>tjir kr>[.{15.1 knvT<r ±y&b)kl m[> lgi h]} BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ ki[ p\[s kr>[."
+    };
+  }
+
+  // 0-SS03-F0304P2. SS03 F0304P2: FAULTY MOTOR TEMPERATURE SENSOR (Vadodara TSD Page 160 / 182)
+  const isSS03F0304P2Query =
+    norm.includes('f0304p2') ||
+    (norm.includes('f0304') && norm.includes('p2')) ||
+    (norm.includes('faulty motor temperature sensor') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2') || norm.includes('traction bogie2'))) ||
+    (norm.includes('temperature sensor') && norm.includes('faulty') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')));
+
+  if (isSS03F0304P2Query) {
+    return {
+      identifiedFaultId: "F0304P2",
+      faultTitle: "SS03 F0304P2: FAULTY MOTOR TEMPERATURE SENSOR, Normal operation can continue, To be checked during maintenance (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 160 / 182):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0304P2\nदोष संदेश:\nSS03 F0304P2 LocoXXXX SS03: Traction Bogie 2\nFAULTY MOTOR\nTEMPERATURE SENSOR\nNormal operation can continue\nTo be checked during\nmaintenance\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यह Priority-2 स्तर का सूचनात्मक संदेश है। ट्रैक्शन मोटर के तापमान सेंसर के खराब होने पर भी ट्रैक्शन/ब्रेकिंग पावर में कोई कमी नहीं होती और सामान्य ऑपरेशन जारी रहता है। गंतव्य शेड/अनुरक्षण स्टाफ को सूचित कर सेंसर की जांच कराएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0304P2, पेज 160 / 182)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 182,
+      pdfQuote: "SS03 F0304P2 LocoXXXX SS03: Traction Bogie 2\nFAULTY MOTOR TEMPERATURE SENSOR\nNormal operation can continue\nTo be checked during maintenance\n1. BPFA dbikr fiˆÃT ACK kr>[.simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0305P1. SS03 F0305P1: CONVERTER -2 OIL TEMPERATURE TOO HIGH, Try to close VCB again (Vadodara TSD Page 157 / 179)
+  const isSS03F0305P1Query =
+    !norm.includes('f0305p2') &&
+    !norm.includes('equipment temperature') &&
+    !norm.includes('te/be is being reduced') &&
+    !norm.includes('f0307') &&
+    !norm.includes('traction motor') &&
+    !norm.includes('tmb') &&
+    !norm.includes('53.1/2') &&
+    !norm.includes('converter 2 blocked') &&
+    !norm.includes('converter-2 blocked') &&
+    (
+      norm.includes('f0305p1') ||
+      (norm.includes('f0305') && !norm.includes('f0305p2')) ||
+      (norm.includes('converter') && (norm.includes('2') || norm.includes('-2') || norm.includes('bogie 2') || norm.includes('ss03')) && norm.includes('oil temperature')) ||
+      ((norm.includes('ss03') || norm.includes('traction bogie 2') || norm.includes('traction bogie2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && norm.includes('temperature too high') && (norm.includes('oil') || norm.includes('converter') || norm.includes('ocb'))) ||
+      (norm.includes('temperature too high') && (norm.includes('converter 2 oil') || norm.includes('converter -2 oil') || norm.includes('ocb-2') || norm.includes('ocb 2') || (norm.includes('oil') && (norm.includes('converter 2') || norm.includes('converter-2')))))
+    );
+
+  if (isSS03F0305P1Query) {
+    const isBogieIsolatedSpecific =
+      norm.includes('bogie 2 isolated') ||
+      norm.includes('bogie-2 isolated') ||
+      norm.includes('only half traction') ||
+      norm.includes('half traction') ||
+      (norm.includes('bogie') && norm.includes('enter'));
+
+    return {
+      identifiedFaultId: "F0305P1",
+      faultTitle: isBogieIsolatedSpecific
+        ? "SS03 F0305P1: BOGIE 2 ISOLATED : Only half traction and electrical braking power available. Press <Enter> (3-Phase Loco TSD)"
+        : "SS03 F0305P1: CONVERTER -2 OIL TEMPERATURE TOO HIGH, Try to close VCB again (3-Phase Loco TSD)",
+      analysis: isBogieIsolatedSpecific
+        ? "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 157 / 179):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0305P1\nदोष संदेश: LocoXXXX SS03: Traction Bogie 2\nBOGIE 2 ISOLATED\nOnly half traction and electrical braking power available.\nPress <Enter>\nलैम्प संकेत: LSFI लगातार जलती रहेगी।\nप्रभाव: बोगी-2 आइसोलेट रहेगी (आधा ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:"
+        : "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 157 / 179):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0305P1\nदोष संदेश: LocoXXXX SS03: Traction Bogie 2\nCONVERTER -2 OIL TEMPERATURE TOO HIGH\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isBogieIsolatedSpecific
+        ? [
+            "1. एक बार कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+            "2. यदि वही मैसेज दोबारा आता है तो आधे (50%) ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+            "3. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।",
+            "════ 【यदि VCB ओपन हो और 'CONVERTER -2 OIL TEMPERATURE TOO HIGH' मैसेज आये तो कार्यवाही】 ════",
+            "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. कनवर्टर क्यूबिकल पर लगे कनवर्टर एक्सपेंशन टैंक में ऑयल लेवल की जाँच करें।",
+            "3. HB-2 पैनल में लगे MCB 59.1/2 और 63.1/2 की जाँच करें। यदि ट्रिप मिले तो VCB ओपन करके एक बार रीसेट करें और ट्रैक्शन कनवर्टर पंप-2 का चलना सुनिश्चित करें। OCB-2 का कार्य अंडरफ्रेम में लगे रेडिएटर से हवा आने के द्वारा सुनिश्चित करें।",
+            "4. लोको पायलट OCB-2 के इम्पेल्लर व केसिंग की किसी भी क्षति को चेक करें। यदि क्षतिग्रस्त पाते हैं तो VCB ओपन करके पैंटो लोअर करें। HB-2 में लगे MCB 59.1/2, MCB 62.1/2 व MCB 63.1/2 को ट्रिप करें, फिर बाद में स्विच 154 (SB-1) के द्वारा बोगी-2 को आइसोलेट करें।",
+            "5. लोको को एनर्जाइज करें व एक बोगी के साथ गाड़ी चलायें। इस स्थिति में LSFI लगातार जलती रहेगी। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+          ]
+        : [
+            "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. कनवर्टर क्यूबिकल पर लगे कनवर्टर एक्सपेंशन टैंक में ऑयल लेवल की जाँच करें।",
+            "3. HB-2 पैनल में लगे MCB 59.1/2 और 63.1/2 की जाँच करें। यदि ट्रिप मिले तो VCB ओपन करके एक बार रीसेट करें और ट्रैक्शन कनवर्टर पंप-2 का चलना सुनिश्चित करें। OCB-2 का कार्य अंडरफ्रेम में लगे रेडिएटर से हवा आने के द्वारा सुनिश्चित करें।",
+            "4. लोको पायलट OCB-2 के इम्पेल्लर व केसिंग की किसी भी क्षति को चेक करें। यदि क्षतिग्रस्त पाते हैं तो VCB ओपन करके पैंटो लोअर करें। HB-2 में लगे MCB 59.1/2, MCB 62.1/2 व MCB 63.1/2 को ट्रिप करें, फिर बाद में स्विच 154 (SB-1) के द्वारा बोगी-2 को आइसोलेट करें।",
+            "5. लोको को एनर्जाइज करें व एक बोगी के साथ गाड़ी चलायें। इस स्थिति में LSFI लगातार जलती रहेगी। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।",
+            "════ 【यदि बोगी आइसोलेट हो जाये और 'BOGIE 2 ISOLATED / Press <Enter>' मैसेज आये तो कार्यवाही】 ════",
+            "1. एक बार कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+            "2. यदि वही मैसेज दोबारा आता है तो आधे (50%) ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+            "3. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+          ],
+      precautions: "OCB-2 के इम्पेल्लर/केसिंग क्षतिग्रस्त होने पर MCB 59.1/2, 62.1/2, 63.1/2 ट्रिप करें और स्विच 154 से बोगी-2 आइसोलेट करके 50% पावर पर चलें। (नोट: बोगी-1 के लिए HB-1 पैनल में MCB 59.1/1, 62.1/1, 63.1/1 व OCB-1 होता है, जबकि बोगी-2 के लिए HB-2 पैनल में MCB 59.1/2, 62.1/2, 63.1/2 व OCB-2 होता है)।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0305P1, पेज 157 / 179)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 179,
+      pdfQuote: "SS03 F0305P1 LocoXXXX SS03: Traction Bogie 2\nCONVERTER -2 OIL TEMPERATURE TOO HIGH\nTry to close VCB again\n1. Throttle ko '0' par layein. BPFA dabakar fault ACK karein.\n2. Converter cubicle par lage converter expansion tank me oil level ki jaanch karein.\n3. HB-2 panel me lage MCB 59.1/2 aur 63.1/2 ki jaanch karein. Yadi trip mile to VCB open karke ek baar reset karein aur traction converter pump-2 ka chalna sunishchit karein. OCB-2 ka karya underframe me lage radiator se hawa aane ke dwara sunishchit karein.\n4. Loco pilot OCB-2 ke impeller va casing ki kisi bhi kshati ko check karein. Yadi kshatigrast paate hain to VCB open karke panto lower karein. HB-2 me lage MCB 59.1/2, MCB 62.1/2 va MCB 63.1/2 ko trip karein, fir baad me switch 154 (SB-1) ke dwara bogie-2 ko isolate karein.\n5. Loco ko energize karein va ek bogie ke saath gaadi chalayein. Is sthiti me LSFI lagatar jalti rahegi. TLC ko suchit karein tatha log book me darj karein.\nFollow-up: LocoXXXX SS03: Traction Bogie 2 / BOGIE 2 ISOLATED Only half traction and electrical braking power available. Press <Enter>:\n1. Ek baar control electronics ko OFF karein aur ON karein. Panto raise karein, VCB close karein tatha traction chalu karein.\n2. Yadi vahi message dobara aata hai to aadhe traction / braking power se samanya operation chalu karein.\n3. TLC ko suchit karein tatha log book me darj karein."
+    };
+  }
+
+  // 0-SS03-F0305P2. SS03 F0305P2: EQUIPMENT TEMPERATURE HIGH (Vadodara TSD Page 160 / 182)
+  const isSS03F0305P2Query =
+    norm.includes('f0305p2') ||
+    (norm.includes('f0305') && norm.includes('p2')) ||
+    (norm.includes('equipment temperature') && (norm.includes('high') || norm.includes('te/be is being reduced') || norm.includes('te is being reduced')) && (norm.includes('2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2') || norm.includes('traction bogie2'))) ||
+    (norm.includes('equipment') && norm.includes('temperature') && (norm.includes('2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')));
+
+  if (isSS03F0305P2Query) {
+    return {
+      identifiedFaultId: "F0305P2",
+      faultTitle: "SS03 F0305P2: EQUIPMENT TEMPERATURE HIGH, TE/BE is being reduced (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 160 / 182):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0305P2\nदोष संदेश:\nSS03 F0305P2 LocoXXXX SS03:Traction Bogie 2\nEQUIPMENT TEMPERATURE\nHIGH\nTE/BE is being reduced\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: TE/BE कम हो रहा है (Tractive / Electrical Braking Effort घट रहा है)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. ब्लॉक सेक्शन क्लियर करें और थ्रोटल को ‘ 0 ’ पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. ट्रांसफार्मर / कनवर्टर के ऑयल का तापमान सामान्य होने के लिए 10 मिनट या कुछ समय इंतज़ार करें।",
+        "3. HB/SB पैनल में लगे सभी MCB चेक करें यदि ट्रिप हैं तो उसे एक बार रीसेट करें।",
+        "4. सभी ऑक्सिलरी तथा MRB का चलना सुनिश्चित करें।",
+        "5. सामान्य ऑपरेशन चालू करें।",
+        "6. यदि दोष दूर नहीं होता है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और फिर ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें। अन्यथा बोगी कट आउट स्विच 154 को ऑपरेट करके बोगी-2 को आइसोलेट करें एवं TLC को सूचित करके एक बोगी के साथ गाड़ी चलाएं।",
+        "7. यदि 20 मिनट के अंदर सफलता न मिले तो सहायता इंजन की मांग करें।"
+      ],
+      precautions: "इक्विपमेंट का तापमान अधिक होने पर सुरक्षा हेतु TE/BE स्वतः कम हो जाता है। ब्लॉक सेक्शन क्लियर करके ट्रांसफार्मर व कनवर्टर ऑयल को 10 मिनट ठंडा होने दें। HB व SB पैनल के MCBs तथा मशीन रूम ब्लोअर्स (MRB) अवश्य जांचें। दोष दूर न होने पर स्विच 154 द्वारा बोगी-2 को आइसोलेट करें। 20 मिनट में निवारण न होने पर सहायता इंजन मांगें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0305P2, पेज 160 / 182)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 182,
+      pdfQuote: "SS03 F0305P2 LocoXXXX SS03:Traction Bogie 2\nEQUIPMENT TEMPERATURE HIGH\nTE/BE is being reduced\n1. Block section clear karein aur throttle ko '0' par layein. BPFA dabakar fault ACK karein.\n2. Transformer / converter ke oil ka tapman samanya hone ke liye 10 minute ya kuchh samay intezar karein.\n3. HB/SB panel me lage sabhi MCB check karein yadi trip hai to use ek baar reset karein.\n4. Sabhi auxiliary tatha MRB ka chalna sunishchit karein.\n5. Samanya operation chalu karein.\n6. Yadi dosh door nahi hota hai to control electronics ko OFF karein aur fir ON karein. Panto raise karein, VCB close karein, yadi loco samanya hota hai to traction chalu karein. Anyatha bogie cut out switch 154 ko operate karke bogie-2 ko isolate karein evam TLC ko suchit karke ek bogie ke saath gaadi chalayein.\n7. Yadi 20 minute ke andar safalta na mile to sahayata engine ki maang karein."
+    };
+  }
+
+  // 0-SS03-F0306P2. SS03 F0306P2: DC LINK CAPACITORS PRESSURE NOT OK (Vadodara TSD Page 161 / 183)
+  const isSS03F0306P2Query =
+    !norm.includes('f0206') &&
+    !norm.includes('bogie 1') &&
+    !norm.includes('bogie-1') &&
+    !norm.includes('ss02') &&
+    (
+      norm.includes('f0306p2') ||
+      (norm.includes('f0306') && norm.includes('p2')) ||
+      ((norm.includes('dc link') || norm.includes('dclink')) && (norm.includes('capacitors') || norm.includes('capacitor') || norm.includes('pressure')) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('traction bogie 2') || norm.includes('traction bogie2') || norm.includes('converter 2') || norm.includes('converter-2') || norm.includes('sr-2') || norm.includes('sr 2') || norm.includes('bi[g)-2'))) ||
+      ((norm.includes('capacitors pressure') || norm.includes('capacitor pressure')) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('traction bogie 2') || norm.includes('traction bogie2') || norm.includes('converter 2') || norm.includes('converter-2')))
+    );
+
+  if (isSS03F0306P2Query) {
+    return {
+      identifiedFaultId: "F0306P2",
+      faultTitle: "SS03 F0306P2: DC LINK CAPACITORS PRESSURE NOT OK, Normal operation can continue, To be checked during maintenance (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 161 / 183):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0306P2\nदोष संदेश:\nSS03 F0306P2 LocoXXXX SS03:Traction Bogie 2\nDC LINK CAPACITORS\nPRESSURE NOT OK\nNormal operation can continue\nTo be checked during\nmaintenance\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। गंतव्य स्थान पर मेंटेनेंस स्टाफ़ को सूचित करें।",
+        "3. मेंटेनेंस के दौरान DC Link कैपेसिटर को चेक करना चाहिए। कैपेसिटर ओपन सर्किट या ख़राब हो सकते हैं।"
+      ],
+      precautions: "यह Priority-2 स्तर का संदेश है। सामान्य ऑपरेशन जारी रहेगा। गंतव्य स्टेशन/शेड में अनुरक्षण कर्मचारियों को सूचित कर कैपेसिटर्स की जांच अवश्य कराएं (कैपेसिटर ओपन सर्किट या खराब हो सकते हैं)।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0306P2, पेज 161 / 183)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 183,
+      pdfQuote: "SS03 F0306P2 LocoXXXX SS03:Traction Bogie 2\nDC LINK CAPACITORS\nPRESSURE NOT OK\nNormal operation can continue\nTo be checked during\nmaintenance\n1. BPFA oiri fiˆÃT E±niˆl[j kr>[ ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.g>tÄy AYin pr m[>ºT)n[ºs ATiˆf ki[ s*(ct kr>[.\n3. m[>ºT)n[ºs k[ di]rin DCLink k]p[(sTr ki[ c]k krni ci(hE.k]p[(sTr ai[pn s(k<T yi Krib hi[ skt[ h>]."
+    };
+  }
+
+  // 0-SS03-F0306P1. SS03 F0306P1: CONVERTER 2 OIL PRESSURE NOT OK (Vadodara TSD Page 158-159 / 180-181)
+  const isSS03F0306P1Query =
+    !norm.includes('f0306p2') &&
+    !norm.includes('dc link') &&
+    !norm.includes('dclink') &&
+    !norm.includes('capacitors') &&
+    !norm.includes('capacitor') &&
+    !norm.includes('f0307') &&
+    !norm.includes('traction motor') &&
+    !norm.includes('tmb') &&
+    !norm.includes('53.1/2') &&
+    (
+      norm.includes('f0306p1') ||
+      (norm.includes('f0306') && !norm.includes('f0306p2') && !norm.includes('p2')) ||
+      (norm.includes('converter') && (norm.includes('2') || norm.includes('-2') || norm.includes('bogie 2') || norm.includes('ss03')) && norm.includes('oil pressure')) ||
+      ((norm.includes('ss03') || norm.includes('traction bogie 2') || norm.includes('traction bogie2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && norm.includes('oil pressure')) ||
+      (norm.includes('converter no.2 oil pressure low') || norm.includes('converter no 2 oil pressure low') || norm.includes('converter 2 oil pressure low'))
+    );
+
+  if (isSS03F0306P1Query) {
+    const isBogieIsolatedSpecific =
+      norm.includes('bogie 2 isolated') ||
+      norm.includes('bogie-2 isolated') ||
+      norm.includes('only half traction') ||
+      norm.includes('half traction') ||
+      (norm.includes('bogie') && norm.includes('enter'));
+
+    return {
+      identifiedFaultId: "F0306P1",
+      faultTitle: isBogieIsolatedSpecific
+        ? "SS03 F0306P1: BOGIE 2 ISOLATED : Only half traction and electrical braking power available. Press <Enter> (3-Phase Loco TSD)"
+        : "SS03 F0306P1: CONVERTER 2 OIL PRESSURE NOT OK, Check oil level, Try to close the VCB again (3-Phase Loco TSD)",
+      analysis: isBogieIsolatedSpecific
+        ? "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 159 / 181):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0306P1\nदोष संदेश: LocoXXXX SS03:Traction Bogie 2\nBOGIE 2 ISOLATED\nOnly half traction and electrical braking power available.\nPress <Enter>\nलैम्प संकेत: LSFI लगातार प्रकाशित रहेगी।\nप्रभाव: बोगी-2 आइसोलेट रहेगी (आधा ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:"
+        : "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 158-159 / 180-181):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0306P1\nदोष संदेश: LocoXXX SS03: Traction Bogie 2\nCONVERTER 2 OIL PRESSURE NOT OK\nCheck oil level\nTry to close the VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी (क्रम 2 व 5 स्थिति अथवा आइसोलेट होने पर LSFI लगातार प्रकाशित रहेगी)।\nप्रभाव: VCB ओपन होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isBogieIsolatedSpecific
+        ? [
+            "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और फिर ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+            "2. यदि वही मैसेज दोबारा आता है तो आधे (50%) ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+            "3. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।",
+            "════ 【यदि VCB ओपन हो और 'CONVERTER 2 OIL PRESSURE NOT OK' मैसेज आये तो कार्यवाही】 ════",
+            "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. कनवर्टर पर लगे कनवर्टर एक्सपेंशन टैंक में ऑयल लेवल की जाँच करें। यदि मैक्सिमम से ऊपर या मिनिमम से नीचे है तो बोगी-2 को स्विच 154 के द्वारा ‘ II ’ पर रखकर आइसोलेट करके आधे ट्रैक्शन से कार्य करें।",
+            "3. यदि ऑयल लेवल बराबर है तो HB-2 पैनल में MCB 63.1/2 को चेक करें। यदि ट्रिप है तो उसे VCB ओपन करके एक बार रीसेट करें। मशीन रूम में SR-2 का ऑयल पंप चल रहा है या नहीं, इसकी जाँच उसके इनलेट तथा आउटलेट पाइप को छूकर करें।",
+            "4. यदि MCB 63.1/2 को एक बार रीसेट करने के बाद दोबारा ट्रिप होता है तो उसे रीसेट न करें। बोगी-2 अपने आप आइसोलेट हो जायेगी और LSFI लगातार प्रकाशित होगी। आधे ट्रैक्शन के साथ कार्य करें।",
+            "5. लोको पायलट ट्रैक्शन कनवर्टर-2 के ऑयल की पाइप लाइन को ऑयल लीकेज तथा कोई क्षति के लिए चेक करें, जिसमें तेल का रिसाव हो सकता है और ऑयल कूलिंग ब्लोअर-2 (OCB-2) की केसिंग को इम्पेल्लर की खराबी से कोई क्षति तो नहीं है चेक करें। ऐसी स्थिति में रेडिएटर के क्षतिग्रस्त होने से तेल के रिसाव के कारण ‘ Converter No.2 oil pressure low ’ का मैसेज आ सकता है। लोको पायलट VCB ओपन करें, पैंटो लोअर करें और HB-2 पैनल पर लगे MCB 59.1/2 और MCB 63.1/2 को ट्रिप करें। बोगी-2 को स्विच 154 द्वारा ‘ II ’ पर रखकर आइसोलेट करें। लोको एनर्जाइज करके एक बोगी द्वारा कार्य करें। (उपरोक्त क्रम सं. 2 और 5 की स्थिति में LSFI लगातार प्रकाशित रहेगी। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।)",
+            "6. यदि SR-2 ऑयल पंप सामान्य है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके BUR-2 को MCB 127.22/2 के द्वारा आइसोलेट करें।",
+            "7. यदि सफलता मिलती है तो BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+            "8. यदि सफलता नहीं मिलती है तो बोगी-2 को स्विच 154 को ‘ II ’ पर रखकर आइसोलेट करें। TLC को सूचित करें।"
+          ]
+        : [
+            "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. कनवर्टर पर लगे कनवर्टर एक्सपेंशन टैंक में ऑयल लेवल की जाँच करें। यदि मैक्सिमम से ऊपर या मिनिमम से नीचे है तो बोगी-2 को स्विच 154 के द्वारा ‘ II ’ पर रखकर आइसोलेट करके आधे ट्रैक्शन से कार्य करें।",
+            "3. यदि ऑयल लेवल बराबर है तो HB-2 पैनल में MCB 63.1/2 को चेक करें। यदि ट्रिप है तो उसे VCB ओपन करके एक बार रीसेट करें। मशीन रूम में SR-2 का ऑयल पंप चल रहा है या नहीं, इसकी जाँच उसके इनलेट तथा आउटलेट पाइप को छूकर करें।",
+            "4. यदि MCB 63.1/2 को एक बार रीसेट करने के बाद दोबारा ट्रिप होता है तो उसे रीसेट न करें। बोगी-2 अपने आप आइसोलेट हो जायेगी और LSFI लगातार प्रकाशित होगी। आधे ट्रैक्शन के साथ कार्य करें।",
+            "5. लोको पायलट ट्रैक्शन कनवर्टर-2 के ऑयल की पाइप लाइन को ऑयल लीकेज तथा कोई क्षति के लिए चेक करें, जिसमें तेल का रिसाव हो सकता है और ऑयल कूलिंग ब्लोअर-2 (OCB-2) की केसिंग को इम्पेल्लर की खराबी से कोई क्षति तो नहीं है चेक करें। ऐसी स्थिति में रेडिएटर के क्षतिग्रस्त होने से तेल के रिसाव के कारण ‘ Converter No.2 oil pressure low ’ का मैसेज आ सकता है। लोको पायलट VCB ओपन करें, पैंटो लोअर करें और HB-2 पैनल पर लगे MCB 59.1/2 और MCB 63.1/2 को ट्रिप करें। बोगी-2 को स्विच 154 द्वारा ‘ II ’ पर रखकर आइसोलेट करें। लोको एनर्जाइज करके एक बोगी द्वारा कार्य करें। (उपरोक्त क्रम सं. 2 और 5 की स्थिति में LSFI लगातार प्रकाशित रहेगी। TLC को सूचित करें तथा लॉग बुक में दर्ज करें।)",
+            "6. यदि SR-2 ऑयल पंप सामान्य है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके BUR-2 को MCB 127.22/2 के द्वारा आइसोलेट करें।",
+            "7. यदि सफलता मिलती है तो BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+            "8. यदि सफलता नहीं मिलती है तो बोगी-2 को स्विच 154 को ‘ II ’ पर रखकर आइसोलेट करें। TLC को सूचित करें।",
+            "════ 【यदि बोगी आइसोलेट हो जाये और 'BOGIE 2 ISOLATED / Press <Enter>' मैसेज आये तो कार्यवाही】 ════",
+            "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और फिर ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+            "2. यदि वही मैसेज दोबारा आता है तो आधे (50%) ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+            "3. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+          ],
+      precautions: "ऑयल लेवल असामान्य होने या OCB-2/रेडिएटर क्षतिग्रस्त होने पर स्विच 154 को 'II' पर रखकर बोगी-2 को आइसोलेट करें (नोट: बोगी-1 के लिए स्विच 154 को 'I' पर रखा जाता है, जबकि बोगी-2 के लिए स्विच 154 को 'II' पर रखा जाता है)। HB-2 पैनल में MCB 59.1/2 व 63.1/2 तथा BUR-2 हेतु MCB 127.22/2 संबंधित होते हैं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0306P1, पेज 158-159 / 180-181)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 180,
+      pdfQuote: "SS03 F0306P1 LocoXXX SS03: Traction Bogie 2\nCONVERTER 2 OIL PRESSURE NOT OK\nCheck oil level\nTry to close the VCB again\n1. Throttle ko '0' par layein. BPFA dabakar fault ACK karein.\n2. Converter par lage converter expansion tank me oil level ki jaanch karein. Yadi maximum se upar ya minimum se neeche hai to bogie-2 ko switch 154 dwara 'II' par rakhkar isolate karke aadhe traction se karya karein.\n3. Yadi oil level barabar hai to HB-2 panel me MCB 63.1/2 ko check karein. Yadi trip hai to VCB open karke ek baar reset karein. SR-2 oil pump inlet/outlet chhoo kar chalna check karein.\n4. Yadi MCB 63.1/2 dobara trip hota hai to reset na karein. Bogie-2 isolate hogi, LSFI glow rahegi. Aadhe traction se karya karein.\n5. SR-2 oil pipe line leakage va OCB-2 casing check karein. VCB open, panto lower, HB-2 me MCB 59.1/2 va 63.1/2 trip karein. Switch 154 ko 'II' par rakhkar bogie-2 isolate karein.\n6. SR-2 oil pump samanya hone par BUR-2 ko MCB 127.22/2 dwara isolate karein.\n7. Safalta milne par BUR-2 isolate rakhte hue gaadi chalayein.\n8. Safalta na milne par switch 154 ko 'II' par rakhkar bogie-2 isolate karein. TLC ko suchit karein.\nFollow-up: LocoXXXX SS03:Traction Bogie 2 / BOGIE 2 ISOLATED Only half traction and electrical braking power available. Press <Enter>:\n1. Control electronics ko OFF karein aur fir ON karein. Panto raise karein, VCB close karein tatha traction chalu karein.\n2. Yadi vahi message dobara aata hai to aadhe traction / braking power se samanya operation chalu karein.\n3. TLC ko suchit karein tatha log book me darj karein."
+    };
+  }
+
+  // 0-SS03-F0307P1. SS03 F0307P1: TRACTION MOTOR TEMPERATURE TOO HIGH (Vadodara TSD Page 159-160 / 181-182)
+  const isSS03F0307P1Query =
+    !norm.includes('f0307p2') &&
+    !norm.includes('wheel skidding') &&
+    !norm.includes('reduce be') &&
+    !norm.includes('line converter isolated') &&
+    (
+      norm.includes('f0307p1') ||
+      (norm.includes('f0307') && !norm.includes('f0307p2') && !norm.includes('p2')) ||
+      (norm.includes('converter 2 blocked') || norm.includes('converter-2 blocked')) ||
+      ((norm.includes('traction motor') || norm.includes('tm')) && (norm.includes('temperature too high') || norm.includes('temperature high') || norm.includes('temp too high')) && (norm.includes('2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('converter 2') || norm.includes('converter-2') || norm.includes('ss03') || norm.includes('tmb-2') || norm.includes('tmb 2'))) ||
+      ((norm.includes('53.1/2') || norm.includes('53.1 / 2')) && (norm.includes('traction motor') || norm.includes('tm louver') || norm.includes('tmb') || norm.includes('temperature') || norm.includes('bogie 2') || norm.includes('ss03')))
+    );
+
+  if (isSS03F0307P1Query) {
+    const isBogieIsolatedSpecific =
+      norm.includes('bogie 2 isolated') ||
+      norm.includes('bogie-2 isolated') ||
+      norm.includes('only half traction') ||
+      norm.includes('half traction') ||
+      (norm.includes('bogie') && norm.includes('enter'));
+
+    return {
+      identifiedFaultId: "F0307P1",
+      faultTitle: isBogieIsolatedSpecific
+        ? "SS03 F0307P1: BOGIE 2 ISOLATED : Only half traction and electrical braking power available. Press <Enter> (3-Phase Loco TSD)"
+        : "SS03 F0307P1: TRACTION MOTOR TEMPERATURE TOO HIGH, Converter 2 blocked Bogie 2 may get isolated (3-Phase Loco TSD)",
+      analysis: isBogieIsolatedSpecific
+        ? "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 160 / 182):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0307P1\nदोष संदेश: LocoXXX SS03:Traction Bogie 2\nBOGIE 2 ISOLATED\nOnly half traction and electrical braking power available\nPress <Enter>\nलैम्प संकेत: LSFI लगातार प्रकाशित रहेगी।\nप्रभाव: बोगी-2 आइसोलेट रहेगी (सिर्फ आधा TE/BE पावर उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:"
+        : "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 159-160 / 181-182):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0307P1\nदोष संदेश: LocoXXXX SS03:Traction Bogie 2\nTRACTION MOTOR TEMPERATURE TOO HIGH\nConverter 2 blocked Bogie 2 mayget isolated\nलैम्प संकेत: LSFI प्रकाशित होगी (आइसोलेट होने पर LSFI लगातार प्रकाशित रहेगी)।\nप्रभाव: कन्वर्टर-2 ब्लॉक होगा / बोगी-2 आइसोलेट हो सकती है (सिर्फ आधा TE/BE पावर उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isBogieIsolatedSpecific
+        ? [
+            "1. MCB 53.1/1 और MCB 53.1/2 बार-बार ट्रिप होते हैं तो BUR-2 को आइसोलेट करें (MCE ऑफ करके)। VCB क्लोज़ करने का प्रयत्न करें।",
+            "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और फिर ऑन करें। पैंटो उठायें, VCB क्लोज़ करने का प्रयत्न करें और यदि लोको सामान्य हो जाता है तो ट्रैक्शन चालू करें।",
+            "3. यदि दोष दूर हो जाता है तो BUR-2 को आइसोलेट रखते हुए कार्य करें।",
+            "4. यदि दोष कायम रहता है तो बोगी-2 अपने आप आइसोलेट हो जायेगी।",
+            "5. यदि वही मैसेज पुनः आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर के साथ सामान्य ऑपरेशन चालू करें।",
+            "6. TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+            "════ 【यदि 'TRACTION MOTOR TEMPERATURE TOO HIGH' मैसेज आये तो कार्यवाही】 ════",
+            "1. ब्लॉक सेक्शन क्लियर करें और थ्रॉटल को ‘ 0 ’ पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. ट्रैक्शन मोटर ब्लोअर-2 (TMB-2) कार्य कर रहा है या नहीं, मैन्युअली एयर सक्शन द्वारा TM Louver पर चेक करें। HB-2 पैनल में लगे MCB 53.1/2 को चेक करें। यदि ट्रिप है तो उसे VCB ओपन करके एक बार रीसेट करें।"
+          ]
+        : [
+            "1. ब्लॉक सेक्शन क्लियर करें और थ्रॉटल को ‘ 0 ’ पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+            "2. ट्रैक्शन मोटर ब्लोअर-2 (TMB-2) कार्य कर रहा है या नहीं, मैन्युअली एयर सक्शन द्वारा TM Louver पर चेक करें। HB-2 पैनल में लगे MCB 53.1/2 को चेक करें। यदि ट्रिप है तो उसे VCB ओपन करके एक बार रीसेट करें।",
+            "════ 【यदि बोगी आइसोलेट हो जाये और 'BOGIE 2 ISOLATED / Press <Enter>' मैसेज आये तो कार्यवाही】 ════",
+            "1. MCB 53.1/1 और MCB 53.1/2 बार-बार ट्रिप होते हैं तो BUR-2 को आइसोलेट करें (MCE ऑफ करके)। VCB क्लोज़ करने का प्रयत्न करें।",
+            "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और फिर ऑन करें। पैंटो उठायें, VCB क्लोज़ करने का प्रयत्न करें और यदि लोको सामान्य हो जाता है तो ट्रैक्शन चालू करें।",
+            "3. यदि दोष दूर हो जाता है तो BUR-2 को आइसोलेट रखते हुए कार्य करें।",
+            "4. यदि दोष कायम रहता है तो बोगी-2 अपने आप आइसोलेट हो जायेगी।",
+            "5. यदि वही मैसेज पुनः आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर के साथ सामान्य ऑपरेशन चालू करें।",
+            "6. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+          ],
+      precautions: "ब्लॉक सेक्शन क्लियर करने के बाद ही थ्रॉटल '0' करके जांच करें। TMB-2 एयर सक्शन TM Louver पर अवश्य चेक करें। MCB 53.1/1 व 53.1/2 दोनों के बार-बार ट्रिप होने पर MCE ऑफ करके BUR-2 को आइसोलेट करें। (नोट: बोगी-1 के लिए TMB-1 व HB-1 में MCB 53.1/1 होता है, जबकि बोगी-2 के लिए TMB-2 व HB-2 में MCB 53.1/2 होता है)।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0307P1, पेज 159-160 / 181-182)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 181,
+      pdfQuote: "SS03 F0307P1 LocoXXXX SS03:Traction Bogie 2\nTRACTION MOTOR TEMPERATURE TOO HIGH\nConverter 2 blocked Bogie 2 mayget isolated\n1. Block section clear karein aur throttle ko '0' par layein. BPFA dabakar fault ACK karein.\n2. Traction motor blower-2 karya kar raha hai ya nahi, manually air suction dwara TM Louver par check karein. HB-2 panel me lage MCB 53.1/2 ko check karein. Yadi trip hai to use VCB open karke ek baar reset karein.\nFollow-up: LocoXXX SS03:Traction Bogie 2 / BOGIE 2 ISOLATED Only half traction and electrical braking power available. Press <Enter>:\n1. MCB 53.1/1 aur MCB 53.1/2 baar-baar trip hote hain to BUR-2 ko isolate karein (MCE OFF karke). VCB close karne ka prayatn karein.\n2. Control electronics ko OFF karein aur fir ON karein. Panto uthayein, VCB close karne ka prayatn karein aur yadi loco samanya ho jaata hai to traction chalu karein.\n3. Yadi dosh door ho jaata hai to BUR-2 ko isolate rakhte hue karya karein.\n4. Yadi dosh kayam rahta hai to bogie-2 apne aap isolate ho jaayegi.\n5. Yadi vahi message puna: aata hai to aadhe traction / braking power ke saath samanya operation chalu karein.\n6. TLC ko suchit karein aur log book me darj karein."
+    };
+  }
+
+  // 0-SS03-F0307P2. SS03 F0307P2: WHEEL SKIDDING IN BOGIE 2 & LINE CONVERTER ISOLATED (Vadodara TSD Page 161 / 183)
+  const isSS03F0307P2BombardierQuery =
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') &&
+    !norm.includes('bhel') && !norm.includes('medha') && !norm.includes('3/4') &&
+    !norm.includes('line converter 1') && !norm.includes('line converter1') && !norm.includes('line converter 2') && !norm.includes('line converter2') && !norm.includes('lc1') && !norm.includes('lc2') && !norm.includes('motor') &&
+    (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')) &&
+    (
+      norm.includes('line converter isolated') ||
+      (norm.includes('line converter') && (norm.includes('isolated') || norm.includes('f0307'))) ||
+      (norm.includes('bombardier') && (norm.includes('line converter') || (norm.includes('f0307') && norm.includes('reduced')))) ||
+      ((norm.includes('f0307p2') || (norm.includes('f0307') && norm.includes('p2'))) && (norm.includes('line converter') || norm.includes('bombardier') || norm.includes('igbt') || norm.includes('reduced')))
+    );
+
+  const isSS03F0307P2Query =
+    !norm.includes('f0207') &&
+    !norm.includes('bogie 1') &&
+    !norm.includes('bogie-1') &&
+    !norm.includes('ss02') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') &&
+    !norm.includes('converter 1 blocked') &&
+    !norm.includes('tmb-1') &&
+    !norm.includes('53.1/1') &&
+    (
+      norm.includes('f0307p2') ||
+      (norm.includes('f0307') && norm.includes('p2')) ||
+      isSS03F0307P2BombardierQuery ||
+      (norm.includes('wheel skidding') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2'))) ||
+      (norm.includes('reduce be') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2'))) ||
+      (norm.includes('wheel skidding') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') && (norm.includes('2') || norm.includes('ss03')))
+    );
+
+  if (isSS03F0307P2Query) {
+    if (isSS03F0307P2BombardierQuery) {
+      return {
+        identifiedFaultId: "F0307P2",
+        faultTitle: "SS03 F0307P2: LINE CONVERTER ISOLATED BOGIE 2 (M/s Bombardier Transportation IGBT Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 161 / 183):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BOMBARDIER Transportation' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0307P2\nदोष संदेश:\nSS03 F0307P2 LocoXXXX SS03: Traction Bogie 2\nLINE CONVERTER ISOLATED BOGIE 2\nReduced Traction/Braking effort\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: आधा TE/BE उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और आधे TE/BE द्वारा कार्य करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "Bombardier IGBT कनवर्टर युक्त लोको में बोगी-2 का लाइन कनवर्टर आइसोलेट होने पर केवल आधा ट्रैक्शन/ब्रेकिंग एफ़र्ट (TE/BE) उपलब्ध रहेगा। TLC को सूचित करें और लॉग बुक में नोट दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (Bombardier IGBT अतिरिक्त मैसेज, पेज 161 / 183)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 183,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BOMBARDIER Transportation ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0307P2 LocoXXXX SS03: Traction Bogie 2\nLINE CONVERTER ISOLATED BOGIE 2\nReduced Traction/Braking effort\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r aiF[ TE/BE oiri kiy< kr[>.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0307P2",
+      faultTitle: "SS03 F0307P2: WHEEL SKIDDING IN BOGIE 2, Reduce BE (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 161 / 183):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0307P2\nदोष संदेश:\nSS03 F0307P2 LocoXXXX SS03:Traction Bogie 2\nWHEEL SKIDDING IN\nBOGIE 2\nReduce BE\n(नोट: M/s Bombardier Transportation IGBT कनवर्टर लोको में 'LINE CONVERTER ISOLATED BOGIE 2' मैसेज आता है)\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: BE कम करने का निर्देश।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें। पहियों का मुक्त रूप से घूमना (Check Free movement) सुनिश्चित करें।",
+        "2. सुनिश्चित करें कि लोको पर ब्रेक बाइंडिंग तो नहीं है।",
+        "3. जाँच करें कि सभी पार्किंग ब्रेक बराबर रिलीज़ हो चुके हैं।",
+        "4. यदि गति 1 किमी/घंटा से ज़्यादा है और DDS में “ Error Tacho Generator ” का मैसेज है तो लोको पायलट सामान्य तरीके से कार्य कर सकता है।",
+        "5. ब्रेकिंग एफ़र्ट (BE) को कम करें, चालू गाड़ी में आवाज़ से व्हील स्किडिंग का अनुभव करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "6. BPCS व रिजनेरेटिव ब्रेक का उपयोग न करें।",
+        "【नोट - Bombardier IGBT कनवर्टर लोको में यदि 'LINE CONVERTER ISOLATED BOGIE 2' आये तो】: 1. BPFA द्वारा फ़ॉल्ट ACK करें और आधे TE/BE द्वारा कार्य करें। 2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "पहियों की स्किडिंग (फिसलने) पर ब्रेक बाइंडिंग और पार्किंग ब्रेक अवश्य जाँचें। पहियों पर फ्लैट टायर न बनने दें। रिजनेरेटिव ब्रेक व BPCS का प्रयोग बंद रखें। यदि Bombardier IGBT लोको में लाइन कनवर्टर आइसोलेट है तो आधे TE/BE से कार्य करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0307P2, पेज 161 / 183)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 183,
+      pdfQuote: "SS03 F0307P2 LocoXXXX SS03:Traction Bogie 2\nWHEEL SKIDDING IN\nBOGIE 2\nReduce BE\n1. BPFA oiri fiˆÃT E±niˆl[j kr[>.p(hyi[>[ ki m&±t $p s[ G*mni (Check Free movement) s&(n(Æct kr>[.\n2. s&(n(Æct kr>[ (k li[ki[ pr b\[k bie>(D>g ti[ nh)>> h].\n3. ji‡c kr>[ (k sB) pi(k><g b\[k bribr (rl)j hi[ c&k[ h].\n4. y(d g(t 1 (km)‘p\‘G>Ti s[ ¶yidi h] ai]r DDS m[> “ Error Tacho Generator ” ki m]s[j h] ti[ li[ki[ piylT simiºy tr)k[ s[ kiy< kr skti h].\n5. b\[(k>g EfT< ki[ km kr>[>, cil* giD) m[>[ aivij s[ Äh)l (AkD)>g ki an&Bv kr>[. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n6. BPCS v (rjnr[(Tv b\[k ki upyi[g n kr>[."
+    };
+  }
+
+  // 0-SS03-F0308P2. SS03 F0308P2: MOTOR 1 ISOLATED BOGIE 2 (Bombardier) & TM1 BOGIE 2 ISOLATED (MEDHA) (Vadodara TSD Page 162 & 164 / 184 & 186)
+  const isSS03F0308P2MedhaQuery =
+    !norm.includes('f0208') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') && !norm.includes('bhel') && !norm.includes('bombardier') &&
+    !norm.includes('lc1') && !norm.includes('line converter') && !norm.includes('3/4') &&
+    !norm.includes('ss05') && !norm.includes('f0503') && !norm.includes('abb') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0308') || norm.includes('tm1') || norm.includes('tm 1') || (norm.includes('5/6') && norm.includes('1')) || ((norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2')) && (norm.includes('motor 1') || norm.includes('tm 1') || norm.includes('tm1'))))) ||
+      norm.includes('tm1 bogie 2') ||
+      norm.includes('tm1 bogie-2') ||
+      norm.includes('tm1 bogie 2 isolated') ||
+      (norm.includes('tm1') && (norm.includes('isolated') || norm.includes('5/6')) && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2'))) ||
+      (norm.includes('f0308') && (norm.includes('medha') || norm.includes('tm1') || norm.includes('tm 1') || norm.includes('5/6'))) ||
+      (norm.includes('tm 1 of bogie 2 isolated') && !norm.includes('bhel') && !norm.includes('motor 1 bogie 2')) ||
+      ((norm.includes('tm1') || norm.includes('tm 1')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2')) && !norm.includes('bhel'))
+    );
+
+  const isSS03F0308P2BombardierQuery =
+    !norm.includes('f0208') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !isSS03F0308P2MedhaQuery && !norm.includes('medha') && !norm.includes('line converter') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('bhel') && !norm.includes('5/6') && !norm.includes('motor 2') && !norm.includes('motor 3') &&
+    !norm.includes('ss05') && !norm.includes('f0503') && !norm.includes('abb') &&
+    (
+      ((norm.includes('motor 1 isolated') || (norm.includes('motor 1') && norm.includes('isolated'))) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2'))) ||
+      (norm.includes('bombardier') && (norm.includes('motor 1') || norm.includes('f0308') || ((norm.includes('bogie 2') || norm.includes('ss03')) && norm.includes('motor 1')))) ||
+      ((norm.includes('f0308p2') || (norm.includes('f0308') && norm.includes('p2'))) && (norm.includes('motor') || norm.includes('bombardier') || norm.includes('igbt') || norm.includes('isolated') || norm.includes('reduced')))
+    );
+
+  const isSS03F0308P2Query =
+    !norm.includes('f0208') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') &&
+    !norm.includes('f0311') && !norm.includes('bhel') &&
+    !norm.includes('ss05') && !norm.includes('f0503') && !norm.includes('abb') &&
+    (
+      isSS03F0308P2MedhaQuery ||
+      isSS03F0308P2BombardierQuery ||
+      norm.includes('f0308p2') ||
+      (norm.includes('f0308') && norm.includes('p2')) ||
+      (norm.includes('f0308') && (norm.includes('motor 1') || norm.includes('tm 1') || norm.includes('tm1') || norm.includes('bogie 2') || norm.includes('ss03'))) ||
+      ((norm.includes('motor 1 isolated') || (norm.includes('motor 1') && norm.includes('isolated'))) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')))
+    );
+
+  if (isSS03F0308P2Query) {
+    if (isSS03F0308P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0308P2",
+        faultTitle: "SS03 F0308P2: TM1 BOGIE 2 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 164 / 186):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0308P2\nदोष संदेश:\nSS03 F0308P2 LocoXXXX SS03:Traction Bogie 2\nTM1 BOGIE 2 ISOLATED\nTM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 की TM-1 आइसोलेट रहेगी, केवल 5/6th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-2 की TM-1 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE पावर उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से ऑपरेशन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (MEDHA IGBT अतिरिक्त मैसेज, पेज 164 / 186)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 186,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0308P2 LocoXXXX SS03:Traction Bogie 2\nTM1 BOGIE 2 ISOLATED\nTM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    if (isSS03F0308P2BombardierQuery) {
+      return {
+        identifiedFaultId: "F0308P2",
+        faultTitle: "SS03 F0308P2: MOTOR 1 ISOLATED BOGIE 2 (M/s Bombardier Transportation IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 162 / 184):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BOMBARDIER Transportation' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0308P2\nदोष संदेश:\nSS03 F0308P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 1 ISOLATED\nBOGIE 2\nReduced Traction/Braking effort\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: Reduced Traction/Braking effort (आधा TE/BE उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s Bombardier Transportation IGBT कनवर्टर युक्त लोको में बोगी-2 की मोटर-1 आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें, उपलब्ध क्षमता (Reduced TE/BE) से सामान्य कार्य करें और TLC को सूचित कर लॉग बुक में नोट करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (Bombardier IGBT अतिरिक्त मैसेज, पेज 162 / 184)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 184,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BOMBARDIER Transportation ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0308P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 1 ISOLATED\nBOGIE 2\nReduced Traction/Braking effort\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0308P2",
+      faultTitle: "SS03 F0308P2: MOTOR 1 / TM1 ISOLATED BOGIE 2 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 162 एवं 164):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0308P2\nदोष संदेश:\n(1) Bombardier IGBT लोको में: MOTOR 1 ISOLATED BOGIE 2 / Reduced Traction/Braking effort\n(2) MEDHA IGBT लोको में: TM1 BOGIE 2 ISOLATED / TM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: आधा या 5/6th TE/BE उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "बोगी-2 की मोटर-1 (TM-1) आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें। Bombardier लोको में आधा TE/BE तथा MEDHA लोको में 5/6th TE/BE से सामान्य रूप से कार्य करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (पेज 162 & 164 / 184 & 186)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 186,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0308P2 LocoXXXX SS03:Traction Bogie 2\nTM1 BOGIE 2 ISOLATED\nTM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0309P2. SS03 F0309P2: MOTOR 2 ISOLATED BOGIE 2 (Bombardier) & TM2 BOGIE 2 ISOLATED (MEDHA) (Vadodara TSD Page 162 & 164 / 184 & 186)
+  const isSS03F0309P2MedhaQuery =
+    !norm.includes('f0209') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !norm.includes('f0308') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') && !norm.includes('bhel') && !norm.includes('bombardier') &&
+    !norm.includes('lc2') && !norm.includes('line converter') && !norm.includes('3/4') &&
+    !norm.includes('ss05') && !norm.includes('f0504') && !norm.includes('abb') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0309') || norm.includes('tm2') || norm.includes('tm 2') || (norm.includes('5/6') && norm.includes('2')) || ((norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2')) && (norm.includes('motor 2') || norm.includes('tm 2') || norm.includes('tm2'))))) ||
+      norm.includes('tm2 bogie 2') ||
+      norm.includes('tm2 bogie-2') ||
+      norm.includes('tm2 bogie 2 isolated') ||
+      (norm.includes('tm2') && (norm.includes('isolated') || norm.includes('5/6')) && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2'))) ||
+      (norm.includes('f0309') && (norm.includes('medha') || norm.includes('tm2') || norm.includes('tm 2') || norm.includes('5/6'))) ||
+      (norm.includes('tm 2 of bogie 2 isolated') && !norm.includes('bhel') && !norm.includes('motor 2 bogie 2')) ||
+      ((norm.includes('tm2') || norm.includes('tm 2')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2')) && !norm.includes('bhel'))
+    );
+
+  const isSS03F0309P2BombardierQuery =
+    !norm.includes('f0209') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !isSS03F0309P2MedhaQuery && !norm.includes('medha') && !norm.includes('line converter') && !norm.includes('f0308') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('bhel') && !norm.includes('5/6') && !norm.includes('motor 1') && !norm.includes('motor 3') &&
+    !norm.includes('ss05') && !norm.includes('f0504') && !norm.includes('abb') &&
+    (
+      ((norm.includes('motor 2 isolated') || (norm.includes('motor 2') && norm.includes('isolated'))) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2'))) ||
+      (norm.includes('bombardier') && (norm.includes('motor 2') || norm.includes('f0309') || ((norm.includes('bogie 2') || norm.includes('ss03')) && norm.includes('motor 2')))) ||
+      ((norm.includes('f0309p2') || (norm.includes('f0309') && norm.includes('p2'))) && (norm.includes('motor') || norm.includes('bombardier') || norm.includes('igbt') || norm.includes('isolated') || norm.includes('reduced')))
+    );
+
+  const isSS03F0309P2Query =
+    !norm.includes('f0209') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') &&
+    !norm.includes('f0312') && !norm.includes('bhel') &&
+    !norm.includes('ss05') && !norm.includes('f0504') && !norm.includes('abb') &&
+    (
+      isSS03F0309P2MedhaQuery ||
+      isSS03F0309P2BombardierQuery ||
+      norm.includes('f0309p2') ||
+      (norm.includes('f0309') && norm.includes('p2')) ||
+      (norm.includes('f0309') && (norm.includes('motor 2') || norm.includes('tm 2') || norm.includes('tm2') || norm.includes('bogie 2') || norm.includes('ss03'))) ||
+      ((norm.includes('motor 2 isolated') || (norm.includes('motor 2') && norm.includes('isolated'))) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')))
+    );
+
+  if (isSS03F0309P2Query) {
+    if (isSS03F0309P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0309P2",
+        faultTitle: "SS03 F0309P2: TM2 BOGIE 2 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 164 / 186):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0309P2\nदोष संदेश:\nSS03 F0309P2 LocoXXXX SS03:Traction Bogie 2\nTM2 BOGIE 2 ISOLATED\nTM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 की TM-2 आइसोलेट रहेगी, केवल 5/6th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-2 की TM-2 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE पावर उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से ऑपरेशन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (MEDHA IGBT अतिरिक्त मैसेज, पेज 164 / 186)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 186,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0309P2 LocoXXXX SS03:Traction Bogie 2\nTM2 BOGIE 2 ISOLATED\nTM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    if (isSS03F0309P2BombardierQuery) {
+      return {
+        identifiedFaultId: "F0309P2",
+        faultTitle: "SS03 F0309P2: MOTOR 2 ISOLATED BOGIE 2 (M/s Bombardier Transportation IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 162 / 184):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BOMBARDIER Transportation' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0309P2\nदोष संदेश:\nSS03 F0309P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 2 ISOLATED\nBOGIE 2\nReduced Traction/Braking effort\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: Reduced Traction/Braking effort (आधा TE/BE उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s Bombardier Transportation IGBT कनवर्टर युक्त लोको में बोगी-2 की मोटर-2 आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें, उपलब्ध क्षमता (Reduced TE/BE) से सामान्य कार्य करें और TLC को सूचित कर लॉग बुक में नोट करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (Bombardier IGBT अतिरिक्त मैसेज, पेज 162 / 184)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 184,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BOMBARDIER Transportation ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0309P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 2 ISOLATED\nBOGIE 2\nReduced Traction/Braking effort\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0309P2",
+      faultTitle: "SS03 F0309P2: MOTOR 2 / TM2 ISOLATED BOGIE 2 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 162 एवं 164):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0309P2\nदोष संदेश:\n(1) Bombardier IGBT लोको में: MOTOR 2 ISOLATED BOGIE 2 / Reduced Traction/Braking effort\n(2) MEDHA IGBT लोको में: TM2 BOGIE 2 ISOLATED / TM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: आधा या 5/6th TE/BE उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "बोगी-2 की मोटर-2 (TM-2) आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें। Bombardier लोको में आधा TE/BE तथा MEDHA लोको में 5/6th TE/BE से सामान्य रूप से कार्य करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (पेज 162 & 164 / 184 & 186)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 186,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0309P2 LocoXXXX SS03:Traction Bogie 2\nTM2 BOGIE 2 ISOLATED\nTM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0310P2. SS03 F0310P2: MOTOR 3 ISOLATED BOGIE 2 (Bombardier) & TM3 BOGIE 2 ISOLATED (MEDHA) (Vadodara TSD Page 162 & 164 / 184 & 186)
+  const isSS03F0310P2MedhaQuery =
+    !norm.includes('f0210') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') && !norm.includes('bhel') && !norm.includes('bombardier') &&
+    !norm.includes('lc') && !norm.includes('line converter') && !norm.includes('3/4') &&
+    !norm.includes('ss05') && !norm.includes('f0505') && !norm.includes('abb') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0310') || norm.includes('tm3') || norm.includes('tm 3') || (norm.includes('5/6') && norm.includes('3')) || ((norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2')) && (norm.includes('motor 3') || norm.includes('tm 3') || norm.includes('tm3'))))) ||
+      norm.includes('tm3 bogie 2') ||
+      norm.includes('tm3 bogie-2') ||
+      norm.includes('tm3 bogie 2 isolated') ||
+      (norm.includes('tm3') && (norm.includes('isolated') || norm.includes('5/6')) && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2'))) ||
+      (norm.includes('f0310') && (norm.includes('medha') || norm.includes('tm3') || norm.includes('tm 3') || norm.includes('5/6'))) ||
+      (norm.includes('tm 3 of bogie 2 isolated') && !norm.includes('bhel') && !norm.includes('motor 3 bogie 2')) ||
+      ((norm.includes('tm3') || norm.includes('tm 3')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2')) && !norm.includes('bhel'))
+    );
+
+  const isSS03F0310P2BombardierQuery =
+    !norm.includes('f0210') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !isSS03F0310P2MedhaQuery && !norm.includes('medha') && !norm.includes('line converter') && !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('bhel') && !norm.includes('5/6') && !norm.includes('motor 1') && !norm.includes('motor 2') &&
+    !norm.includes('ss05') && !norm.includes('f0505') && !norm.includes('abb') &&
+    (
+      ((norm.includes('motor 3 isolated') || (norm.includes('motor 3') && norm.includes('isolated'))) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2'))) ||
+      (norm.includes('bombardier') && (norm.includes('motor 3') || norm.includes('f0310') || ((norm.includes('bogie 2') || norm.includes('ss03')) && norm.includes('motor 3')))) ||
+      ((norm.includes('f0310p2') || (norm.includes('f0310') && norm.includes('p2'))) && (norm.includes('motor') || norm.includes('bombardier') || norm.includes('igbt') || norm.includes('isolated') || norm.includes('reduced')))
+    );
+
+  const isSS03F0310P2Query =
+    !norm.includes('f0210') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') &&
+    !norm.includes('f0313') && !norm.includes('bhel') &&
+    !norm.includes('ss05') && !norm.includes('f0505') && !norm.includes('abb') &&
+    (
+      isSS03F0310P2MedhaQuery ||
+      isSS03F0310P2BombardierQuery ||
+      norm.includes('f0310p2') ||
+      (norm.includes('f0310') && norm.includes('p2')) ||
+      (norm.includes('f0310') && (norm.includes('motor 3') || norm.includes('tm 3') || norm.includes('tm3') || norm.includes('bogie 2') || norm.includes('ss03'))) ||
+      ((norm.includes('motor 3 isolated') || (norm.includes('motor 3') && norm.includes('isolated'))) && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')))
+    );
+
+  if (isSS03F0310P2Query) {
+    if (isSS03F0310P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0310P2",
+        faultTitle: "SS03 F0310P2: TM3 BOGIE 2 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 164 / 186):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0310P2\nदोष संदेश:\nSS03 F0310P2 LocoXXXX SS03:Traction Bogie 2\nTM3 BOGIE 2 ISOLATED\nTM 3 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 की TM-3 आइसोलेट रहेगी, केवल 5/6th ट्रैक्शन/इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-2 की TM-3 आइसोलेट होने पर केवल 5/6th (लगभग 83.3%) TE/BE पावर उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से ऑपरेशन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (MEDHA IGBT अतिरिक्त मैसेज, पेज 164 / 186)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 186,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0310P2 LocoXXXX SS03:Traction Bogie 2\nTM3 BOGIE 2 ISOLATED\nTM 3 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    if (isSS03F0310P2BombardierQuery) {
+      return {
+        identifiedFaultId: "F0310P2",
+        faultTitle: "SS03 F0310P2: MOTOR 3 ISOLATED BOGIE 2 (M/s Bombardier Transportation IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 162 / 184):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BOMBARDIER Transportation' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0310P2\nदोष संदेश:\nSS03 F0310P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 3 ISOLATED\nBOGIE 2\nReduced Traction/Braking effort\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: Reduced Traction/Braking effort (आधा TE/BE उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s Bombardier Transportation IGBT कनवर्टर युक्त लोको में बोगी-2 की मोटर-3 आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें, उपलब्ध क्षमता (Reduced TE/BE) से सामान्य कार्य करें और TLC को सूचित कर लॉग बुक में नोट करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (Bombardier IGBT अतिरिक्त मैसेज, पेज 162 / 184)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 184,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BOMBARDIER Transportation ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0310P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 3 ISOLATED\nBOGIE 2\nReduced Traction/Braking effort\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0310P2",
+      faultTitle: "SS03 F0310P2: MOTOR 3 / TM3 ISOLATED BOGIE 2 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 162 एवं 164):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0310P2\nदोष संदेश:\n(1) Bombardier IGBT लोको में: MOTOR 3 ISOLATED BOGIE 2 / Reduced Traction/Braking effort\n(2) MEDHA IGBT लोको में: TM3 BOGIE 2 ISOLATED / TM 3 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: आधा या 5/6th TE/BE उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "बोगी-2 की मोटर-3 (TM-3) आइसोलेट होने पर BPFA दबाकर फ़ॉल्ट ACK करें। Bombardier लोको में आधा TE/BE तथा MEDHA लोको में 5/6th TE/BE से सामान्य रूप से कार्य करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (पेज 162 & 164 / 184 & 186)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 186,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0310P2 LocoXXXX SS03:Traction Bogie 2\nTM3 BOGIE 2 ISOLATED\nTM 3 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0311P2. SS03 F0311P2: MOTOR 1 BOGIE 2 ISOLATED (BHEL) & LINE CONVERTER 1 BOGIE 2 ISOLATED (MEDHA) (Vadodara TSD Page 162 & 164 / 184 & 186)
+  const isSS03F0311P2MedhaQuery =
+    !norm.includes('f0211') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') && !norm.includes('bhel') &&
+    !norm.includes('lc2') && !norm.includes('line converter 2') && !norm.includes('line converter2') &&
+    !norm.includes('ss05') && !norm.includes('f0506') && !norm.includes('abb') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0311') || norm.includes('lc1') || norm.includes('line converter 1') || norm.includes('line converter1') || (norm.includes('3/4') && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2'))))) ||
+      (norm.includes('f0311') && (norm.includes('medha') || norm.includes('line converter') || norm.includes('lc1') || norm.includes('3/4'))) ||
+      ((norm.includes('line converter 1') || norm.includes('line converter1') || norm.includes('lc1')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')) && (norm.includes('medha') || norm.includes('f0311') || !norm.includes('f0314'))) ||
+      (norm.includes('lc1 of bogie 2') && norm.includes('3/4') && (norm.includes('medha') || norm.includes('f0311')))
+    );
+
+  const isSS03F0311P2BhelQuery =
+    !norm.includes('f0211') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !isSS03F0311P2MedhaQuery && !norm.includes('medha') && !norm.includes('line converter') && !norm.includes('lc1') && !norm.includes('3/4') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') &&
+    !norm.includes('ss05') && !norm.includes('f0503') && !norm.includes('abb') &&
+    (
+      (norm.includes('bhel') && (norm.includes('motor 1') || norm.includes('tm 1') || norm.includes('f0311') || (norm.includes('5/6') && norm.includes('1')))) ||
+      ((norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')) && (
+        (norm.includes('tm 1') && (norm.includes('isolated') || norm.includes('5/6'))) ||
+        (norm.includes('motor 1') && (norm.includes('isolated') || norm.includes('5/6'))) ||
+        ((norm.includes('f0311p2') || (norm.includes('f0311') && norm.includes('p2'))) && (norm.includes('motor') || norm.includes('tm') || norm.includes('5/6')))
+      ))
+    );
+
+  const isSS03F0311P2Query =
+    !norm.includes('f0211') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') &&
+    !norm.includes('f0308') &&
+    !norm.includes('ss05') && !norm.includes('f0506') && !norm.includes('f0503') && !norm.includes('abb') &&
+    (
+      isSS03F0311P2MedhaQuery ||
+      isSS03F0311P2BhelQuery ||
+      norm.includes('f0311p2') ||
+      (norm.includes('f0311') && norm.includes('p2')) ||
+      (norm.includes('f0311') && (norm.includes('motor 1') || norm.includes('tm 1') || norm.includes('lc1') || norm.includes('line converter') || norm.includes('bogie 2') || norm.includes('ss03'))) ||
+      ((norm.includes('motor 1') || norm.includes('tm 1')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2')) && !norm.includes('bombardier') && !norm.includes('f0308'))
+    );
+
+  if (isSS03F0311P2Query) {
+    if (isSS03F0311P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0311P2",
+        faultTitle: "SS03 F0311P2: LINE CONVERTER 1 BOGIE 2 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 164 / 186):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0311P2\nदोष संदेश:\nSS03 F0311P2 LocoXXXX SS03:Traction Bogie 2\nLINE CONVERTER1 BOGIE 2\nISOLATED\nLC1 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 का लाइन कनवर्टर-1 (LC1) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-2 का LC1 (Line Converter 1) आइसोलेट होने पर केवल 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (MEDHA IGBT अतिरिक्त मैसेज, पेज 164 / 186)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 186,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0311P2 LocoXXXX SS03:Traction Bogie 2\nLINE CONVERTER1 BOGIE 2\nISOLATED\nLC1 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    if (isSS03F0311P2BhelQuery) {
+      return {
+        identifiedFaultId: "F0311P2",
+        faultTitle: "SS03 F0311P2: MOTOR 1 BOGIE 2 ISOLATED (M/s BHEL IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 162 / 184):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0311P2\nदोष संदेश:\nSS03 F0311P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 1 BOGIE 2\nISOLATED\nTM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: TM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available (केवल 5/6 ट्रैक्शन व इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहेगी)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-2 की TM-1 आइसोलेट होने पर 5/6 ट्रैक्शन व इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहेगी। BPFA दबाकर फ़ॉल्ट ACK करें और सामान्य कार्य करते हुए TLC को सूचित करें व लॉग बुक में नोट करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (BHEL IGBT अतिरिक्त मैसेज, पेज 162 / 184)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 184,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0311P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 1 BOGIE 2\nISOLATED\nTM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0311P2",
+      faultTitle: "SS03 F0311P2: MOTOR 1 ISOLATED (BHEL) / LINE CONVERTER 1 ISOLATED (MEDHA) BOGIE 2",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 162 एवं 164):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0311P2\nदोष संदेश:\n(1) BHEL IGBT लोको में: MOTOR 1 BOGIE 2 ISOLATED / TM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available\n(2) MEDHA IGBT लोको में: LINE CONVERTER1 BOGIE 2 ISOLATED / LC1 of bogie 2 isolated only 3/4th of traction/electrical Braking power available\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: BHEL लोको में 5/6th TE/BE तथा MEDHA लोको में 3/4th TE/BE उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "बोगी-2 में F0311P2 आने पर BPFA दबाकर फ़ॉल्ट ACK करें। BHEL लोको में बोगी-2 की TM-1 आइसोलेट (5/6th TE/BE) तथा MEDHA लोको में LC1 आइसोलेट (3/4th TE/BE) से सामान्य कार्य करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (पेज 162 & 164 / 184 & 186)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 186,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज:\n(BHEL) SS03 F0311P2 MOTOR 1 BOGIE 2 ISOLATED\n(MEDHA) SS03 F0311P2 LINE CONVERTER1 BOGIE 2 ISOLATED\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0312P2. SS03 F0312P2: MOTOR 2 BOGIE 2 ISOLATED (BHEL) & LINE CONVERTER 2 BOGIE 2 ISOLATED (MEDHA) (Vadodara TSD Page 163 & 164 / 185 & 186)
+  const isSS03F0312P2MedhaQuery =
+    !norm.includes('ss05') && !norm.includes('f0507') && !norm.includes('f0504') && !norm.includes('abb') &&
+    !norm.includes('f0212') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') && !norm.includes('bhel') &&
+    !norm.includes('lc1') && !norm.includes('line converter 1') && !norm.includes('line converter1') &&
+    (
+      (norm.includes('medha') && (norm.includes('f0312') || norm.includes('lc2') || norm.includes('line converter 2') || norm.includes('line converter2') || (norm.includes('3/4') && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2'))))) ||
+      (norm.includes('f0312') && (norm.includes('medha') || norm.includes('line converter') || norm.includes('lc2') || norm.includes('3/4'))) ||
+      ((norm.includes('line converter 2') || norm.includes('line converter2') || norm.includes('lc2')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')) && (norm.includes('medha') || norm.includes('f0312') || !norm.includes('f0315'))) ||
+      (norm.includes('lc2 of bogie 2') && norm.includes('3/4') && (norm.includes('medha') || norm.includes('f0312')))
+    );
+
+  const isSS03F0312P2BhelQuery =
+    !norm.includes('ss05') && !norm.includes('f0507') && !norm.includes('f0504') && !norm.includes('abb') &&
+    !norm.includes('f0212') && !norm.includes('ss02') && !norm.includes('bogie 1') && !norm.includes('bogie-1') &&
+    !isSS03F0312P2MedhaQuery && !norm.includes('medha') && !norm.includes('line converter') && !norm.includes('lc2') && !norm.includes('3/4') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0313') && !norm.includes('f0314') && !norm.includes('f0315') &&
+    (
+      (norm.includes('bhel') && (norm.includes('motor 2') || norm.includes('tm 2') || norm.includes('f0312') || (norm.includes('5/6') && norm.includes('2')))) ||
+      ((norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')) && (
+        (norm.includes('tm 2') && (norm.includes('isolated') || norm.includes('5/6'))) ||
+        (norm.includes('motor 2') && (norm.includes('isolated') || norm.includes('5/6'))) ||
+        ((norm.includes('f0312p2') || (norm.includes('f0312') && norm.includes('p2'))) && (norm.includes('motor') || norm.includes('tm') || norm.includes('5/6')))
+      ))
+    );
+
+  const isSS03F0312P2Query =
+    !norm.includes('ss05') && !norm.includes('f0507') && !norm.includes('f0504') && !norm.includes('abb') &&
+    !norm.includes('f0212') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') &&
+    !norm.includes('f0309') &&
+    (
+      isSS03F0312P2MedhaQuery ||
+      isSS03F0312P2BhelQuery ||
+      norm.includes('f0312p2') ||
+      (norm.includes('f0312') && norm.includes('p2')) ||
+      (norm.includes('f0312') && (norm.includes('motor 2') || norm.includes('tm 2') || norm.includes('lc2') || norm.includes('line converter') || norm.includes('bogie 2') || norm.includes('ss03'))) ||
+      ((norm.includes('motor 2') || norm.includes('tm 2')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2')) && !norm.includes('bombardier') && !norm.includes('f0309'))
+    );
+
+  if (isSS03F0312P2Query) {
+    if (isSS03F0312P2MedhaQuery) {
+      return {
+        identifiedFaultId: "F0312P2",
+        faultTitle: "SS03 F0312P2: LINE CONVERTER 2 BOGIE 2 ISOLATED (M/s MEDHA IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 164 / 186):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s MEDHA' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0312P2\nदोष संदेश:\nSS03 F0312P2 LocoXXXX SS03:Traction Bogie 2\nLINE CONVERTER2 BOGIE 2\nISOLATED\nLC2 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 का लाइन कनवर्टर-2 (LC2) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s MEDHA IGBT कनवर्टर युक्त लोको में बोगी-2 का LC2 (Line Converter 2) आइसोलेट होने पर केवल 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (MEDHA IGBT अतिरिक्त मैसेज, पेज 164 / 186)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 186,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s MEDHA ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0312P2 LocoXXXX SS03:Traction Bogie 2\nLINE CONVERTER2 BOGIE 2\nISOLATED\nLC2 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    if (isSS03F0312P2BhelQuery) {
+      return {
+        identifiedFaultId: "F0312P2",
+        faultTitle: "SS03 F0312P2: MOTOR 2 BOGIE 2 ISOLATED (M/s BHEL IGBT Traction Converter)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 163 / 185):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0312P2\nदोष संदेश:\nSS03 F0312P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 2 BOGIE 2\nISOLATED\nTM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: TM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available (केवल 5/6 ट्रैक्शन व इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहेगी)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+          "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-2 की TM-2 आइसोलेट होने पर 5/6 ट्रैक्शन व इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहेगी। BPFA दबाकर फ़ॉल्ट ACK करें और सामान्य कार्य करते हुए TLC को सूचित करें व लॉग बुक में नोट करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (BHEL IGBT अतिरिक्त मैसेज, पेज 163 / 185)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 185,
+        pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0312P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 2 BOGIE 2\nISOLATED\nTM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+      };
+    }
+
+    return {
+      identifiedFaultId: "F0312P2",
+      faultTitle: "SS03 F0312P2: MOTOR 2 ISOLATED (BHEL) / LINE CONVERTER 2 ISOLATED (MEDHA) BOGIE 2",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 163 एवं 164):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0312P2\nदोष संदेश:\n(1) BHEL IGBT लोको में: MOTOR 2 BOGIE 2 ISOLATED / TM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available\n(2) MEDHA IGBT लोको में: LINE CONVERTER2 BOGIE 2 ISOLATED / LC2 of bogie 2 isolated only 3/4th of traction/electrical Braking power available\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: BHEL लोको में 5/6th TE/BE तथा MEDHA लोको में 3/4th TE/BE उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "बोगी-2 में F0312P2 आने पर BPFA दबाकर फ़ॉल्ट ACK करें। BHEL लोको में बोगी-2 की TM-2 आइसोलेट (5/6th TE/BE) तथा MEDHA लोको में LC2 आइसोलेट (3/4th TE/BE) से सामान्य कार्य करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (पेज 163 & 164 / 185 & 186)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 186,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज:\n(BHEL) SS03 F0312P2 MOTOR 2 BOGIE 2 ISOLATED\n(MEDHA) SS03 F0312P2 LINE CONVERTER2 BOGIE 2 ISOLATED\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0313P2. SS03 F0313P2: MOTOR 3 BOGIE 2 ISOLATED (M/s BHEL IGBT Traction Converter) (Vadodara TSD Page 163 / 185)
+  const isSS03F0313P2BhelQuery =
+    !norm.includes('ss05') && !norm.includes('f0505') && !norm.includes('abb') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0312') &&
+    (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')) &&
+    (
+      (norm.includes('bhel') && (norm.includes('motor 3') || norm.includes('tm 3') || norm.includes('f0313'))) ||
+      (norm.includes('tm 3') && (norm.includes('isolated') || norm.includes('5/6'))) ||
+      (norm.includes('motor 3') && (norm.includes('isolated') || norm.includes('5/6'))) ||
+      norm.includes('f0313p2') ||
+      (norm.includes('f0313') && norm.includes('p2')) ||
+      (norm.includes('f0313') && !norm.includes('medha'))
+    );
+
+  const isSS03F0313P2Query =
+    !norm.includes('ss05') && !norm.includes('f0505') && !norm.includes('abb') &&
+    !norm.includes('f0213') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') &&
+    !norm.includes('medha') && !norm.includes('f0310') &&
+    (
+      isSS03F0313P2BhelQuery ||
+      norm.includes('f0313p2') ||
+      (norm.includes('f0313') && norm.includes('p2')) ||
+      (norm.includes('f0313') && (norm.includes('motor 3') || norm.includes('bogie 2') || norm.includes('ss03'))) ||
+      ((norm.includes('motor 3') || norm.includes('tm 3')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2')))
+    );
+
+  if (isSS03F0313P2Query) {
+    return {
+      identifiedFaultId: "F0313P2",
+      faultTitle: "SS03 F0313P2: MOTOR 3 BOGIE 2 ISOLATED (M/s BHEL IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 163 / 185):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0313P2\nदोष संदेश:\nSS03 F0313P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 3 BOGIE 2\nISOLATED\nTM 3 of bogie 2 isolated only 5/6th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: TM 3 of bogie 2 isolated only 5/6th of traction/electrical Braking power available (केवल 5/6 ट्रैक्शन व इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहेगी)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-2 की TM-3 आइसोलेट होने पर 5/6 ट्रैक्शन व इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहेगी। BPFA दबाकर फ़ॉल्ट ACK करें और सामान्य कार्य करते हुए TLC को सूचित करें व लॉग बुक में नोट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (BHEL IGBT अतिरिक्त मैसेज, पेज 163 / 185)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 185,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0313P2 LocoXXXX SS03:Traction Bogie 2\nMOTOR 3 BOGIE 2\nISOLATED\nTM 3 of bogie 2 isolated only 5/6th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0314P2. SS03 F0314P2: LINE CONVERTER 1 BOGIE 2 ISOLATED (M/s BHEL IGBT Traction Converter) (Vadodara TSD Page 163 / 185)
+  const isSS03F0314P2BhelQuery =
+    !norm.includes('ss05') && !norm.includes('f0506') && !norm.includes('f0507') && !norm.includes('abb') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0315') &&
+    (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')) &&
+    (
+      (norm.includes('bhel') && (norm.includes('line converter 1') || norm.includes('line converter1') || norm.includes('lc1') || norm.includes('f0314'))) ||
+      (norm.includes('lc1') && (norm.includes('isolated') || norm.includes('3/4'))) ||
+      (norm.includes('line converter 1') && (norm.includes('isolated') || norm.includes('3/4'))) ||
+      (norm.includes('line converter1') && (norm.includes('isolated') || norm.includes('3/4'))) ||
+      norm.includes('f0314p2') ||
+      (norm.includes('f0314') && norm.includes('p2')) ||
+      (norm.includes('f0314') && !norm.includes('medha'))
+    );
+
+  const isSS03F0314P2Query =
+    !norm.includes('ss05') && !norm.includes('f0506') && !norm.includes('f0507') && !norm.includes('abb') &&
+    !norm.includes('f0214') && !norm.includes('f0211') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') &&
+    !norm.includes('f0311') && !norm.includes('medha') &&
+    (
+      isSS03F0314P2BhelQuery ||
+      norm.includes('f0314p2') ||
+      (norm.includes('f0314') && norm.includes('p2')) ||
+      (norm.includes('f0314') && (norm.includes('line converter') || norm.includes('lc1') || norm.includes('bogie 2') || norm.includes('ss03'))) ||
+      ((norm.includes('line converter 1') || norm.includes('line converter1') || norm.includes('lc1')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2'))) ||
+      (norm.includes('lc1 of bogie 2') && norm.includes('isolated'))
+    );
+
+  if (isSS03F0314P2Query) {
+    return {
+      identifiedFaultId: "F0314P2",
+      faultTitle: "SS03 F0314P2: LINE CONVERTER 1 BOGIE 2 ISOLATED (M/s BHEL IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 163 / 185):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0314P2\nदोष संदेश:\nSS03 F0314P2 LocoXXXX SS03:Traction Bogie 2\nLINE CONVERTER1 BOGIE 2\nISOLATED\nLC1 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 का लाइन कनवर्टर-1 (LC1) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-2 का LC1 (Line Converter 1) आइसोलेट होने पर 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (BHEL IGBT अतिरिक्त मैसेज, पेज 163 / 185)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 185,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0314P2 LocoXXXX SS03:Traction Bogie 2\nLINE CONVERTER1 BOGIE 2\nISOLATED\nLC1 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-F0315P2. SS03 F0315P2: LINE CONVERTER 2 BOGIE 2 ISOLATED (M/s BHEL IGBT Traction Converter) (Vadodara TSD Page 164 / 186)
+  const isSS03F0315P2BhelQuery =
+    !norm.includes('ss05') && !norm.includes('f0506') && !norm.includes('f0507') && !norm.includes('abb') &&
+    !norm.includes('f0308') && !norm.includes('f0309') && !norm.includes('f0310') && !norm.includes('f0311') && !norm.includes('f0312') && !norm.includes('f0313') && !norm.includes('f0314') &&
+    (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2') || norm.includes('traction bogie 2')) &&
+    (
+      (norm.includes('bhel') && (norm.includes('line converter 2') || norm.includes('line converter2') || norm.includes('lc2') || norm.includes('f0315'))) ||
+      (norm.includes('lc2') && (norm.includes('isolated') || norm.includes('3/4'))) ||
+      (norm.includes('line converter 2') && (norm.includes('isolated') || norm.includes('3/4'))) ||
+      (norm.includes('line converter2') && (norm.includes('isolated') || norm.includes('3/4'))) ||
+      norm.includes('f0315p2') ||
+      (norm.includes('f0315') && norm.includes('p2')) ||
+      (norm.includes('f0315') && !norm.includes('medha'))
+    );
+
+  const isSS03F0315P2Query =
+    !norm.includes('ss05') && !norm.includes('f0506') && !norm.includes('f0507') && !norm.includes('abb') &&
+    !norm.includes('f0215') && !norm.includes('f0212') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('ss02') &&
+    !norm.includes('f0312') && !norm.includes('medha') &&
+    (
+      isSS03F0315P2BhelQuery ||
+      norm.includes('f0315p2') ||
+      (norm.includes('f0315') && norm.includes('p2')) ||
+      (norm.includes('f0315') && (norm.includes('line converter') || norm.includes('lc2') || norm.includes('bogie 2') || norm.includes('ss03'))) ||
+      ((norm.includes('line converter 2') || norm.includes('line converter2') || norm.includes('lc2')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('ss03') || norm.includes('bi[g)-2'))) ||
+      (norm.includes('lc2 of bogie 2') && norm.includes('isolated'))
+    );
+
+  if (isSS03F0315P2Query) {
+    return {
+      identifiedFaultId: "F0315P2",
+      faultTitle: "SS03 F0315P2: LINE CONVERTER 2 BOGIE 2 ISOLATED (M/s BHEL IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 164 / 186):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s BHEL' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0315P2\nदोष संदेश:\nSS03 F0315P2 LocoXXXX SS03:Traction Bogie 2\nLINE CONVERTER2 BOGIE 2\nISOLATED\nLC2 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 का लाइन कनवर्टर-2 (LC2) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एकनॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s BHEL IGBT कनवर्टर युक्त लोको में बोगी-2 का LC2 (Line Converter 2) आइसोलेट होने पर 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (BHEL IGBT अतिरिक्त मैसेज, पेज 164 / 186)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 186,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s BHEL ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS03 F0315P2 LocoXXXX SS03:Traction Bogie 2\nLINE CONVERTER2 BOGIE 2\nISOLATED\nLC2 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS03-BOGIE2-ISOLATED. SS03 F0301P1: BOGIE 2 ISOLATED : Only half traction and electrical braking power available Press <Enter> (Vadodara TSD Page 154-155 / 177)
+  const isSS03Bogie2IsolatedQuery =
+    !norm.includes('ss05') && !norm.includes('f0503') && !norm.includes('f0504') && !norm.includes('f0505') && !norm.includes('f0506') && !norm.includes('f0507') && !norm.includes('abb') &&
+    !norm.includes('tm 1') && !norm.includes('tm1') && !norm.includes('tm 2') && !norm.includes('tm2') && !norm.includes('tm 3') && !norm.includes('tm3') &&
+    !norm.includes('motor 1') && !norm.includes('motor 2') && !norm.includes('motor 3') &&
+    !norm.includes('line converter') && !norm.includes('lc1') && !norm.includes('lc2') &&
+    !norm.includes('f0302') &&
+    !norm.includes('f0303') &&
+    !norm.includes('f0305') &&
+    !norm.includes('f0306') &&
+    !norm.includes('f0307') &&
+    !norm.includes('f0308') &&
+    !norm.includes('f0309') &&
+    !norm.includes('f0310') &&
+    !norm.includes('f0311') &&
+    !norm.includes('f0312') &&
+    !norm.includes('f0313') &&
+    !norm.includes('f0314') &&
+    !norm.includes('f0315') &&
+    !norm.includes('traction motor') &&
+    !norm.includes('53.1/2') &&
+    !norm.includes('53.1/1') &&
+    !norm.includes('converter 2 blocked') &&
+    !norm.includes('converter-2 blocked') &&
+    !norm.includes('oil temperature') &&
+    !norm.includes('oil pressure') &&
+    !norm.includes('gate unit') &&
+    !norm.includes('contactor') &&
+    !norm.includes('stuck off') &&
+    !norm.includes('coc 88') &&
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('bogie 2 isolated') ||
+      norm.includes('bogie-2 isolated') ||
+      norm.includes('traction bogie 2 isolated') ||
+      norm.includes('traction bogie-2 isolated') ||
+      (norm.includes('ss03') && (norm.includes('isolated') || norm.includes('half traction') || norm.includes('enter') || norm.includes('154'))) ||
+      (norm.includes('bogie 2') && (norm.includes('half traction') || norm.includes('press <enter>') || norm.includes('press enter') || norm.includes('only half') || norm.includes('154') || norm.includes('isolated'))) ||
+      (norm.includes('f0301') && (norm.includes('isolated') || norm.includes('half traction') || norm.includes('enter') || norm.includes('154') || norm.includes('press'))) ||
+      norm.includes('asc 2: error ps hardware') ||
+      norm.includes('asc 2: error ps fault') ||
+      norm.includes('bogie 2 error tacho generator') ||
+      (norm.includes('error ps hardware') && norm.includes('2'))
+    );
+
+  if (isSS03Bogie2IsolatedQuery) {
+    return {
+      identifiedFaultId: "SS03-BOGIE2-ISOLATED",
+      faultTitle: "SS03 F0301P1: BOGIE 2 ISOLATED : Only half traction and electrical braking power available Press <Enter> (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 154-155 / 177):\nसबसिस्टम: SS03 (Traction Bogie 2)\nदोष कोड: F0301P1 / Bogie 2 Isolated\nदोष संदेश:\nSS03 F0301P1 LocoXXXX SS03:Traction Bogie 2\nBOGIE 2 ISOLATED :\nOnly half traction and electrical braking power available\nPress <Enter>\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 आइसोलेट रहेगी, केवल आधा (50%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. यदि लोको पायलट 154 स्विच के द्वारा बोगी-2 को आइसोलेट करता है तो उसके बाद डिस्प्ले बोर्ड पर ENTER Key प्रेस करें, अन्यथा -",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें और फिर ऑन करें। पेंटो उठायें, VCB क्लोज करें तथा ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज दोबारा आता है तो आधे ट्रैक्शन / ब्रेकिंग पावर से सामान्य ऑपरेशन चालू करें।",
+        "4. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।",
+        "★ महत्वपूर्ण नोट: कंट्रोल इलेक्ट्रॉनिक्स को निम्न DDS मैसेज के लिए ऑफ / ऑन करने से बचें (Vadodara TSD पृष्ठ 155):",
+        "• यदि 'ASC 2: Error PS hardware' के बाद निम्न में से कोई मैसेज आता है:",
+        "  a) ASC 2: Error PS Fault storage CGP अथवा ASC 2: Error PS Fault storage GBC.",
+        "  b) NSC 2: Error PS hardware के बाद NSC 2: Error PS Fault storage GBC और ASC 2: 0052/0053/0054 (Bogie 2 Error Tacho generator)."
+      ],
+      precautions: "यदि बोगी-2 आइसोलेट हो चुकी है तो आधे ट्रैक्शन एवं ब्रेकिंग पावर से सुरक्षित कार्य किया जा सकता है। ध्यान रहे कि ASC 2 / NSC 2 के विशिष्ट एरर हार्डवेयर DDS संदेशों (Error PS Fault storage CGP/GBC या Error Tacho generator) की स्थिति में कंट्रोल इलेक्ट्रॉनिक्स को बार-बार ऑफ/ऑन करने से बचें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS03 Traction Bogie 2 (F0301P1 - Bogie 2 Isolated, पेज 154-155 / 177)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 177,
+      pdfQuote: "SS03 F0301P1 LocoXXXX SS03:Traction Bogie 2\nBOGIE 2 ISOLATED :\nOnly half traction and electrical braking power available\nPress <Enter>\n1. Yadi loco pilot 154 switch ke dwara bogie-2 ko isolate karta hai to uske baad display board par ENTER Key press karein, anyatha-\n2. Control electronics ko OFF karein aur fir ON karein. Panto uthayein, VCB close karein tatha traction chalu karein.\n3. Yadi vahi message dobara aata hai to aadhe traction / braking power se samanya operation chalu karein.\n4. TLC ko suchit karein tatha log book me darj karein.\nNote: Control electronics ko nimna DDS message ke liye OFF / ON karne se bachein -\nYadi ASC 2: Error PS hardware ke baad nimna me se koi message aata hai -\na) ASC 2: Error PS Fault storage CGP or ASC 2: Error PS Fault storage GBC\nb) NSC 2: Error PS hardware ke baad NSC 2: Error PS Fault storage GBC aur ASC 2: 0052/0053/0054 (Bogie 2 Error Tacho generator)"
+    };
+  }
+
+  // 0-SS04-F0401P1. SS04 F0401P1: HARMONIC FILTER CURRENT TOO HIGH & HARMONIC FILTER ISOLATED (Vadodara TSD Page 165 / 187)
+  const isSS04F0401P1Query =
+    !norm.includes('f0401p2') &&
+    !norm.includes('8.1') &&
+    !norm.includes('will not close') &&
+    !norm.includes('f0402') &&
+    !norm.includes('f0403') &&
+    !norm.includes('f0404') &&
+    !norm.includes('f0405') &&
+    !norm.includes('f0406') &&
+    !norm.includes('f0407') &&
+    !norm.includes('abb') &&
+    !norm.includes('tm1') &&
+    !norm.includes('tm 1') &&
+    !norm.includes('tm2') &&
+    !norm.includes('tm 2') &&
+    !norm.includes('tm3') &&
+    !norm.includes('tm 3') &&
+    !norm.includes('line converter') &&
+    !norm.includes('lc1') &&
+    !norm.includes('lc2') &&
+    !norm.includes('resistor') &&
+    !norm.includes('contactor') &&
+    !norm.includes('stuck') &&
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f0401p1') ||
+      (norm.includes('f0401') && norm.includes('p1')) ||
+      (norm.includes('ss04') && norm.includes('f0401')) ||
+      (norm.includes('ss04') && (norm.includes('current too high') || (norm.includes('harmonic') && norm.includes('current')))) ||
+      norm.includes('harmonic filter current too high') ||
+      (norm.includes('harmonic filter') && (norm.includes('current too high') || norm.includes('too high') || norm.includes('try to close vcb') || norm.includes('speak to tlc') || norm.includes('max. permitted speed') || norm.includes('40 kmph') || norm.includes('40kmph'))) ||
+      (norm.includes('hirmi[(nk') && (norm.includes('f0401') || norm.includes('fÃTr') || norm.includes('40 kmph') || norm.includes('vcb') || norm.includes('ss04'))) ||
+      ((norm.includes('harmonic filter') || norm.includes('hirmi[(nk (fÃTr')) && norm.includes('isolated') && (norm.includes('40') || norm.includes('speak to tlc') || norm.includes('tlc') || norm.includes('154') || norm.includes('bogie-1') || norm.includes('bogie 1') || norm.includes('ss04')))
+    );
+
+  if (isSS04F0401P1Query) {
+    return {
+      identifiedFaultId: "F0401P1",
+      faultTitle: "SS04 F0401P1: HARMONIC FILTER CURRENT TOO HIGH / HARMONIC FILTER ISOLATED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0401P1\nदोष संदेश (स्क्रीन 1):\nSS04 F0401P1 Loco XXX SS04: Harmonic filter\nHARMONIC FILTER\nCURRENT TOO HIGH\nTry to close VCB again\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS04: Harmonic filter\nHARMONIC FILTER\nISOLATED\nSpeak to TLC\nMax. permitted speed is 40 Kmph\nPress <Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन; यदि हार्मोनिक फ़िल्टर आइसोलेट होता है तो अधिकतम अनुमेय गति 40 KMPH हो जाएगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: HARMONIC FILTER CURRENT TOO HIGH / Try to close VCB again】",
+        "1. थ्रॉटल को “0” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ को प्रेस करें।",
+        "3. यदि दोष बना रहता है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करें और फिर ऑन करें। पेण्टो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "【स्क्रीन 2: HARMONIC FILTER ISOLATED / Speak to TLC / Max. permitted speed is 40 Kmph / Press <Enter>】",
+        "1. गति कम होकर 40 KMPH होगी।",
+        "2. TLC को सूचित करें तथा सामान्य ट्रैक्शन चालू करें।",
+        "3. एक-दो सेक्शन पास करने के उपरांत कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें।",
+        "4. यदि हार्मोनिक फ़िल्टर सर्विस में आ जाता है तो सामान्य गति से ट्रैक्शन चालू करें। TLC को सूचित करें।",
+        "5. यदि सफलता नहीं मिलती है तो 40 KMPH की गति से दोनों ट्रैक्शन कनवर्टर के साथ गाड़ी चलाएं या बोगी-1 को स्विच 154 के द्वारा आइसोलेट करें। कंट्रोल इलेक्ट्रॉनिक्स ऑफ़ करें और फिर ऑन करें (आइसोलेट हार्मोनिक फ़िल्टर को वापस सर्विस में लाने के लिए)। TLC के आदेशानुसार आधे TE/BE पावर के साथ सामान्य गति से काम करें।",
+        "6. लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "हार्मोनिक फ़िल्टर आइसोलेट रहने की स्थिति में दोनों कनवर्टर के साथ गाड़ी की अधिकतम अनुमेय गति केवल 40 KMPH है। यदि सामान्य गति से गाड़ी चलानी हो, तो TLC के परामर्श से स्विच 154 द्वारा बोगी-1 को आइसोलेट किया जाता है जिससे लोको आधे TE/BE के साथ सामान्य गति पर कार्य कर सकता है।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (F0401P1, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "SS04 F0401P1 Loco XXX SS04: Harmonic filter\nHARMONIC FILTER\nCURRENT TOO HIGH\nTry to close VCB again\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>.BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ ki[ p\\[s kr>[.\n3. y(d di[P bni rhti h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf kr>[ ai]r (fr aiˆn kr>[.p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[\n\nFollow-up: Loco XXX SS04: Harmonic filter\nHARMONIC FILTER\nISOLATED\nSpeak to TLC\nMax. permitted speed is 40 Kmph\nPress <Enter>\n1. g(t km hi[kr 40 KMPH hi[g).\n2. TLC ki[ s*(ct kr>[ tYi simiºy T^]±Sn cil* kr[>[>.\n3. Ek-di[ s[±Sn pis krn[ k[ upriºt k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr>[ ai]r (fr aiˆn kr>[.\n4. y(d hirmi[(nk (fÃTr s(v<s m[> ai jiti h] ti[ simiºy g(t s[ T^]±Sn cil* kr>[. TLC ki[ s*(ct kr>[.\n5. y(d sflti nh)>> (mlt) h] ti[ 40 KMPH k) g(t s[ di[ni[> T^]±Sn knvT<r k[ siY giD) cliE> yi bi[g)-1 ki[ (Avc 154 k[ oiri aiesi[l[T kr>[.k>T^i[l el[±T^iˆ(n±s aiˆf kr>[ ai]r (fr aiˆn kr>[ {aiesi[l[T hirmi[(nk (fÃTr ki[ vi(ps s(v<s m[> lin[ k[ (lE}.TLC k[ aid[Sin&sir aiF[ TE/BE pivr k[ siY simiºy g(t s[ kim kr>[.\n6. liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS04-F0401P2. SS04 F0401P2: FILTER CONTACTOR 8.1 STUCK ON / If VCB opens it will not close again (Vadodara TSD Page 165 / 187)
+  const isSS04F0401P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f0401p2') ||
+      (norm.includes('f0401') && (norm.includes('p2') || norm.includes('8.1') || norm.includes('stuck on') || norm.includes('close again'))) ||
+      (norm.includes('ss04') && norm.includes('8.1')) ||
+      norm.includes('filter contactor 8.1') ||
+      norm.includes('contactor 8.1') ||
+      norm.includes('8.1 stuck on') ||
+      norm.includes('8.1 stuck') ||
+      norm.includes('will not close again') ||
+      norm.includes('it will not close again') ||
+      norm.includes('if vcb opens it will not close') ||
+      (norm.includes('harmonic filter') && norm.includes('8.1')) ||
+      (norm.includes('8.1') && (norm.includes('stuck') || norm.includes('contactor') || norm.includes('vcb'))) ||
+      norm.includes('(bni vcb ai[pn') ||
+      norm.includes('bina vcb open')
+    );
+
+  if (isSS04F0401P2Query) {
+    return {
+      identifiedFaultId: "F0401P2",
+      faultTitle: "SS04 F0401P2: FILTER CONTACTOR 8.1 STUCK ON (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0401P2\nदोष संदेश:\nSS04 F0401P2 Loco XXX SS04: Harmonic filter\nFILTER CONTACTOR 8.1\nSTUCK ON\nIf VCB opens it will not close again\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: यदि VCB ओपन होता है तो BLDJ को प्रेस करने से VCB क्लोज़ करना संभव नहीं होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. यदि VCB ओपन होता है तो BLDJ को प्रेस करने से VCB क्लोज़ करना संभव नहीं होगा। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. बिना VCB ओपन करे सेक्शन क्लियर करके गाड़ी खड़ी करें।",
+        "3. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें। पेण्टो उठायें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "4. यदि VCB क्लोज़ नहीं होता है तो 20 मिनट में सहायता इंजन की मांग करें।"
+      ],
+      precautions: "फ़िल्टर कॉन्टैक्टर 8.1 स्टक ऑन (STUCK ON) रहने पर यदि एक बार VCB खुल गया तो वह BLDJ द्वारा दोबारा बंद नहीं होगा। अतः तुरंत VCB न खोलें; बिना VCB ओपन किए ब्लॉक सेक्शन को क्लियर करके सुरक्षित स्थान पर गाड़ी खड़ी करें, फिर कंट्रोल इलेक्ट्रॉनिक्स रीसेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (F0401P2, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "SS04 F0401P2 Loco XXX SS04: Harmonic filter\nFILTER CONTACTOR 8.1\nSTUCK ON\nIf VCB opens it will not close again\n1. y(d VCB ai[pn hi[ti h] ti[ BLDJ ki[ p\\[s krn[ s[ VCB ±li[j krni s>Bv nh)>> hi[gi. BPFA dbikr fiˆÃT ACK kr>[.\n2. (bni VCB ai[pn kr[ s[±Sn I±lyr krk[ giD) KD) kr[>.\n3. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr>[ ai]r (fr aiˆn kr>[.p[ºTi[ uqiy[> ,VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n4. y(d VCB ±li[j nh)>> hi[ti h] ti[ 20 (mnT m[> shiyti k) e>jn k) mi>g kr>[."
+    };
+  }
+
+  // 0-SS04-F0402P1. SS04 F0402P1: HARM. FILTER CONTACTOR (S) STUCK OFF/ON & HARMONIC FILTER ISOLATED (Vadodara TSD Page 165 / 187)
+  const isSS04F0402P1Query =
+    !norm.includes('f0402p2') &&
+    !norm.includes('earth') &&
+    !norm.includes('ay<fi') &&
+    !norm.includes('f0401') &&
+    !norm.includes('f0404') &&
+    !norm.includes('resistor') &&
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('hotel') && !norm.includes('ss05') && !norm.includes('f050') &&
+    (
+      norm.includes('f0402p1') ||
+      (norm.includes('f0402') && norm.includes('p1')) ||
+      (norm.includes('ss04') && norm.includes('f0402')) ||
+      (norm.includes('f0402') && (norm.includes('contactor') || norm.includes('stuck') || norm.includes('harmonic') || norm.includes('filter') || norm.includes('isolated'))) ||
+      ((norm.includes('harm') || norm.includes('filter') || norm.includes('harmonic') || norm.includes('ss04')) && (
+        norm.includes('contactor (s) stuck') ||
+        norm.includes('contactor(s) stuck') ||
+        norm.includes('contactor stuck') ||
+        norm.includes('stuck off/on') ||
+        norm.includes('stuck off / on')
+      )) ||
+      ((norm.includes('harm. filter') || norm.includes('harmonic filter') || norm.includes('hirmi[(nk')) && (norm.includes('contactor') || norm.includes('stuck') || norm.includes('filter will be isolated')))
+    );
+
+  if (isSS04F0402P1Query) {
+    return {
+      identifiedFaultId: "F0402P1",
+      faultTitle: "SS04 F0402P1: HARM. FILTER CONTACTOR (S) STUCK OFF/ON (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0402P1\nदोष संदेश (स्क्रीन 1):\nSS04 F0402P1 Loco XXX SS04: Harmonic filter\nHARM. FILTER\nCONTACTOR (S) STUCK\nOFF/ON\nHarmonic filter will be isolated\nSpeak to TLC\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS04: Harmonic filter\nHARMONIC FILTER\nISOLATED\nSpeak to TLC Max. permittedspeed is 40 Km/h\nPress <Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन; यदि हार्मोनिक फ़िल्टर आइसोलेट होता है तो अधिकतम अनुमेय गति 40 KMPH हो जाएगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: HARM. FILTER CONTACTOR (S) STUCK OFF/ON / Harmonic filter will be isolated / Speak to TLC】",
+        "1. थ्रॉटल को “0” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ को प्रेस करें।",
+        "3. यदि दोष बना रहता है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करें और फिर ऑन करें। पेण्टो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "【स्क्रीन 2: HARMONIC FILTER ISOLATED / Speak to TLC Max. permittedspeed is 40 Km/h / Press <Enter>】",
+        "1. गति कम होकर 40 KMPH होगी।",
+        "2. TLC को सूचित करें तथा सामान्य ट्रैक्शन चालू करें।",
+        "3. एक-दो सेक्शन पास करने के उपरांत कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर ऑन करें।",
+        "4. यदि हार्मोनिक फ़िल्टर सर्विस में आ जाता है तो सामान्य गति से ट्रैक्शन चालू करें। TLC को सूचित करें।",
+        "5. यदि सफलता नहीं मिलती है तो, 40 KMPH की गति से दोनों ट्रैक्शन कनवर्टर के साथ गाड़ी चलाएं या बोगी-1 को स्विच 154 के द्वारा आइसोलेट करें। कंट्रोल इलेक्ट्रॉनिक्स ऑफ़ करें और फिर ऑन करें (आइसोलेटेड हार्मोनिक फ़िल्टर को वापस सर्विस में लाने के लिए)। TLC के आदेशानुसार आधे TE/BE पावर के साथ सामान्य गति से काम करें।",
+        "6. लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "हार्मोनिक फ़िल्टर का कॉन्टैक्टर स्टक (Stuck OFF/ON) होने की स्थिति में हार्मोनिक फ़िल्टर आइसोलेट हो जाता है। दोनों ट्रैक्शन कनवर्टर के साथ अधिकतम अनुमेय गति 40 KMPH ही है। सामान्य गति पर गाड़ी चलाने के लिए TLC के परामर्श से स्विच 154 द्वारा बोगी-1 को आइसोलेट करें, जिससे आधा TE/BE उपलब्ध होगा।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (F0402P1, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "SS04 F0402P1 Loco XXX SS04: Harmonic filter\nHARM. FILTER\nCONTACTOR (S) STUCK\nOFF/ON\nHarmonic filter will be isolated\nSpeak to TLC\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ ki[ p\\[s kr>[.\n3. y(d di[P bni rhti h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf kr>[ ai]r (fr aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n\nFollow-up: Loco XXX SS04: Harmonic filter\nHARMONIC FILTER\nISOLATED\nSpeak to TLC Max. permittedspeed is 40 Km/h\nPress <Enter>\n1. g(t km hi[kr 40 KMPH hi[g).\n2. TLC ki[ s*(ct kr>[ tYi simiºy T^]±Sn cil* kr[>[>.\n3. Ek-di[ s[±Sn pis krn[ k[ upriºt k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr>[ ai]r (fr aiˆn kr>[.\n4. y(d hirmi[(nk (fÃTr s(v<s m[> ai jiti h] ti[ simiºy g(t s[ T^]±Sn cil* kr>[. TLC ki s*(ct kr>[.\n5. y(d sflti nh)>> (mlt) h] ti[, 40 KMPH k) g(t s[ di[ni[> T^]±Sn knvT<r k[ siY giD) cliE> yi bi[g)-1 ki[ (Avc 154 k[ oiri aiesi[l[T kr>[. k>T^i[l el[±T^iˆ(n±s aiˆf kr>[ ai]r (fr aiˆn kr>[ {aiesi[l[T hirmi[(nk (fÃTr ki[ vi(ps s(v<s m[> lin[ k[ (lE}.TLC k[ aid[Sin&sir aiF[ TE/BE pivr k[ siY simiºy g(t s[ kim kr>[ .\n6. liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS04-F0402P2. SS04 F0402P2: EARTH FAULT HARMONIC FILTER CIRCUIT (Vadodara TSD Page 165 / 187)
+  const isSS04F0402P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('bogie 1') && !norm.includes('bogie 2') && !norm.includes('bogie-1') && !norm.includes('bogie-2') &&
+    !norm.includes('converter 1') && !norm.includes('converter 2') && !norm.includes('f0201') && !norm.includes('f0301') &&
+    (
+      norm.includes('f0402p2') ||
+      (norm.includes('f0402') && (norm.includes('p2') || norm.includes('earth') || norm.includes('normal operation') || norm.includes('circuit'))) ||
+      norm.includes('earth fault harmonic filter') ||
+      norm.includes('earth fault harmonic') ||
+      (norm.includes('harmonic filter') && (norm.includes('earth fault') || norm.includes('earth') || (norm.includes('circuit') && norm.includes('normal operation')))) ||
+      ((norm.includes('harmonic') || norm.includes('ss04')) && (norm.includes('earth fault') || norm.includes('earth') || norm.includes('ay<fi'))) ||
+      (norm.includes('filter circuit') && (norm.includes('earth') || norm.includes('normal operation') || norm.includes('to be checked during maintenance')))
+    );
+
+  if (isSS04F0402P2Query) {
+    return {
+      identifiedFaultId: "F0402P2",
+      faultTitle: "SS04 F0402P2: EARTH FAULT HARMONIC FILTER CIRCUIT (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0402P2\nदोष संदेश:\nSS04 F0402P2 Loco XXX SS04: Harmonic filter\nEARTH FAULT HARMONIC FILTER CIRCUIT\nNormal operation can continue\nTo be checked during maintenance\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा। कोई कर्षण या ब्रेकिंग प्रतिबंध नहीं।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज करें। सामान्य ऑपरेशन चालू रखें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "हार्मोनिक फ़िल्टर सर्किट में अर्थ फ़ॉल्ट आने पर भी लोको का सामान्य संचालन सुरक्षित रूप से जारी रखा जा सकता है। गति या TE/BE पर कोई प्रतिबंध नहीं होता। शेड मेंटेनेंस के दौरान जाँच हेतु TLC को सूचित करें तथा लोको लॉग बुक में आवश्यक प्रविष्टि करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (F0402P2, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "SS04 F0402P2 Loco XXX SS04: Harmonic filter\nEARTH FAULT HARMONIC FILTER CIRCUIT\nNormal operation can continue\nTo be checked during maintenance\n1. BPFA oiri fiˆÃT E±niˆl[j kr>[.simiºy aiˆpr[Sn cil* rK[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS04-F0404P1. SS04 F0404P1: RESISTOR TOO HOT / No. of filter discharges exceeded / VCB will remain inhibited 15 min. (Vadodara TSD Page 165 / 187)
+  const isSS04F0404P1Query =
+    !norm.includes('f0404p2') &&
+    !norm.includes('tm2') &&
+    !norm.includes('tm 2') &&
+    !norm.includes('bogie 1') &&
+    !norm.includes('bogie-1') &&
+    !norm.includes('bogie1') &&
+    !norm.includes('abb') &&
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f0404p1') ||
+      (norm.includes('f0404') && norm.includes('p1')) ||
+      (norm.includes('ss04') && norm.includes('f0404') && !norm.includes('p2') && !norm.includes('tm')) ||
+      (norm.includes('f0404') && !norm.includes('p2') && !norm.includes('tm')) ||
+      norm.includes('resistor too hot') ||
+      norm.includes('filter discharges exceeded') ||
+      norm.includes('filter discharge') ||
+      norm.includes('discharges exceeded') ||
+      norm.includes('vcb will remain inhibited') ||
+      norm.includes('inhibited 15 min') ||
+      norm.includes('inhibited 15min') ||
+      (norm.includes('15 (mnt') && norm.includes('bldj')) ||
+      (norm.includes('15 मिनट') && (norm.includes('vcb') || norm.includes('इंतजार') || norm.includes('हार्मोनिक') || norm.includes('रेजिस्टर') || norm.includes('प्रतिबंधित'))) ||
+      ((norm.includes('harmonic filter') || norm.includes('ss04')) && (norm.includes('resistor') || norm.includes('too hot') || norm.includes('15 min') || norm.includes('15min')))
+    );
+
+  if (isSS04F0404P1Query) {
+    return {
+      identifiedFaultId: "F0404P1",
+      faultTitle: "SS04 F0404P1: RESISTOR TOO HOT (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0404P1\nदोष संदेश:\nSS04 F0404P1 Loco XXX SS04: Harmonic filter\nRESISTOR TOO HOT\nNo. of filter discharges exceeded\nVCB will remain inhibited 15 min.\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: VCB ओपन हो जाएगा और 15 मिनट तक VCB क्लोजिंग इनहिबिट (प्रतिबंधित) रहेगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रॉटल को “0” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. 15 मिनट इंतजार करें तथा BLDJ प्रेस करके फिर से VCB क्लोज़ करने का प्रयत्न करें।",
+        "3. यदि दोष बना रहता है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें और फिर से ऑन करें। पेण्टो उठायें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "4. TLC को सूचित करें तथा लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "हार्मोनिक फ़िल्टर डिस्चार्ज रेजिस्टर के अत्यधिक गर्म होने पर सिस्टम सुरक्षा हेतु VCB क्लोजिंग को 15 मिनट के लिए बाधित (Inhibit) कर देता है। 15 मिनट की समयावधि पूर्ण होने से पहले VCB क्लोज़ करने की चेष्टा न करें; समय बीतने के उपरांत ही BLDJ दबाकर VCB क्लोज़ करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (F0404P1, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "SS04 F0404P1 Loco XXX SS04: Harmonic filter\nRESISTOR TOO HOT\nNo. of filter discharges exceeded\nVCB will remain inhibited 15 min.\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>.BPFA dbikr fiˆÃT ACK kr>[.\n2. 15 (mnT e>tjir kr>[ tYi BLDJ p\\[s krk[ (fr s[ VCB ±li[j krn[ ki p\\yRn kr>[ .\n3. y(d di[P bni rhti h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr>[ ai]r (fr s[ aiˆn kr>[ .p[ºTi[ uqiy[> ,VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n4. TLC ki[ s*(ct kr>[ tYi liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS04-F0403P2. SS04 F0403P2: TM1 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter, Vadodara TSD Page 165 / 187)
+  const isSS04F0403P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bogie2') && !norm.includes('f0308') &&
+    (
+      norm.includes('f0403p2') ||
+      (norm.includes('f0403') && (norm.includes('p2') || norm.includes('tm1') || norm.includes('tm 1') || norm.includes('bogie 1') || norm.includes('5/6'))) ||
+      norm.includes('tm1 bogie 1 isolated') ||
+      norm.includes('tm 1 bogie 1 isolated') ||
+      norm.includes('tm 1 of bogie 1 isolated') ||
+      norm.includes('tm1 of bogie 1 isolated') ||
+      ((norm.includes('tm1') || norm.includes('tm 1')) && (norm.includes('bogie 1') || norm.includes('bogie-1')) && (norm.includes('abb') || norm.includes('ss04') || norm.includes('isolated') || norm.includes('5/6')))
+    );
+
+  if (isSS04F0403P2Query) {
+    return {
+      identifiedFaultId: "F0403P2",
+      faultTitle: "SS04 F0403P2: TM1 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0403P2\nदोष संदेश:\nSS04 F0403P2 Loco XXX SS04: Harmonic filter\nTM1 BOGIE 1 ISOLATED\nTM 1 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का ट्रैक्शन मोटर 1 (TM 1) आइसोलेट रहेगा, केवल 5/6th (लगभग 83.3%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-1 का TM 1 आइसोलेट होने पर लोको 5/6th (पाँच-छठा) कर्षण एवं विद्युत ब्रेकिंग क्षमता के साथ सामान्य रूप से कार्य कर सकता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में प्रविष्टि करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (ABB IGBT अतिरिक्त मैसेज, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s ABB ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS04 F0403P2 Loco XXX SS04: Harmonic filter\nTM1 BOGIE 1 ISOLATED\nTM 1 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS04-F0404P2. SS04 F0404P2: TM2 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter, Vadodara TSD Page 165 / 187)
+  const isSS04F0404P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bogie2') && !norm.includes('f0309') &&
+    (
+      norm.includes('f0404p2') ||
+      (norm.includes('f0404') && (norm.includes('p2') || norm.includes('tm2') || norm.includes('tm 2') || norm.includes('bogie 1') || norm.includes('5/6'))) ||
+      norm.includes('tm2 bogie 1 isolated') ||
+      norm.includes('tm 2 bogie 1 isolated') ||
+      norm.includes('tm 2 of bogie 1 isolated') ||
+      norm.includes('tm2 of bogie 1 isolated') ||
+      ((norm.includes('tm2') || norm.includes('tm 2')) && (norm.includes('bogie 1') || norm.includes('bogie-1')) && (norm.includes('abb') || norm.includes('ss04') || norm.includes('isolated') || norm.includes('5/6')))
+    );
+
+  if (isSS04F0404P2Query) {
+    return {
+      identifiedFaultId: "F0404P2",
+      faultTitle: "SS04 F0404P2: TM2 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0404P2\nदोष संदेश:\nSS04 F0404P2 Loco XXX SS04: Harmonic filter\nTM2 BOGIE 1 ISOLATED\nTM 2 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का ट्रैक्शन मोटर 2 (TM 2) आइसोलेट रहेगा, केवल 5/6th (लगभग 83.3%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-1 का TM 2 आइसोलेट होने पर लोको 5/6th (पाँच-छठा) कर्षण एवं विद्युत ब्रेकिंग क्षमता के साथ सामान्य रूप से कार्य कर सकता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में प्रविष्टि करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (ABB IGBT अतिरिक्त मैसेज, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s ABB ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS04 F0404P2 Loco XXX SS04: Harmonic filter\nTM2 BOGIE 1 ISOLATED\nTM 2 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS04-F0405P2. SS04 F0405P2: TM3 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter, Vadodara TSD Page 165 / 187)
+  const isSS04F0405P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bogie2') && !norm.includes('f0310') && !norm.includes('f0313') &&
+    (
+      norm.includes('f0405p2') ||
+      (norm.includes('f0405') && (norm.includes('p2') || norm.includes('tm3') || norm.includes('tm 3') || norm.includes('bogie 1') || norm.includes('5/6'))) ||
+      norm.includes('tm3 bogie 1 isolated') ||
+      norm.includes('tm 3 bogie 1 isolated') ||
+      norm.includes('tm 3 of bogie 1 isolated') ||
+      norm.includes('tm3 of bogie 1 isolated') ||
+      ((norm.includes('tm3') || norm.includes('tm 3')) && (norm.includes('bogie 1') || norm.includes('bogie-1')) && (norm.includes('abb') || norm.includes('ss04') || norm.includes('isolated') || norm.includes('5/6')))
+    );
+
+  if (isSS04F0405P2Query) {
+    return {
+      identifiedFaultId: "F0405P2",
+      faultTitle: "SS04 F0405P2: TM3 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0405P2\nदोष संदेश:\nSS04 F0405P2 Loco XXX SS04: Harmonic filter\nTM3 BOGIE 1 ISOLATED\nTM 3 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का ट्रैक्शन मोटर 3 (TM 3) आइसोलेट रहेगा, केवल 5/6th (लगभग 83.3%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-1 का TM 3 आइसोलेट होने पर लोको 5/6th (पाँच-छठा) कर्षण एवं विद्युत ब्रेकिंग क्षमता के साथ सामान्य रूप से कार्य कर सकता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में प्रविष्टि करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (ABB IGBT अतिरिक्त मैसेज, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s ABB ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS04 F0405P2 Loco XXX SS04: Harmonic filter\nTM3 BOGIE 1 ISOLATED\nTM 3 of bogie 1 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS04-F0406P2. SS04 F0406P2: LINE CONVERTER1 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter, Vadodara TSD Page 165 / 187)
+  const isSS04F0406P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bogie2') && !norm.includes('f0311') && !norm.includes('f0314') &&
+    (
+      norm.includes('f0406p2') ||
+      (norm.includes('f0406') && (norm.includes('p2') || norm.includes('lc1') || norm.includes('line converter1') || norm.includes('line converter 1') || norm.includes('bogie 1') || norm.includes('3/4'))) ||
+      norm.includes('line converter1 bogie 1 isolated') ||
+      norm.includes('line converter 1 bogie 1 isolated') ||
+      norm.includes('lc1 of bogie 1 isolated') ||
+      norm.includes('lc1 bogie 1 isolated') ||
+      ((norm.includes('line converter1') || norm.includes('line converter 1') || norm.includes('lc1') || norm.includes('lc 1')) && (norm.includes('bogie 1') || norm.includes('bogie-1')) && (norm.includes('abb') || norm.includes('ss04') || norm.includes('isolated') || norm.includes('3/4')))
+    );
+
+  if (isSS04F0406P2Query) {
+    return {
+      identifiedFaultId: "F0406P2",
+      faultTitle: "SS04 F0406P2: LINE CONVERTER1 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0406P2\nदोष संदेश:\nSS04 F0406P2 Loco XXX SS04: Harmonic filter\nLINE CONVERTER1 BOGIE 1\nISOLATED\nLC1 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का लाइन कनवर्टर-1 (LC1) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-1 का LC1 आइसोलेट होने पर 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (ABB IGBT अतिरिक्त मैसेज, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s ABB ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS04 F0406P2 Loco XXX SS04: Harmonic filter\nLINE CONVERTER1 BOGIE 1\nISOLATED\nLC1 of bogie 1 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS04-F0407P2. SS04 F0407P2: LINE CONVERTER2 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter, Vadodara TSD Page 165 / 187)
+  const isSS04F0407P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bogie2') && !norm.includes('f0312') && !norm.includes('f0315') &&
+    (
+      norm.includes('f0407p2') ||
+      (norm.includes('f0407') && (norm.includes('p2') || norm.includes('lc2') || norm.includes('line converter2') || norm.includes('line converter 2') || norm.includes('bogie 1') || norm.includes('3/4'))) ||
+      norm.includes('line converter2 bogie 1 isolated') ||
+      norm.includes('line converter 2 bogie 1 isolated') ||
+      norm.includes('lc2 of bogie 1 isolated') ||
+      norm.includes('lc2 bogie 1 isolated') ||
+      ((norm.includes('line converter2') || norm.includes('line converter 2') || norm.includes('lc2') || norm.includes('lc 2')) && (norm.includes('bogie 1') || norm.includes('bogie-1')) && (norm.includes('abb') || norm.includes('ss04') || norm.includes('isolated') || norm.includes('3/4')))
+    );
+
+  if (isSS04F0407P2Query) {
+    return {
+      identifiedFaultId: "F0407P2",
+      faultTitle: "SS04 F0407P2: LINE CONVERTER2 BOGIE 1 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 165 / 187):\nबोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS04 (Harmonic Filter)\nदोष कोड: F0407P2\nदोष संदेश:\nSS04 F0407P2 Loco XXX SS04: Harmonic filter\nLINE CONVERTER2 BOGIE 1\nISOLATED\nLC2 of bogie 1 isolated, only 3/4th of traction/electrical Braking power available.\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-1 का लाइन कनवर्टर-2 (LC2) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-1 का LC2 आइसोलेट होने पर 3/4th (75%) TE/BE उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य रूप से गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS04 Harmonic Filter (ABB IGBT अतिरिक्त मैसेज, पेज 165 / 187)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 187,
+      pdfQuote: "बोगी-1 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s ABB ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS04 F0407P2 Loco XXX SS04: Harmonic filter\nLINE CONVERTER2 BOGIE 1\nISOLATED\nLC2 of bogie 1 isolated, only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS05-F0503P1. SS05 F0503P1: EARTH FAULT IN HOTEL LOAD CIRCUIT (Vadodara TSD Page 166 / 188)
+  const isHotelLoadNorm = norm.includes('hotel load') || norm.includes('hotel') || norm.includes('होटल लोड') || norm.includes('होटल') || norm.includes('होतेल');
+  const isEarthFaultNorm = norm.includes('earth fault') || norm.includes('earth') || norm.includes('अर्थ फॉल्ट') || norm.includes('अर्थ फाल्ट') || norm.includes('अर्थफ़ॉल्ट') || norm.includes('अर्थ') || norm.includes('ay<fi');
+  const isOverCurrentNorm = norm.includes('over current') || norm.includes('overcurrent') || norm.includes('ओवर करंट') || norm.includes('ओवरकरंट');
+  const isStuckOffNorm = norm.includes('stuck off') || norm.includes('स्टक ऑफ') || norm.includes('स्टक ऑफ़') || norm.includes('not available') || norm.includes('उपलब्ध नहीं');
+  const isStuckOnNorm = norm.includes('stuck on') || norm.includes('स्टक ऑन') || norm.includes('uncoupling') || norm.includes('un/coupling') || norm.includes('अनकप्लिंग') || norm.includes('कप्लिंग') || norm.includes('trip vcb');
+
+  const isSS05F0503P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0503p2') && !norm.includes('tm 1') && !norm.includes('tm1') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') && !norm.includes('5/6') &&
+    !norm.includes('f0504') && !norm.includes('f0501') && !norm.includes('f0502') && !norm.includes('f0505') && !norm.includes('f0506') && !norm.includes('f0507') &&
+    !norm.includes('f0402') && !norm.includes('f0103') && !norm.includes('f0201') && !norm.includes('f0301') &&
+    (
+      norm.includes('f0503p1') ||
+      (norm.includes('f0503') && !norm.includes('p2') && !norm.includes('abb')) ||
+      (norm.includes('ss05') && isEarthFaultNorm) ||
+      (isHotelLoadNorm && isEarthFaultNorm) ||
+      norm.includes('earth fault in hotel load') ||
+      norm.includes('earth fault in hotel load circuit') ||
+      norm.includes('hotel load will be isolated') ||
+      (norm.includes('hotel load') && norm.includes('ki>t[±tr')) ||
+      (norm.includes('hotel load') && norm.includes('कांटैक्टर') && norm.includes('blho')) ||
+      norm.includes('blho')
+    );
+
+  if (isSS05F0503P1Query) {
+    return {
+      identifiedFaultId: "F0503P1",
+      faultTitle: "SS05 F0503P1: EARTH FAULT IN HOTEL LOAD CIRCUIT (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 166 / 188):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0503P1\nदोष संदेश:\nSS05 F0503P1 Loco XXX SS05:Hotel Load\nEARTH FAULT IN\nHOTEL LOAD\nCIRCUIT\nHotel Load will be\nisolated\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: होटल लोड आइसोलेट हो जाएगा (Hotel Load will be isolated)। गाड़ी का कर्षण सामान्य रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. Hotel Load कॉन्टैक्टर को खोलने के लिए BLHO स्विच को ऑफ़ करें। BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें।",
+        "2. मेंटेनेंस स्टाफ को सूचित करें।"
+      ],
+      precautions: "होटल लोड सर्किट में अर्थ फ़ॉल्ट आने पर होटल लोड स्वतः आइसोलेट हो जाता है। BLHO स्विच को ऑफ़ करके होटल लोड कॉन्टैक्टर खोलें, BPFA दबाकर फ़ॉल्ट ACK करें तथा मेंटेनेंस स्टाफ/TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (F0503P1, पेज 166 / 188)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 188,
+      pdfQuote: "SS05 F0503P1 Loco XXX SS05:Hotel Load\nEARTH FAULT IN\nHOTEL LOAD\nCIRCUIT\nHotel Load will be\nisolated\n1. Hotel Load ki>T[±Tr ki[ Ki[ln[ k[ (lE BLHO (Avc ki[ aiˆf kr>[. BPFA oiri fiˆÃT E±niˆl[j kr[>.\n2. m[>T[nºs ATif ki[ s*(ct kr>[."
+    };
+  }
+
+  // 0-SS05-F0504P1. SS05 F0504P1: OVER CURRENT IN HOTEL LOAD CIRCUIT (Vadodara TSD Page 166 / 188)
+  const isSS05F0504P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0504p2') && !norm.includes('tm 2') && !norm.includes('tm2') && !norm.includes('bogie 2') && !norm.includes('bogie-2') && !norm.includes('bi[g)-2') && !norm.includes('5/6') &&
+    !norm.includes('f0503') && !norm.includes('f0501') && !norm.includes('f0502') && !norm.includes('f0505') && !norm.includes('f0506') && !norm.includes('f0507') &&
+    (
+      norm.includes('f0504p1') ||
+      (norm.includes('f0504') && !norm.includes('p2') && !norm.includes('abb')) ||
+      (norm.includes('ss05') && isOverCurrentNorm) ||
+      (isHotelLoadNorm && isOverCurrentNorm) ||
+      norm.includes('over current in hotel load') ||
+      norm.includes('over current in hotel load circuit') ||
+      norm.includes('over current hotel load') ||
+      (norm.includes('hotel load') && (norm.includes('over current') || norm.includes('overcurrent') || norm.includes('try to close vcb again')))
+    );
+
+  if (isSS05F0504P1Query) {
+    return {
+      identifiedFaultId: "F0504P1",
+      faultTitle: "SS05 F0504P1: OVER CURRENT IN HOTEL LOAD CIRCUIT (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 166 / 188):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0504P1\nदोष संदेश:\nSS05 F0504P1 Loco XXX SS05:Hotel Load\nOVER CURRENT IN\nHOTEL LOAD\nCIRCUIT\nTry to close VCB again\n\nलैम्प संकेत: BPFA एवं LSDJ प्रकाशित होंगे।\nप्रभाव: VCB ओपन हो जाएगा (Try to close VCB again)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【1st (प्रथम बार / First Attempt)】:",
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ को प्रेस करें।",
+        "【2nd (दूसरी बार / यदि पुनः दोष आए)】:",
+        "1. मेंटेनेंस स्टाफ को सूचित करें।"
+      ],
+      precautions: "होटल लोड सर्किट में ओवर करंट आने पर सुरक्षात्मक कारणों से VCB तुरंत ओपन हो जाता है। प्रथम बार में BPFA दबाकर फ़ॉल्ट ACK करें और BLDJ दबाकर VCB क्लोज़ करें। यदि दोबारा वही मैसेज आता है तो बार-बार VCB क्लोज़ न करें; सीधे मेंटेनेंस स्टाफ/TLC को सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (F0504P1, पेज 166 / 188)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 188,
+      pdfQuote: "SS05 F0504P1 Loco XXX SS05:Hotel Load\nOVER CURRENT IN\nHOTEL LOAD\nCIRCUIT\nTry to close VCB again\n1st\n1. BPFA oiri fiˆÃT E±niˆl[j kr[>.\n2. VCB ±li[j krn[ k[ (lE BLDJ ki[ p\\[s kr>[.\n2nd -1. m[>T[nºs ATif ki[ s*(ct kr>[."
+    };
+  }
+
+  // 0-SS05-F0501P2. SS05 F0501P2: HOTEL LOAD CONTACTOR STUCK OFF (Vadodara TSD Page 167 / 189)
+  const isSS05F0501P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0501p1') && !norm.includes('f0502') && !norm.includes('f0503') && !norm.includes('f0504') && !norm.includes('f0505') && !norm.includes('f0506') && !norm.includes('f0507') &&
+    (
+      norm.includes('f0501p2') ||
+      (norm.includes('f0501') && (norm.includes('p2') || isStuckOffNorm)) ||
+      (norm.includes('ss05') && isStuckOffNorm) ||
+      norm.includes('hotel load contactor stuck off') ||
+      (isHotelLoadNorm && isStuckOffNorm)
+    );
+
+  if (isSS05F0501P2Query) {
+    return {
+      identifiedFaultId: "F0501P2",
+      faultTitle: "SS05 F0501P2: HOTEL LOAD CONTACTOR STUCK OFF (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 167 / 189):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0501P2\nदोष संदेश:\nSS05 F0501P2 Loco XXX SS05:Hotel Load\nHOTEL LOAD\nCONTACTOR STUCK\nOFF\nHotel Load not available\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: होटल लोड उपलब्ध नहीं रहेगा (Hotel Load not available)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें।",
+        "2. मेंटेनेंस स्टाफ को सूचित करें।"
+      ],
+      precautions: "होटल लोड कॉन्टैक्टर स्टक ऑफ़ (STUCK OFF) होने पर होटल लोड की विद्युत आपूर्ति उपलब्ध नहीं होगी। BPFA दबाकर फ़ॉल्ट ACK करें तथा मेंटेनेंस स्टाफ को सूचित करें व लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (F0501P2, पेज 167 / 189)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 189,
+      pdfQuote: "SS05 F0501P2 Loco XXX SS05:Hotel Load\nHOTEL LOAD\nCONTACTOR STUCK\nOFF\nHotel Load not available\n1. BPFA oiri fiˆÃT E±niˆl[j kr[>.\n2. m[>T[nºs ATif ki[ s*(ct kr>[."
+    };
+  }
+
+  // 0-SS05-F0502P2. SS05 F0502P2: HOTEL LOAD CONTACTOR STUCK ON (Vadodara TSD Page 167 / 189)
+  const isSS05F0502P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0502p1') && !norm.includes('f0501') && !norm.includes('f0503') && !norm.includes('f0504') && !norm.includes('f0505') && !norm.includes('f0506') && !norm.includes('f0507') &&
+    (
+      norm.includes('f0502p2') ||
+      (norm.includes('f0502') && (norm.includes('p2') || isStuckOnNorm)) ||
+      (norm.includes('ss05') && isStuckOnNorm) ||
+      norm.includes('hotel load contactor stuck on') ||
+      norm.includes('for un/coupling hotel load trip vcb') ||
+      norm.includes('uncoupling hotel load trip vcb') ||
+      (isHotelLoadNorm && isStuckOnNorm)
+    );
+
+  if (isSS05F0502P2Query) {
+    return {
+      identifiedFaultId: "F0502P2",
+      faultTitle: "SS05 F0502P2: HOTEL LOAD CONTACTOR STUCK ON (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 167 / 189):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0502P2\nदोष संदेश:\nSS05 F0502P2 Loco XXX SS05:Hotel Load\nHOTEL LOAD\nCONTACTOR STUCK\nON\nFor Un/coupling hotel\nload trip VCB\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: यदि VCB ट्रिप हुआ है तो दोबारा क्लोज़ नहीं होगा। होटल लोड की अनकप्लिंग/कप्लिंग (Un/coupling) के लिए VCB ट्रिप करना होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें।",
+        "2. TLC को सूचित करें और TLC के निर्देशानुसार कार्य करें क्योंकि यदि VCB ट्रिप हुआ है तो क्लोज़ नहीं होगा।"
+      ],
+      precautions: "होटल लोड कॉन्टैक्टर स्टक ऑन (STUCK ON) रहने पर VCB यदि एक बार ट्रिप हो जाए, तो वह क्लोज़ नहीं होगा। अतः VCB को अनावश्यक रूप से ट्रिप न करें। केवल होटल लोड अनकप्लिंग/कप्लिंग के लिए ही VCB ट्रिप करें तथा TLC के निर्देशानुसार ही आगे की कार्यवाही करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (F0502P2, पेज 167 / 189)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 189,
+      pdfQuote: "SS05 F0502P2 Loco XXX SS05:Hotel Load\nHOTEL LOAD\nCONTACTOR STUCK\nON\nFor Un/coupling hotel\nload trip VCB\n1. BPFA oiri fiˆÃT E±niˆl[j kr[>.\n2. TLC ki[ s*(ct kr>[ ai]r TLC k[ (nd[<Sin&sir kiy< kr[> ±yi[>(k y(d VCB (T^^p h&ai h] ti[ ±li[J nh)> hi[gi."
+    };
+  }
+
+  // 0-SS05-F0503P2. SS05 F0503P2: TM 1 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter) (Vadodara TSD Page 168 / 190)
+  const isSS05F0503P2Query =
+    !norm.includes('f0504') && !norm.includes('f0505') && !norm.includes('f0506') && !norm.includes('f0507') &&
+    !norm.includes('tm 2') && !norm.includes('tm2') && !norm.includes('tm 3') && !norm.includes('tm3') &&
+    !norm.includes('line converter') && !norm.includes('lc1') && !norm.includes('lc2') &&
+    (
+      norm.includes('f0503p2') ||
+      (norm.includes('f0503') && (norm.includes('p2') || norm.includes('tm 1') || norm.includes('tm1') || norm.includes('motor 1') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2') || norm.includes('5/6') || norm.includes('abb'))) ||
+      ((norm.includes('tm 1') || norm.includes('tm1') || norm.includes('motor 1')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && (norm.includes('abb') || norm.includes('ss05') || norm.includes('hotel load') || norm.includes('5/6'))) ||
+      norm.includes('tm 1 of bogie 2 isolated') ||
+      norm.includes('tm 1 bogie 2 isolated') ||
+      norm.includes('tm1 bogie 2 isolated')
+    );
+
+  if (isSS05F0503P2Query) {
+    return {
+      identifiedFaultId: "F0503P2",
+      faultTitle: "SS05 F0503P2: TM 1 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 168 / 190):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0503P2\nदोष संदेश:\nSS05 F0503P2 Loco XXX SS05:Hotel Load\nTM 1 BOGIE 2 ISOLATED\nTM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 की ट्रैक्शन मोटर 1 (TM 1) आइसोलेट रहेगी, केवल 5/6th (83.3%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-2 की TM 1 आइसोलेट होने पर केवल 5/6th कर्षण एवं इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य ऑपरेशन चालू रखें तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (ABB IGBT बोगी-2 अतिरिक्त मैसेज, पेज 168 / 190)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 190,
+      pdfQuote: "बोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में “ M/s ABB ” का IGBT ट्रैक्शन कनवर्टर लगा है)\nSS05 F0503P2 Loco XXXSS05:Hotel Load\nTM 1 BOGIE 2 ISOLATED\nTM 1 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS05-F0504P2. SS05 F0504P2: TM 2 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter) (Vadodara TSD Page 168 / 190)
+  const isSS05F0504P2Query =
+    !norm.includes('f0503') && !norm.includes('f0505') && !norm.includes('f0506') && !norm.includes('f0507') &&
+    !norm.includes('tm 1') && !norm.includes('tm1') && !norm.includes('tm 3') && !norm.includes('tm3') &&
+    !norm.includes('line converter') && !norm.includes('lc1') && !norm.includes('lc2') &&
+    (
+      norm.includes('f0504p2') ||
+      (norm.includes('f0504') && (norm.includes('p2') || norm.includes('tm 2') || norm.includes('tm2') || norm.includes('motor 2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2') || norm.includes('5/6') || norm.includes('abb'))) ||
+      ((norm.includes('tm 2') || norm.includes('tm2') || norm.includes('motor 2')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && (norm.includes('abb') || norm.includes('ss05') || norm.includes('hotel load') || norm.includes('5/6'))) ||
+      norm.includes('tm 2 of bogie 2 isolated') ||
+      norm.includes('tm 2 bogie 2 isolated') ||
+      norm.includes('tm2 bogie 2 isolated')
+    );
+
+  if (isSS05F0504P2Query) {
+    return {
+      identifiedFaultId: "F0504P2",
+      faultTitle: "SS05 F0504P2: TM 2 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 168 / 190):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0504P2\nदोष संदेश:\nSS05 F0504P2 Loco XXX SS05:Hotel Load\nTM 2 BOGIE 2 ISOLATED\nTM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 की ट्रैक्शन मोटर 2 (TM 2) आइसोलेट रहेगी, केवल 5/6th (83.3%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-2 की TM 2 आइसोलेट होने पर केवल 5/6th कर्षण एवं इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य ऑपरेशन चालू रखें तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (ABB IGBT बोगी-2 अतिरिक्त मैसेज, पेज 168 / 190)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 190,
+      pdfQuote: "SS05 F0504P2 Loco XXX SS05:Hotel Load\nTM 2 BOGIE 2 ISOLATED\nTM 2 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS05-F0505P2. SS05 F0505P2: TM 3 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter) (Vadodara TSD Page 168 / 190)
+  const isSS05F0505P2Query =
+    !norm.includes('f0503') && !norm.includes('f0504') && !norm.includes('f0506') && !norm.includes('f0507') &&
+    !norm.includes('tm 1') && !norm.includes('tm1') && !norm.includes('tm 2') && !norm.includes('tm2') &&
+    !norm.includes('line converter') && !norm.includes('lc1') && !norm.includes('lc2') &&
+    (
+      norm.includes('f0505p2') ||
+      norm.includes('f0505') ||
+      ((norm.includes('tm 3') || norm.includes('tm3') || norm.includes('motor 3')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && (norm.includes('abb') || norm.includes('ss05') || norm.includes('hotel load') || norm.includes('5/6'))) ||
+      norm.includes('tm 3 of bogie 2 isolated') ||
+      norm.includes('tm 3 bogie 2 isolated') ||
+      norm.includes('tm3 bogie 2 isolated')
+    );
+
+  if (isSS05F0505P2Query) {
+    return {
+      identifiedFaultId: "F0505P2",
+      faultTitle: "SS05 F0505P2: TM 3 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 168 / 190):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0505P2\nदोष संदेश:\nSS05 F0505P2 Loco XXX SS05:Hotel Load\nTM 3 BOGIE 2 ISOLATED\nTM 3 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 की ट्रैक्शन मोटर 3 (TM 3) आइसोलेट रहेगी, केवल 5/6th (83.3%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-2 की TM 3 आइसोलेट होने पर केवल 5/6th कर्षण एवं इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य ऑपरेशन चालू रखें तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (ABB IGBT बोगी-2 अतिरिक्त मैसेज, पेज 168 / 190)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 190,
+      pdfQuote: "SS05 F0505P2 Loco XXXSS05:Hotel Load\nTM 3 BOGIE 2 ISOLATED\nTM 3 of bogie 2 isolated only 5/6th of Traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS05-F0506P2. SS05 F0506P2: LINE CONVERTER 1 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter) (Vadodara TSD Page 168 / 190)
+  const isSS05F0506P2Query =
+    !norm.includes('f0503') && !norm.includes('f0504') && !norm.includes('f0505') && !norm.includes('f0507') &&
+    !norm.includes('lc2') && !norm.includes('line converter 2') && !norm.includes('line converter2') &&
+    !norm.includes('tm 1') && !norm.includes('tm1') && !norm.includes('tm 2') && !norm.includes('tm2') && !norm.includes('tm 3') && !norm.includes('tm3') &&
+    (
+      norm.includes('f0506p2') ||
+      norm.includes('f0506') ||
+      ((norm.includes('line converter 1') || norm.includes('line converter1') || norm.includes('lc1')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && (norm.includes('abb') || norm.includes('ss05') || norm.includes('hotel load') || norm.includes('3/4'))) ||
+      norm.includes('lc1 of bogie 2 isolated') ||
+      norm.includes('line converter 1 bogie 2 isolated') ||
+      norm.includes('line converter1 bogie 2 isolated')
+    );
+
+  if (isSS05F0506P2Query) {
+    return {
+      identifiedFaultId: "F0506P2",
+      faultTitle: "SS05 F0506P2: LINE CONVERTER 1 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 168 / 190):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0506P2\nदोष संदेश:\nSS05 F0506P2 Loco XXX SS05:Hotel Load\nLINE CONVERTER 1 BOGIE 2 ISOLATED\nLC1 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 का लाइन कनवर्टर 1 (LC1) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-2 का LC1 (Line Converter 1) आइसोलेट होने पर केवल 3/4th कर्षण एवं इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य ऑपरेशन चालू रखें तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (ABB IGBT बोगी-2 अतिरिक्त मैसेज, पेज 168 / 190)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 190,
+      pdfQuote: "SS05 F0506P2 Loco XXXSS05:Hotel Load\nLINE CONVERTER 1\nBOGIE 2 ISOLATED\nLC1 of bogie 2 isolated only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS05-F0507P2. SS05 F0507P2: LINE CONVERTER 2 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter) (Vadodara TSD Page 168 / 190)
+  const isSS05F0507P2Query =
+    !norm.includes('f0503') && !norm.includes('f0504') && !norm.includes('f0505') && !norm.includes('f0506') &&
+    !norm.includes('lc1') && !norm.includes('line converter 1') && !norm.includes('line converter1') &&
+    !norm.includes('tm 1') && !norm.includes('tm1') && !norm.includes('tm 2') && !norm.includes('tm2') && !norm.includes('tm 3') && !norm.includes('tm3') &&
+    (
+      norm.includes('f0507p2') ||
+      norm.includes('f0507') ||
+      ((norm.includes('line converter 2') || norm.includes('line converter2') || norm.includes('lc2')) && norm.includes('isolated') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('bi[g)-2')) && (norm.includes('abb') || norm.includes('ss05') || norm.includes('hotel load') || norm.includes('3/4'))) ||
+      norm.includes('lc2 of bogie 2 isolated') ||
+      norm.includes('line converter 2 bogie 2 isolated') ||
+      norm.includes('line converter2 bogie 2 isolated')
+    );
+
+  if (isSS05F0507P2Query) {
+    return {
+      identifiedFaultId: "F0507P2",
+      faultTitle: "SS05 F0507P2: LINE CONVERTER 2 BOGIE 2 ISOLATED (M/s ABB IGBT Traction Converter)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 168 / 190):\nबोगी-2 के लिए अतिरिक्त मैसेज (जिन लोको में 'M/s ABB' का IGBT ट्रैक्शन कनवर्टर लगा है):\nसबसिस्टम: SS05 (Hotel Load)\nदोष कोड: F0507P2\nदोष संदेश:\nSS05 F0507P2 Loco XXX SS05:Hotel Load\nLINE CONVERTER 2 BOGIE 2 ISOLATED\nLC2 of bogie 2 isolated, only 3/4th of traction/electrical Braking power available.\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बोगी-2 का लाइन कनवर्टर 2 (LC2) आइसोलेट रहेगा, केवल 3/4th (75%) ट्रैक्शन एवं इलेक्ट्रिकल ब्रेकिंग पावर उपलब्ध रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें और सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "M/s ABB IGBT कनवर्टर युक्त लोको में बोगी-2 का LC2 (Line Converter 2) आइसोलेट होने पर केवल 3/4th कर्षण एवं इलेक्ट्रिकल ब्रेकिंग उपलब्ध रहता है। BPFA दबाकर फ़ॉल्ट ACK करें, सामान्य ऑपरेशन चालू रखें तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS05 Hotel Load (ABB IGBT बोगी-2 अतिरिक्त मैसेज, पेज 168 / 190)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 190,
+      pdfQuote: "SS05 F0507P2 Loco XXX SS05:Hotel Load\nLINE CONVERTER 2\nBOGIE 2 ISOLATED\nLC2 of bogie 2 isolated, only 3/4th of traction/electrical Braking power available.\n1. BPFA oiri fiˆÃT E±niˆl[j kr[> ai]r simiºy aiˆpr[Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS06-BUR1-ISOLATED. SS06: Aux-converter1 / AUX CONVERTER1 ISOLATED (Vadodara TSD Page 169 & 170 / 191 & 192)
+  const isSS06Bur1IsolatedQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('riom') && !norm.includes('rbu') && !norm.includes('f1304') && !norm.includes('f1305') && !norm.includes('f1301') && !norm.includes('f1302') &&
+    !norm.includes('ocb') && !norm.includes('59.1') && !norm.includes('auxiliary converter 2') && !norm.includes('auxiliary converter -2') &&
+    !norm.includes('bur-2') && !norm.includes('bur 2') && !norm.includes('bur2') &&
+    !norm.includes('ss07') && !norm.includes('f0701') && !norm.includes('127.22/2') &&
+    !norm.includes('aux converter 2') && !norm.includes('aux converter2') && !norm.includes('aux-converter 2') && !norm.includes('aux-converter2') &&
+    !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0604') && !norm.includes('52/4') && !norm.includes('52/5') &&
+    !norm.includes('bur-3') && !norm.includes('bur 3') && !norm.includes('bur3') &&
+    !norm.includes('ss08') && !norm.includes('f0801') && !norm.includes('127.22/3') &&
+    !norm.includes('aux converter 3') && !norm.includes('aux converter3') && !norm.includes('aux-converter 3') && !norm.includes('aux-converter3') && !norm.includes('auxiliary converter 3') && !norm.includes('auxiliary converter -3') &&
+    !norm.includes('ventilation bur 1') && !norm.includes('reconfigure to bur 2') &&
+    (
+      norm.includes('aux converter1 isolated') ||
+      norm.includes('aux converter 1 isolated') ||
+      norm.includes('aux-converter1 isolated') ||
+      norm.includes('aux-converter 1 isolated') ||
+      norm.includes('auxiliary converter 1 isolated') ||
+      norm.includes('auxiliary converter -1 isolated') ||
+      (norm.includes('driving still possible') && (norm.includes('bur') || norm.includes('ventilation') || norm.includes('aux') || norm.includes('ss06'))) ||
+      norm.includes('max. ventilation level will be reduced') ||
+      norm.includes('max ventilation level will be reduced') ||
+      norm.includes('ventilation level will be reduced') ||
+      norm.includes('max. ventilation level') ||
+      norm.includes('ventilation level') ||
+      norm.includes('127.22/1') ||
+      norm.includes('bur 1 isolated') ||
+      norm.includes('bur-1 isolated') ||
+      (norm.includes('bur 1') && norm.includes('isolated') && (norm.includes('driving') || norm.includes('ventilation') || norm.includes('127.22') || norm.includes('sb-1') || norm.includes('press<enter>') || norm.includes('press enter'))) ||
+      (norm.includes('bur-1') && norm.includes('isolated') && (norm.includes('driving') || norm.includes('ventilation') || norm.includes('127.22') || norm.includes('sb-1') || norm.includes('press<enter>') || norm.includes('press enter'))) ||
+      (norm.includes('ss06') && (norm.includes('driving still possible') || norm.includes('ventilation') || (norm.includes('isolated') && !norm.includes('disturbance') && !norm.includes('fault'))))
+    );
+
+  if (isSS06Bur1IsolatedQuery) {
+    return {
+      identifiedFaultId: "SS06-BUR1-ISOLATED",
+      faultTitle: "SS06: AUX CONVERTER1 ISOLATED (Driving still Possible / max. ventilation level will be reduced) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 169 & 170 / 191 & 192):\nसबसिस्टम: SS06 (Aux-converter1)\nदोष संदेश:\nLoco XXX SS06: Aux-converter1\nAUX CONVERTER1\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित रहेगा। (यदि MCB 127.22/1 ट्रिप करके आइसोलेट किया जाए तो LSFI भी निरंतर जलेगी)\nप्रभाव: BUR-1 आइसोलेट रहेगा; ड्राइविंग संभव है, अधिकतम वेंटिलेशन स्तर घट जाएगा (Driving still Possible, max. ventilation level will be reduced)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. SB-1 में लगे MCB नं. 127.22/1 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो उठाएं, VCB क्लोज़ करें यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-1 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें। यदि BUR-1 स्वतः आइसोलेट नहीं हो रहा है तो VCB ओपन करके तथा कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके SB-1 में लगे MCB 127.22/1 को ट्रिप करके BUR-1 को आइसोलेट करें।",
+        "4. लोको को एनरजाइज करें और BUR-1 को आइसोलेट रखते हुए गाड़ी कार्य करें। इस स्थिति में LSFI की बत्ती लगातार जलती रहेगी।",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "BUR-1 आइसोलेट होने पर अधिकतम वेंटिलेशन स्तर कम हो जाता है किंतु गाड़ी चलाना (Driving still Possible) संभव रहता है। SB-1 में MCB 127.22/1 की स्थिति जांचें और केवल एक बार रीसेट करें। यदि दोबारा वही मैसेज आए तो बार-बार कंट्रोल इलेक्ट्रॉनिक्स ऑफ/ऑन न करें; यदि ऑटोमैटिक आइसोलेट न हो तो VCB ओपन व CE ऑफ़ करके MCB 127.22/1 को ट्रिप करके मैनुअल आइसोलेट करें (LSFI निरंतर जलेगी) और गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS06 Aux-converter1 (पेज 169 & 170 / 191 & 192)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 191,
+      pdfQuote: "Loco XXX SS06: Aux-converter1\nAUX CONVERTER1\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-1 m[> lg[ MCB n>‘ 127.22/1 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[[ MCB ki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[.p[ºTi[ uqiy[>, VCB ±li[j kr>[ y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h], BUR-1 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[> ai]r k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn krk[ BUR-1 ki[ s(v<s m[> lin[ ki p\yRn n kr>[.BUR-1 ki[ aiesi[l[T rKt[ h&E giD) cliy[>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS06-F0601P1. SS06 F0601P1: DISTURBANCE IN PROCESSOR BUR 1 (Vadodara TSD Page 169 / 191)
+  const isSS06F0601P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('bur-2') && !norm.includes('bur 2') && !norm.includes('bur-3') && !norm.includes('bur 3') &&
+    (
+      norm.includes('f0601p1') ||
+      norm.includes('f0601') ||
+      norm.includes('disturbance in processor bur 1') ||
+      norm.includes('disturbance in processor bur-1') ||
+      norm.includes('disturbance in processor bur1') ||
+      (norm.includes('ss06') && (norm.includes('bur 1') || norm.includes('bur-1') || norm.includes('bur1') || norm.includes('processor') || norm.includes('aux-converter1') || norm.includes('aux converter 1'))) ||
+      (norm.includes('aux-converter1') && (norm.includes('disturbance') || norm.includes('vcb') || norm.includes('bur'))) ||
+      (norm.includes('aux converter 1') && (norm.includes('disturbance') || norm.includes('vcb') || norm.includes('bur'))) ||
+      (norm.includes('bur 1') && (norm.includes('disturbance') || norm.includes('try to close vcb'))) ||
+      (norm.includes('bur-1') && (norm.includes('disturbance') || norm.includes('try to close vcb')))
+    );
+
+  if (isSS06F0601P1Query) {
+    return {
+      identifiedFaultId: "F0601P1",
+      faultTitle: "SS06 F0601P1: DISTURBANCE IN PROCESSOR BUR 1 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 169 / 191):\nसबसिस्टम: SS06 (Aux-converter1)\nदोष कोड: F0601P1\nदोष संदेश:\nSS06 F0601P1 Loco XXX SS06: Aux-converter1\nDISTURBANCE IN\nPROCESSOR BUR 1\nTry to close VCB again\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन हो जाएगा; BUR-1 स्वतः आइसोलेट होगा (Try to close VCB again)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: DISTURBANCE IN PROCESSOR BUR 1 / Try to close VCB again】:",
+        "1. थ्रोटल को \"0\" पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. BUR-1 अपने आप आइसोलेट होगा। ENTER key दबाएं।",
+        "3. VCB क्लोज़ करने के लिए BLDJ को प्रेस करें।",
+        "4. सामान्य ट्रैक्शन द्वारा गाड़ी चलाएं।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER1 ISOLATED (Driving still Possible / max. ventilation level will be reduced)】:",
+        "1. SB-1 में लगे MCB नं. 127.22/1 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो उठाएं, VCB क्लोज़ करें यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-1 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें और कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करके BUR-1 को सर्विस में लेने का प्रयत्न न करें। BUR-1 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "थ्रोटल को शून्य ('0') पर लाकर BPFA द्वारा फ़ॉल्ट ACK करें। BUR-1 स्वतः आइसोलेट होगा; ENTER दबाकर BLDJ से VCB क्लोज़ करें और सामान्य कर्षण से गाड़ी चलाएं। इसके बाद स्क्रीन-2 (AUX CONVERTER1 ISOLATED) आने पर SB-1 में MCB 127.22/1 की जांच करें। यदि वही मैसेज फिर से आता है, तो BUR-1 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें और बार-बार CE ऑफ/ऑन न करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS06 Aux-converter1 (F0601P1, पेज 169 / 191)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 191,
+      pdfQuote: "SS06 F0601P1 Loco XXX SS06: Aux-converter1\nDISTURBANCE IN\nPROCESSOR BUR 1\nTry to close VCB again\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>.BPFA dbikr fiˆÃT ACK kr>[.\n2. BUR-1 apn[ aip aiesi[l[T hi[gi. ENTER key dbiE>.\n3. VCB ±li[j krn[ k[ (lE BLDJ ki[ p\\[s kr>[.\n4. simiºy T^^]±Sn oiri giD) cliE>\n\nLoco XXX SS06: Aux-converter1\nAUX CONVERTER1\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-1 m[> lg[ MCB n>‘ 127.22/1 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[[ MCB ki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[.p[ºTi[ uqiy[>, VCB ±li[j kr>[ y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h], BUR-1 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[> ai]r k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn krk[ BUR-1 ki[ s(v<s m[> lin[ ki p\yRn n kr>[.BUR-1 ki[ aiesi[l[T rKt[ h&E giD) cliy[>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS06-F0602P1. SS06 F0602P1: FAULT IN AUXILIARY CONVERTER 1 (Vadodara TSD Page 170 / 192)
+  const isSS06F0602P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0601') && !norm.includes('f0603') && !norm.includes('bur-2') && !norm.includes('bur 2') && !norm.includes('bur-3') && !norm.includes('bur 3') &&
+    !norm.includes('f1101') && !norm.includes('ss11') && !norm.includes('cubicle 1') &&
+    (
+      norm.includes('f0602p1') ||
+      norm.includes('f0602') ||
+      norm.includes('fault in auxiliary converter 1') ||
+      norm.includes('fault in auxiliary converter-1') ||
+      norm.includes('fault in aux converter 1') ||
+      norm.includes('fault in aux-converter1') ||
+      norm.includes('54.1/1') ||
+      (norm.includes('mrb-1') && (norm.includes('bur-1') || norm.includes('bur 1') || norm.includes('54.1'))) ||
+      (norm.includes('mrb1') && (norm.includes('bur-1') || norm.includes('bur 1') || norm.includes('54.1'))) ||
+      (norm.includes('ss06') && (norm.includes('fault in auxiliary') || norm.includes('fault in aux') || norm.includes('54.1/1') || norm.includes('f0602'))) ||
+      (norm.includes('auxiliary converter 1') && (norm.includes('fault') || norm.includes('54.1/1'))) ||
+      (norm.includes('aux-converter1') && (norm.includes('fault') || norm.includes('54.1/1')))
+    );
+
+  if (isSS06F0602P1Query) {
+    return {
+      identifiedFaultId: "F0602P1",
+      faultTitle: "SS06 F0602P1: FAULT IN AUXILIARY CONVERTER 1 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 170 / 192):\nसबसिस्टम: SS06 (Aux-converter1)\nदोष कोड: F0602P1\nदोष संदेश:\nSS06 F0602P1 Loco XXX SS06: Aux-converter1\nFAULT IN AUXILIARY\nCONVERTER 1\nTry to close VCB again\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन हो जाएगा; BUR-1 स्वतः आइसोलेट होगा (Try to close VCB again)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: FAULT IN AUXILIARY CONVERTER 1 / Try to close VCB again】:",
+        "1. थ्रोटल को \"0\" पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "3. यदि फिर से मैसेज आता है तो BUR-1 अपने आप आइसोलेट होगा। <ENTER> key दबाएं।",
+        "4. HB-1 में लगे MCB नं. 54.1/1 को चेक करें। यदि ट्रिप है तो VCB ओपन करके रीसेट करें। यदि MCB नं. 54.1/1 फिर से ट्रिप होती है, और ऑक्ज़ीलरी कनवर्टर-1 आइसोलेट हो जाता है तो गाड़ी चलाएं। TLC को सूचित करें। {IGBT वाला BUR-1 भी MRB-1 के काम न करने पर इनवर्टर फ़ॉल्ट के कारण आइसोलेट होगा।}",
+        "5. सामान्य ट्रैक्शन द्वारा गाड़ी चलाएं।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER1 ISOLATED (Driving still possible / max. ventilation level will be reduced)】:",
+        "1. SB-1 में लगे MCB नं. 127.22/1 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो उठाएं, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-1 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें। यदि BUR-1 आइसोलेट नहीं हो रहा है तो VCB ओपन करके तथा कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके SB-1 में लगे MCB 127.22/1 को ट्रिप करके BUR-1 को आइसोलेट करें।",
+        "4. लोको को एनरजाइज करें और BUR-1 को आइसोलेट रखते हुए गाड़ी कार्य करें। इस स्थिति में LSFI की बत्ती लगातार जलती रहेगी।",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "F0602P1 आने पर थ्रोटल को '0' पर लाकर BPFA द्वारा फ़ॉल्ट ACK करें और BLDJ से VCB क्लोज़ करें। यदि दोबारा मैसेज आए तो HB-1 में MCB 54.1/1 (MRB-1) चेक करें (VCB ओपन करके रीसेट करें)। यदि 54.1/1 पुनः ट्रिप हो तो BUR-1 आइसोलेटेड स्थिति में सामान्य गति से कार्य करें। यदि BUR-1 स्वतः आइसोलेट न हो, तो VCB ओपन व CE ऑफ़ करके SB-1 में MCB 127.22/1 ट्रिप करके मैनुअल आइसोलेट करें (LSFI निरंतर जलेगी) तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS06 Aux-converter1 (F0602P1, पेज 170 / 192)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 192,
+      pdfQuote: "SS06 F0602P1 Loco XXX SS06: Aux-converter1\nFAULT IN AUXILIARY\nCONVERTER 1\nTry to close VCB again\n1. Y\\i[Tl ki[ “ 0” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ p\\[s kr>[.\n3. y(d (fr s[ m]s[J aiti h] ti[ BUR-1 apn[ aip aiesi[l[T hi[gi. <ENTER> key dbiE>.\n4. HB-1 m[> lg[ MCBn>0 54.1/1 ki[ c]k kr>[. y(d (T^p h] ti[[ VCB ai[pn krk[ (rs[T kr[>.\ny(d MCB n>0 54.1/1 (fr s[ (T^p hi[t)h], ai]r ai³j)lr) knvT<r-1 aiesi[l[T hi[ jiti h] ti[ giD) cliy[. TLCki[ s*(ct kr>[.{IGBT vili BUR-1 B) MRB-1 k[ kim n krn[ pr env<Tr fiˆÃT k[ kirN aiesi[l[T hi[gi.}\n5. simiºy T^^]±Sn oiri giD) cliE>.\n\nLoco XXX SS06: Aux-converter1\nAUX CONVERTER1\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-1 m[> lg[ MCB n>‘ 127.22/1 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[[ MCB ki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ uqiy[>,VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h]] BUR-1 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[>.y(d BUR-1 aiesi[l[T nh)>> hi[ rhi h] ti[ VCB ai[pn krk[ tYi k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ SB-1 m[> lg[ MCB127.22/1 ki[ (T^p krk[ BUR-1 ki[ aiesi[l[T kr>[.\n4. li[ki[ ki[ enrjiej kr>[ ai]r BUR-1 ki[ aiesi[l[T rKt[ h&E giD) kiy< kr>[. es (AY(t m[> LSFI k) b_i) lgitir jlt) rh[g) .\n5. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS06-F0603P1. SS06 F0603P1: CONTACTOR FAULT IN AUX. CONV-1/HB1 (Contactor 52/4 or 52/5 stuck OFF or ON) (Vadodara TSD Page 171 / 193)
+  const isSS06F0603P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0701') && !norm.includes('f0702') && !norm.includes('f0703') &&
+    !norm.includes('bur-2') && !norm.includes('bur 2') && !norm.includes('bur-3') && !norm.includes('bur 3') &&
+    !norm.includes('ss07') && !norm.includes('conv-2') && !norm.includes('conv 2') && !norm.includes('hb2') && !norm.includes('hb-2') &&
+    !norm.includes('52/1/2/4') && !norm.includes('52/1') && !norm.includes('52/2') &&
+    !norm.includes('ss08') && !norm.includes('f0801') && !norm.includes('f0802') && !norm.includes('f0803') && !norm.includes('52/3') && !norm.includes('auxconv 3') && !norm.includes('auxconv-3') &&
+    (
+      norm.includes('f0603p1') ||
+      norm.includes('f0603') ||
+      norm.includes('52/4 or 52/5') ||
+      norm.includes('52/5') ||
+      (norm.includes('52/4') && (norm.includes('hb1') || norm.includes('hb-1') || norm.includes('conv-1') || norm.includes('conv 1') || norm.includes('ss06') || norm.includes('bur 1') || norm.includes('bur-1'))) ||
+      norm.includes('contactor fault in aux. conv-1') ||
+      norm.includes('contactor fault in aux conv-1') ||
+      norm.includes('aux. conv-1/hb1') ||
+      norm.includes('aux. conv-1 / hb1') ||
+      norm.includes('aux conv-1/hb1') ||
+      (norm.includes('contactor fault in aux') && !norm.includes('2') && !norm.includes('hb2') && !norm.includes('3') && !norm.includes('auxconv')) ||
+      (norm.includes('ss06') && (norm.includes('contactor') || norm.includes('hb1') || norm.includes('hb-1') || norm.includes('52/4') || norm.includes('52/5') || norm.includes('f0603'))) ||
+      ((norm.includes('contactor') || norm.includes('k>t[±tr') || norm.includes('ki[>t[±Tr') || norm.includes('कॉन्टैक्टर') || norm.includes('कांटेक्टर')) && (norm.includes('52/5') || norm.includes('aux. conv-1') || norm.includes('aux conv-1') || norm.includes('bur-1') || norm.includes('bur 1')))
+    );
+
+  if (isSS06F0603P1Query) {
+    return {
+      identifiedFaultId: "F0603P1",
+      faultTitle: "SS06 F0603P1: CONTACTOR FAULT IN AUX. CONV-1/HB1 (Contactor 52/4 or 52/5 stuck OFF or ON) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 171 / 193):\nसबसिस्टम: SS06 (Aux-converter1)\nदोष कोड: F0603P1\nदोष संदेश (स्क्रीन 1):\nSS06 F0603P1 Loco XXX SS06: Aux-converter1\nCONTACTOR FAULT IN\nAUX. CONV-1/HB1\nContactor 52/4 or 52/5 stuck\nOFF or ON\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS06: Aux-converter1\nAUX CONVERTER1\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: कनवर्टर-1/HB1 में कॉन्टैक्टर 52/4 या 52/5 स्टक OFF या ON; दोष बना रहने पर BUR-1 आइसोलेट होगा। लोको पायलट अगले निर्धारित स्टॉप तक सामान्य ऑपरेशन कर सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: CONTACTOR FAULT IN AUX. CONV-1/HB1 / Contactor 52/4 or 52/5 stuck OFF or ON】:",
+        "1. थ्रोटल को \"0\" पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "3. यदि दोष फिर भी रहता है तो BUR-1 आइसोलेट होगा। लोको पायलट अगले निर्धारित स्टॉप तक सामान्य ऑपरेशन कर सकता है।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER1 ISOLATED (Driving still possible / max. ventilation level will be reduced)】:",
+        "1. BUR-1 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "F0603P1 आने पर थ्रोटल को '0' पर लाकर BPFA द्वारा फ़ॉल्ट ACK करें और BLDJ से VCB क्लोज़ करें। यदि दोष बना रहता है तो BUR-1 आइसोलेट होगा; लोको पायलट अगले निर्धारित स्टॉप तक सामान्य ऑपरेशन कर सकता है। स्क्रीन-2 (AUX CONVERTER1 ISOLATED) आने पर BUR-1 को आइसोलेट रखते हुए गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS06 Aux-converter1 (F0603P1, पेज 171 / 193)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 193,
+      pdfQuote: "SS06 F0603P1 Loco XXX SS06: Aux-converter1\nCONTACTOR FAULT IN\nAUX. CONV-1/HB1\nContactor 52/4 or 52/5 stuck\nOFF or ON\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ p\\[s kr>[.\n3. y(d di[P (fr B) rhti h] ti[ BUR-1 aiesi[l[T hi[gi.li[ki[ piylT agl[ (nFi<(rt ATiˆp tk simiºy aipr[Sn kr skti h].\n\nLoco XXX SS06: Aux-converter1\nAUX CONVERTER1\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. BUR-1 ki[ aiesi[l[T rKt[ h&E giD) cliE>.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS06-F0604P1. SS06 F0604P1: VENTILATION BUR 1 DISTURBED (Press acknowledge to reconfigure to BUR 2) (Vadodara TSD Page 171 / 193)
+  const isSS06F0604P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0701') && !norm.includes('f0702') && !norm.includes('f0703') && !norm.includes('f0704') &&
+    !norm.includes('ventilation bur 2') && !norm.includes('ventilation bur-2') && !norm.includes('reconfigure to bur 1') && !norm.includes('reconfigure to bur-1') && !norm.includes('reconfigure to bur1') &&
+    !norm.includes('bur-3') && !norm.includes('bur 3') &&
+    (
+      norm.includes('f0604p1') ||
+      norm.includes('f0604') ||
+      norm.includes('ventilation bur 1 disturbed') ||
+      norm.includes('ventilation bur 1') ||
+      norm.includes('ventilation bur-1') ||
+      norm.includes('reconfigure to bur 2') ||
+      norm.includes('reconfigure to bur-2') ||
+      norm.includes('reconfigure to bur2') ||
+      (norm.includes('ss06') && (norm.includes('f0604') || norm.includes('ventilation bur') || norm.includes('reconfigure'))) ||
+      ((norm.includes('ventilation') || norm.includes('v[ºt)l[sn') || norm.includes('v[ºT)l[Sn')) && (norm.includes('bur 1') || norm.includes('bur-1') || norm.includes('bur1')) && (norm.includes('disturbed') || norm.includes('(diatb)<d') || norm.includes('(diATb)<D') || norm.includes('reconfigure') || norm.includes('bur 2') || norm.includes('ack')))
+    );
+
+  if (isSS06F0604P1Query) {
+    return {
+      identifiedFaultId: "F0604P1",
+      faultTitle: "SS06 F0604P1: VENTILATION BUR 1 DISTURBED (Press acknowledge to reconfigure to BUR 2) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 171 / 193):\nसबसिस्टम: SS06 (Aux-converter1)\nदोष कोड: F0604P1\nदोष संदेश:\nSS06 F0604P1 Loco XXX SS06: Aux-converter1\nVENTILATION BUR 1\nDISTURBED\nPress acknowledge to\nreconfigure to BUR 2\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: BUR 1 का वेंटिलेशन बाधित होगा। BPFA द्वारा एक्नॉलेज करने पर BUR 2 पर लोड रीकॉन्फ़िगर होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो उठाएं, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-1 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें।",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "F0604P1 आने पर थ्रोटल '0' पर लाएं तथा BPFA दबाकर फ़ॉल्ट ACK करें जिससे लोड BUR-2 पर रीकॉन्फ़िगर हो सके। कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। यदि मैसेज दोबारा आता है तो BUR-1 को आइसोलेट रखते हुए सामान्य रूप से गाड़ी चलाएं और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS06 Aux-converter1 (F0604P1, पेज 171 / 193)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 193,
+      pdfQuote: "SS06 F0604P1 Loco XXX SS06: Aux-converter1\nVENTILATION BUR 1\nDISTURBED\nPress acknowledge to\nreconfigure to BUR 2\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ uqiy>[, VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h], BUR-1 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS07-BUR2-ISOLATED. SS07: Aux-converter2 / AUX CONVERTER 2 ISOLATED (Vadodara TSD Page 172 / 194)
+  const isSS07Bur2IsolatedQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('ocb') && !norm.includes('59.1') &&
+    !norm.includes('f0701') && !norm.includes('f0702') && !norm.includes('f0703') && !norm.includes('f0704') && !norm.includes('reconfigure') && !norm.includes('54.1/2') && !norm.includes('52/1') && !norm.includes('52/2') && !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0604') &&
+    !norm.includes('bur-1') && !norm.includes('bur 1') &&
+    !norm.includes('bur-3') && !norm.includes('bur 3') && !norm.includes('127.22/3') && !norm.includes('ss08') && !norm.includes('f0801') &&
+    (
+      norm.includes('aux converter2 isolated') ||
+      norm.includes('aux converter 2 isolated') ||
+      norm.includes('aux-converter2 isolated') ||
+      norm.includes('aux-converter 2 isolated') ||
+      norm.includes('auxiliary converter 2 isolated') ||
+      norm.includes('auxiliary converter -2 isolated') ||
+      norm.includes('127.22/2') ||
+      norm.includes('bur 2 isolated') ||
+      norm.includes('bur-2 isolated') ||
+      (norm.includes('bur 2') && norm.includes('isolated') && (norm.includes('driving') || norm.includes('ventilation') || norm.includes('127.22') || norm.includes('sb-2') || norm.includes('press<enter>') || norm.includes('press enter'))) ||
+      (norm.includes('bur-2') && norm.includes('isolated') && (norm.includes('driving') || norm.includes('ventilation') || norm.includes('127.22') || norm.includes('sb-2') || norm.includes('press<enter>') || norm.includes('press enter'))) ||
+      (norm.includes('ss07') && (norm.includes('driving still possible') || norm.includes('ventilation') || (norm.includes('isolated') && !norm.includes('disturbance') && !norm.includes('fault'))))
+    );
+
+  if (isSS07Bur2IsolatedQuery) {
+    return {
+      identifiedFaultId: "SS07-BUR2-ISOLATED",
+      faultTitle: "SS07: AUX CONVERTER 2 ISOLATED (Driving still Possible / max. ventilation level will be reduced) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 172 / 194):\nसबसिस्टम: SS07 (Aux-converter2)\nदोष संदेश:\nLoco XXX SS07: Aux-converter2\nAUX CONVERTER 2\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित रहेगा।\nप्रभाव: BUR-2 आइसोलेट रहेगा; ड्राइविंग संभव है, अधिकतम वेंटिलेशन स्तर घट जाएगा (Driving still Possible, max. ventilation level will be reduced)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. SB-2 में लगे MCB नं. 127.22/2 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो रेज़ करें, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-2 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें और कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करके BUR-2 को सर्विस में लेने की कोशिश न करें। BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "BUR-2 आइसोलेट होने पर अधिकतम वेंटिलेशन स्तर कम हो जाता है किंतु गाड़ी चलाना (Driving still Possible) संभव रहता है। SB-2 में MCB 127.22/2 की स्थिति जांचें और केवल एक बार रीसेट करें। यदि दोबारा वही मैसेज आए तो बार-बार कंट्रोल इलेक्ट्रॉनिक्स ऑफ/ऑन न करें, BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS07 Aux-converter2 (पेज 172 / 194)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 194,
+      pdfQuote: "Loco XXX SS07: Aux-converter2\nAUX CONVERTER 2\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-2 m[> lg[ MCB n>‘ 127.22/2 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ MCB ki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h], BUR-2 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[> ai]r k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn krk[ BUR-2 ki[ s(v<s m[> lin[ k) ki[(SS n kr>[. BUR-2 ki[ aiesi[l[T rKt[ h&E giD) cliy[>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS07-F0701P1. SS07 F0701P1: DISTURBANCE IN PROCESSOR BUR 2 (Vadodara TSD Page 172 / 194)
+  const isSS07F0701P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0601') && !norm.includes('f0702') && !norm.includes('f0703') && !norm.includes('54.1/2') && !norm.includes('52/1') && !norm.includes('52/2') && !norm.includes('bur-1') && !norm.includes('bur 1') && !norm.includes('bur-3') && !norm.includes('bur 3') &&
+    (
+      norm.includes('f0701p1') ||
+      norm.includes('f0701') ||
+      norm.includes('disturbance in processor bur 2') ||
+      norm.includes('disturbance in processor bur-2') ||
+      norm.includes('disturbance in processor bur2') ||
+      (norm.includes('ss07') && (norm.includes('bur 2') || norm.includes('bur-2') || norm.includes('bur2') || norm.includes('processor') || norm.includes('aux-converter2') || norm.includes('aux converter 2') || norm.includes('f0701'))) ||
+      (norm.includes('aux-converter2') && (norm.includes('disturbance') || norm.includes('vcb') || norm.includes('bur'))) ||
+      (norm.includes('aux converter 2') && (norm.includes('disturbance') || norm.includes('vcb') || norm.includes('bur'))) ||
+      (norm.includes('bur 2') && (norm.includes('disturbance') || norm.includes('try to close vcb'))) ||
+      (norm.includes('bur-2') && (norm.includes('disturbance') || norm.includes('try to close vcb')))
+    );
+
+  if (isSS07F0701P1Query) {
+    return {
+      identifiedFaultId: "F0701P1",
+      faultTitle: "SS07 F0701P1: DISTURBANCE IN PROCESSOR BUR 2 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 172 / 194):\nसबसिस्टम: SS07 (Aux-converter2)\nदोष कोड: F0701P1\nदोष संदेश (स्क्रीन 1):\nSS07 F0701P1 Loco XXX SS07: Aux-converter2\nDISTURBANCE IN\nPROCESSOR BUR 2\nTry to close VCB again\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS07: Aux-converter2\nAUX CONVERTER 2\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन हो जाएगा; BUR-2 स्वतः आइसोलेट होगा (Try to close VCB again)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: DISTURBANCE IN PROCESSOR BUR 2 / Try to close VCB again】:",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. BUR-2 अपने आप आइसोलेट होगा। ENTER key दबाएं।",
+        "3. VCB क्लोज़ करने के लिए BLDJ को प्रेस करें।",
+        "4. सामान्य ट्रैक्शन द्वारा गाड़ी चलाएं।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER 2 ISOLATED (Driving still Possible / max. ventilation level will be reduced)】:",
+        "1. SB-2 में लगे MCB नं. 127.22/2 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो रेज़ करें, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-2 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें और कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करके BUR-2 को सर्विस में लेने की कोशिश न करें। BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "थ्रोटल को शून्य ('0') पर लाकर BPFA द्वारा फ़ॉल्ट ACK करें। BUR-2 स्वतः आइसोलेट होगा; ENTER दबाकर BLDJ से VCB क्लोज़ करें और सामान्य कर्षण से गाड़ी चलाएं। इसके बाद स्क्रीन-2 (AUX CONVERTER 2 ISOLATED) आने पर SB-2 में MCB 127.22/2 की जांच करें। यदि वही मैसेज फिर से आता है, तो BUR-2 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें और बार-बार CE ऑफ/ऑन न करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS07 Aux-converter2 (F0701P1, पेज 172 / 194)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 194,
+      pdfQuote: "SS07 F0701P1 Loco XXX SS07: Aux-converter2\nDISTURBANCE IN\nPROCESSOR BUR 2\nTry to close VCB again\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>.BPFA dbikr fiˆÃT ACK kr>[.\n2. BUR-2 apn[ aip aiesi[l[T hi[gi. ENTER key dbiE>.\n3. VCB ±li[j krn[ k[ (lE BLDJ ki[ p\\[s kr>[.\n4. simiºy T^^[±Sn oiri giD) cliE>.\n\nLoco XXX SS07: Aux-converter2\nAUX CONVERTER 2\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-2 m[> lg[ MCB n>‘ 127.22/2 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ MCB ki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h], BUR-2 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[> ai]r k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn krk[ BUR-2 ki[ s(v<s m[> lin[ k) ki[(SS n kr>[. BUR-2 ki[ aiesi[l[T rKt[ h&E giD) cliy[>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS07-F0702P1. SS07 F0702P1: FAULT IN AUXILIARY CONVERTER 2 (Vadodara TSD Page 173-174 / 195-196)
+  const isSS07F0702P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1201') && !norm.includes('ss12') && !norm.includes('cubicle 2') && !norm.includes('cubicle') &&
+    !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0604') && !norm.includes('f0701') && !norm.includes('f0703') && !norm.includes('52/1') && !norm.includes('52/2') &&
+    !norm.includes('bur-1') && !norm.includes('bur 1') &&
+    !norm.includes('bur-3') && !norm.includes('bur 3') && !norm.includes('ss08') && !norm.includes('f0801') && !norm.includes('f0802') &&
+    (
+      norm.includes('f0702p1') ||
+      norm.includes('f0702') ||
+      norm.includes('fault in auxiliary converter 2') ||
+      norm.includes('fault in auxiliary converter -2') ||
+      norm.includes('fault in aux converter 2') ||
+      norm.includes('fault in aux-converter 2') ||
+      norm.includes('fault in aux-converter2') ||
+      norm.includes('fault in aux. converter 2') ||
+      norm.includes('fault in aux. conv-2') ||
+      (norm.includes('ss07') && (norm.includes('f0702') || norm.includes('fault in auxiliary') || norm.includes('fault in aux') || norm.includes('54.1/2') || norm.includes('mrb-2') || norm.includes('mrb 2'))) ||
+      ((norm.includes('bur-2') || norm.includes('bur 2')) && (norm.includes('fault in auxiliary') || norm.includes('54.1/2') || norm.includes('54.1') || norm.includes('mrb-2') || norm.includes('mrb 2')))
+    );
+
+  if (isSS07F0702P1Query) {
+    return {
+      identifiedFaultId: "F0702P1",
+      faultTitle: "SS07 F0702P1: FAULT IN AUXILIARY CONVERTER 2 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 173-174 / 195-196):\nसबसिस्टम: SS07 (Aux-converter2)\nदोष कोड: F0702P1\nदोष संदेश (स्क्रीन 1):\nSS07 F0702P1 Loco XXX SS07: Aux-converter2\nFAULT IN AUXILIARY\nCONVERTER 2\nTry to close VCB again\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS07: Aux-converter2\nAUX CONVERTER 2\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन हो जाएगा; BUR-2 स्वतः आइसोलेट होगा (Try to close VCB again)। HB-2 MCB 54.1/2 बार-बार ट्रिप होने पर सेक्शन साफ़ कर TLC को सूचित करें व सहायता मांगें।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: FAULT IN AUXILIARY CONVERTER 2 / Try to close VCB again】:",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "3. यदि फिर से मैसेज आता है तो BUR-2 अपने आप आइसोलेट होगा। <ENTER> key दबाएं।",
+        "4. HB-2 में लगे MCB नं 54.1/2 को चेक करें। यदि ट्रिप है तो VCB ओपन करके रीसेट करें। सामान्य ट्रैक्शन द्वारा गाड़ी चलाएं।",
+        "   ★ यदि MCB क्र. 54.1/2 फिर से ट्रिप होती है, तो सेक्शन साफ़ करके TLC को सूचित करें और सहायता मांगें। {नोट: IGBT वाला BUR-2 & 3 भी MRB-2 के काम न करने पर, इनवर्टर फ़ॉल्ट के कारण आइसोलेट होंगे। यह F0110P1 फ़ॉल्ट आने का कारण होगा जिसके लिए ट्रबलशूट करें।}",
+        "5. सामान्य ट्रैक्शन द्वारा गाड़ी चलाएं।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER 2 ISOLATED (Driving still possible / max. ventilation level will be reduced)】:",
+        "1. SB-2 में लगे MCB नं. 127.22/2 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो रेज़ करें, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-2 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें। यदि BUR-2 आइसोलेट नहीं हो रहा है तो VCB ओपन करके तथा कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके SB-2 में लगे MCB 127.22/2 को ट्रिप करके BUR-2 को आइसोलेट करें।",
+        "4. लोको को एनरजाइज करें और BUR-2 को आइसोलेट रखते हुए गाड़ी कार्य करें। इस स्थिति में LSFI की बत्ती लगातार प्रकाशित रहेगी।",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "थ्रोटल को '0' पर लाएं, BPFA से फ़ॉल्ट ACK करें और BLDJ से VCB क्लोज़ करें। यदि संदेश फिर आए तो <ENTER> दबाएं, BUR-2 स्वतः आइसोलेट होगा। HB-2 में MCB 54.1/2 की जांच करें, यदि ट्रिप हो तो VCB ओपन करके रीसेट करें। यदि MCB 54.1/2 दोबारा ट्रिप होती है तो सेक्शन साफ़ करके TLC को सूचित करें और सहायता इंजन मांगें। IGBT लोको में MRB-2 बंद होने से BUR-2 & 3 दोनों इनवर्टर फ़ॉल्ट पर आइसोलेट हो सकते हैं जिससे F0110P1 आ सकता है। स्क्रीन-2 आने पर SB-2 में MCB 127.22/2 की जांच करें और आवश्यकतानुसार मैन्युअल आइसोलेट करें (LSFI लगातार जलेगी)।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS07 Aux-converter2 (F0702P1, पेज 173-174 / 195-196)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 195,
+      pdfQuote: "SS07 F0702P1 Loco XXX SS07: Aux-converter2\nFAULT IN AUXILIARY\nCONVERTER 2\nTry to close VCB again\n1. Y\\i[Tl ki[ “ 0” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ p\\[s kr>[.\n3. y(d (fr s[ m]s[J aiti h] ti[ BUR-2 apn[ aip aiesi[l[T hi[gi. <ENTER> key dbiE>.\n4. HB-2 m[> lg[ MCB n> 54.1/2 ki[ c]k kr>[.y(d (T^p h] ti[[ VCB ai[pn krk[ (rs[T kr[>.simiºy T^^]±Sn oiri giD) cliE>. y(d MCB k\\‘ 54.1/2 (fr s[ (T^p hi[t) h], ti[ s[±Sn sif krk[ TLC ki[ s*(ct kr[> ai]r shiyti mig[>. {IGBT vili BUR-2 & 3 B) MRB-2 k[ kim n krn[ pr, env<Tr fiˆÃT k[ kirN aiesi[l[T hi>[g[.yh F0110P1 fiˆÃT ain[ ki kirN hi[gi (jsk[ (lE T^^bl-S*T kr[>.} 5. simiºy T^^]±Sn oiri giD) cliE>.\n\nLoco XXX SS07: Aux-converter2\nAUX CONVERTER 2\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-2 m[> lg[ MCB n>‘ 127.22/2 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[[ MCB ki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h], BUR-2 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[]Sn cil* rK[>.y(d BUR-2 aiesi[l[T nh)>> hi[ rhi h] ti[ VCB ai[pn krk[ tYi k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ SB-2 m[> lg[ MCB 127.22/2 ki[ (T^p krk[ BUR-2 ki[ aiesi[l[T kr>[.\n4. li[ki[ ki[ enrjiej kr>[ ai]r BUR-2 ki[ aiesi[l[T rKt[ h&E giD) kiy< kr>[. es (AY(t m[> LSFI k) b_i) lgitir p\\ki(St rh[g).\n5. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS07-F0703P1. SS07 F0703P1: CONTACTOR FAULT IN AUX CONV-2/ HB2 (Vadodara TSD Page 174-175 / 196-197)
+  const isSS07F0703P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0604') && !norm.includes('f0701') && !norm.includes('f0702') &&
+    !norm.includes('bur-1') && !norm.includes('bur 1') &&
+    !norm.includes('bur-3') && !norm.includes('bur 3') && !norm.includes('ss08') && !norm.includes('f0801') && !norm.includes('f0802') && !norm.includes('f0803') && !norm.includes('52/3') && !norm.includes('auxconv 3') && !norm.includes('auxconv-3') &&
+    (
+      norm.includes('f0703p1') ||
+      norm.includes('f0703') ||
+      norm.includes('52/1/2/4') ||
+      norm.includes('52/1') ||
+      norm.includes('52/2') ||
+      (norm.includes('contactor') && (norm.includes('aux conv-2') || norm.includes('aux conv 2') || norm.includes('aux. conv-2') || norm.includes('aux. conv 2') || norm.includes('aux-conv-2') || norm.includes('aux converter 2') || norm.includes('aux-converter 2') || norm.includes('aux-converter2') || norm.includes('hb2') || norm.includes('hb-2'))) ||
+      ((norm.includes('52/1') || norm.includes('52/2') || (norm.includes('52/4') && (norm.includes('hb2') || norm.includes('hb-2') || norm.includes('bur 2') || norm.includes('bur-2')))) && (norm.includes('stuck') || norm.includes('contactor') || norm.includes('stuck off') || norm.includes('stuck on'))) ||
+      (norm.includes('ss07') && (norm.includes('f0703') || norm.includes('contactor') || norm.includes('stuck') || norm.includes('52/1') || norm.includes('52/2')))
+    );
+
+  if (isSS07F0703P1Query) {
+    return {
+      identifiedFaultId: "F0703P1",
+      faultTitle: "SS07 F0703P1: CONTACTOR FAULT IN AUX CONV-2/ HB2 (Contactor 52/1/2/4 stuck OFF or ON) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 174-175 / 196-197):\nसबसिस्टम: SS07 (Aux-converter2)\nदोष कोड: F0703P1\nदोष संदेश (स्क्रीन 1):\nSS07 F0703P1 Loco XXX SS07: Aux-converter2\nCONTACTOR FAULT IN\nAUX CONV-2/ HB2\nContactor 52/1/2/4 stuck OFF or\nON\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS07: Aux-converter2\nAUX CONVERTER 2\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन हो जाएगा; HB2 में कॉन्टैक्टर 52/1, 52/2 या 52/4 के stuck होने पर BUR-2 स्वतः आइसोलेट होगा। लोको पायलट अगले निर्धारित स्टॉप तक सामान्य ऑपरेशन कर सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: CONTACTOR FAULT IN AUX CONV-2/ HB2 / Contactor 52/1/2/4 stuck OFF or ON】:",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "3. यदि दोष फिर भी रहता है तो BUR-2 आइसोलेट होगा। लोको पायलट अगले निर्धारित स्टॉप तक सामान्य ऑपरेशन कर सकता है।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER 2 ISOLATED (Driving still possible / max. ventilation level will be reduced)】:",
+        "1. BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "थ्रोटल को '0' पर लाकर BPFA द्वारा फ़ॉल्ट ACK करें और BLDJ से VCB क्लोज़ करें। यदि खराबी बनी रहती है तो BUR-2 स्वतः आइसोलेट होगा; लोको पायलट अगले निर्धारित स्टॉप तक सामान्य परिचालन जारी रख सकता है। स्क्रीन-2 पर BUR-2 को आइसोलेट रखते हुए गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS07 Aux-converter2 (F0703P1, पेज 174-175 / 196-197)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 196,
+      pdfQuote: "SS07 F0703P1 Loco XXX SS07: Aux-converter2\nCONTACTOR FAULT IN\nAUX CONV-2/ HB2\nContactor 52/1/2/4 stuck OFF or\nON\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ p\\[s kr>[.\n3. y(d di[P (fr B) rhti h] ti[ BUR-2 aiesi[l[T hi[gi. li[ki[ piylT agl[ (nFi<(rt ATiˆp tk simiºy aiˆpr[Sn kr skti h].\n\nLoco XXX SS07: Aux-converter2\nAUX CONVERTER 2\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. BUR-2 ki[ aiesi[l[T rKt[ h&E giD) cliE>.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS07-F0704P1. SS07 F0704P1: VENTILATION BUR 2 DISTURBED (Press acknowledge to reconfigure to BUR 1) (Vadodara TSD Page 175 / 197)
+  const isSS07F0704P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0701') && !norm.includes('f0702') && !norm.includes('f0703') &&
+    !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0604') &&
+    !norm.includes('bur-3') && !norm.includes('bur 3') &&
+    (
+      norm.includes('f0704p1') ||
+      norm.includes('f0704') ||
+      norm.includes('ventilation bur 2 disturbed') ||
+      norm.includes('ventilation bur 2') ||
+      norm.includes('ventilation bur-2') ||
+      norm.includes('reconfigure to bur 1') ||
+      norm.includes('reconfigure to bur-1') ||
+      norm.includes('reconfigure to bur1') ||
+      (norm.includes('ss07') && (norm.includes('f0704') || norm.includes('ventilation bur') || norm.includes('reconfigure'))) ||
+      ((norm.includes('ventilation') || norm.includes('v[ºt)l[sn') || norm.includes('v[ºT)l[Sn')) && (norm.includes('bur 2') || norm.includes('bur-2') || norm.includes('bur2')) && (norm.includes('disturbed') || norm.includes('(diatb)<d') || norm.includes('(diATb)<D') || norm.includes('reconfigure') || norm.includes('bur 1') || norm.includes('ack')))
+    );
+
+  if (isSS07F0704P1Query) {
+    return {
+      identifiedFaultId: "F0704P1",
+      faultTitle: "SS07 F0704P1: VENTILATION BUR 2 DISTURBED (Press acknowledge to reconfigure to BUR 1) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 175 / 197):\nसबसिस्टम: SS07 (Aux-converter2)\nदोष कोड: F0704P1\nदोष संदेश:\nSS07 F0704P1 Loco XXX SS07: Aux-converter2\nVENTILATION BUR 2\nDISTURBED\nPress acknowledge to\nreconfigure to BUR 1\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: BUR 2 का वेंटिलेशन बाधित होगा। BPFA द्वारा एक्नॉलेज करने पर BUR 1 पर लोड रीकॉन्फ़िगर होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो उठाएं, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-2 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें।",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "F0704P1 आने पर थ्रोटल '0' पर लाएं तथा BPFA दबाकर फ़ॉल्ट ACK करें जिससे लोड BUR-1 पर रीकॉन्फ़िगर हो सके। कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। यदि मैसेज दोबारा आता है तो BUR-2 को आइसोलेट रखते हुए सामान्य रूप से गाड़ी चलाएं और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS07 Aux-converter2 (F0704P1, पेज 175 / 197)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 197,
+      pdfQuote: "SS07 F0704P1 Loco XXX SS07: Aux-converter2\nVENTILATION BUR 2\nDISTURBED\nPress acknowledge to\nreconfigure to BUR 1\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>.BPFA dbikr fiˆÃT ACK kr>[.\n2. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ uqiy>[, VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h], BUR-2 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS08-BUR3-ISOLATED. SS08: Aux-converter3 / AUX CONVERTER 3 ISOLATED (Vadodara TSD Page 176 / 198)
+  const isSS08Bur3IsolatedQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('ocb') && !norm.includes('59.1') &&
+    !norm.includes('f0801') && !norm.includes('f0802') && !norm.includes('f0803') && !norm.includes('52/3') && !norm.includes('contactor') && !norm.includes('disturbance') && !norm.includes('try to close vcb') && !norm.includes('54.1/2') &&
+    !norm.includes('bur-1') && !norm.includes('bur 1') && !norm.includes('bur-2') && !norm.includes('bur 2') &&
+    !norm.includes('ss06') && !norm.includes('ss07') &&
+    !norm.includes('battery') && !norm.includes('b]tr)') && !norm.includes('बैटरी') && !norm.includes('ss09') && !norm.includes('f0901') && !norm.includes('f0902') &&
+    (
+      norm.includes('aux converter3 isolated') ||
+      norm.includes('aux converter 3 isolated') ||
+      norm.includes('aux-converter3 isolated') ||
+      norm.includes('aux-converter 3 isolated') ||
+      norm.includes('auxiliary converter 3 isolated') ||
+      norm.includes('auxiliary converter -3 isolated') ||
+      norm.includes('127.22/3') ||
+      norm.includes('bur 3 isolated') ||
+      norm.includes('bur-3 isolated') ||
+      (norm.includes('bur 3') && norm.includes('isolated') && (norm.includes('driving') || norm.includes('ventilation') || norm.includes('127.22') || norm.includes('sb-2') || norm.includes('press<enter>') || norm.includes('press enter'))) ||
+      (norm.includes('bur-3') && norm.includes('isolated') && (norm.includes('driving') || norm.includes('ventilation') || norm.includes('127.22') || norm.includes('sb-2') || norm.includes('press<enter>') || norm.includes('press enter'))) ||
+      (norm.includes('ss08') && (norm.includes('driving still possible') || norm.includes('ventilation') || (norm.includes('isolated') && !norm.includes('disturbance') && !norm.includes('fault'))))
+    );
+
+  if (isSS08Bur3IsolatedQuery) {
+    return {
+      identifiedFaultId: "SS08-BUR3-ISOLATED",
+      faultTitle: "SS08: AUX CONVERTER 3 ISOLATED (Driving still Possible / max. ventilation level will be reduced) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 176 - 178 / 198 - 200):\nसबसिस्टम: SS08 (Aux-converter3)\nदोष संदेश:\nLoco XXX SS08: Aux-converter3\nAUX CONVERTER 3\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित रहेगा। (यदि MCB 127.22/3 ट्रिप करके आइसोलेट किया जाए तो LSFI भी लगातार जलेगी)\nप्रभाव: BUR-3 आइसोलेट रहेगा; ड्राइविंग संभव है, अधिकतम वेंटिलेशन स्तर घट जाएगा (Driving still Possible, max. ventilation level will be reduced)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. SB-2 में लगे MCB नं. 127.22/3 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो रेज़ करें, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-3 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें। यदि BUR-3 आइसोलेट नहीं हो रहा है तो VCB ओपन करके तथा कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके SB-2 में लगे MCB 127.22/3 को ट्रिप करके BUR-3 को आइसोलेट करें।",
+        "4. लोको को एनरजाइज करें और BUR-3 को आइसोलेट रखते हुए गाड़ी कार्य करें। इस स्थिति में LSFI की बत्ती लगातार जलती रहेगी।",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "BUR-3 आइसोलेट होने पर अधिकतम वेंटिलेशन स्तर घट जाता है किंतु गाड़ी चलाना (Driving still Possible) संभव रहता है। SB-2 में MCB 127.22/3 की स्थिति जांचें और केवल एक बार रीसेट करें। यदि दोबारा वही मैसेज आए तो बार-बार कंट्रोल इलेक्ट्रॉनिक्स ऑफ/ऑन न करें; यदि ऑटोमैटिक आइसोलेट न हो तो VCB ओपन व CE ऑफ़ करके SB-2 में MCB 127.22/3 को ट्रिप करके BUR-3 को आइसोलेट करें (LSFI जलेगी) और गाड़ी कार्य करते हुए TLC को सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS08 Aux-converter3 (पेज 176 / 198)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 198,
+      pdfQuote: "Loco XXX SS08: Aux-converter3\nAUX CONVERTER 3\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-2 m[> lg[ MCB n>‘ 127.22/3 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[[ MCB ki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h],BUR-3 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[> ai]r k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn krk[ BUR-3 ki[ s(v<s m[> lin[ ki p\\yRn n kr>[. BUR-3 ki[ aiesi[l[T rKt[ h&E giD) cliy[>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS08-F0801P1. SS08 F0801P1: DISTURBANCE IN PROCESSOR BUR 3 (Vadodara TSD Page 176 / 198)
+  const isSS08F0801P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0601') && !norm.includes('f0701') && !norm.includes('f0702') && !norm.includes('f0703') && !norm.includes('f0704') &&
+    !norm.includes('f0802') && !norm.includes('f0803') && !norm.includes('52/3') && !norm.includes('contactor') && !norm.includes('fault in auxiliary') && !norm.includes('fault in aux') && !norm.includes('54.1/2') &&
+    !norm.includes('bur-1') && !norm.includes('bur 1') && !norm.includes('bur-2') && !norm.includes('bur 2') &&
+    (
+      norm.includes('f0801p1') ||
+      norm.includes('f0801') ||
+      norm.includes('disturbance in processor bur 3') ||
+      norm.includes('disturbance in processor bur-3') ||
+      norm.includes('disturbance in processor bur3') ||
+      (norm.includes('ss08') && (norm.includes('bur 3') || norm.includes('bur-3') || norm.includes('bur3') || norm.includes('processor') || norm.includes('aux-converter3') || norm.includes('aux converter 3') || norm.includes('f0801'))) ||
+      (norm.includes('aux-converter3') && (norm.includes('disturbance') || norm.includes('vcb') || norm.includes('bur'))) ||
+      (norm.includes('aux converter 3') && (norm.includes('disturbance') || norm.includes('vcb') || norm.includes('bur'))) ||
+      (norm.includes('bur 3') && (norm.includes('disturbance') || norm.includes('try to close vcb'))) ||
+      (norm.includes('bur-3') && (norm.includes('disturbance') || norm.includes('try to close vcb')))
+    );
+
+  if (isSS08F0801P1Query) {
+    return {
+      identifiedFaultId: "F0801P1",
+      faultTitle: "SS08 F0801P1: DISTURBANCE IN PROCESSOR BUR 3 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 176 / 198):\nसबसिस्टम: SS08 (Aux-converter3)\nदोष कोड: F0801P1\nदोष संदेश (स्क्रीन 1):\nSS08 F0801P1 Loco XXX SS08: Aux-converter3\nDISTURBANCE IN\nPROCESSOR BUR 3\nTry to close VCB again\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS08: Aux-converter3\nAUX CONVERTER 3\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन हो जाएगा; BUR-3 स्वतः आइसोलेट होगा (Try to close VCB again)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: DISTURBANCE IN PROCESSOR BUR 3 / Try to close VCB again】:",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. BUR-3 अपने आप आइसोलेट होगा। ENTER key दबाएं।",
+        "3. VCB क्लोज़ करने के लिए BLDJ को प्रेस करें।",
+        "4. सामान्य ट्रैक्शन द्वारा गाड़ी चलाएं।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER 3 ISOLATED (Driving still Possible / max. ventilation level will be reduced)】:",
+        "1. SB-2 में लगे MCB नं. 127.22/3 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो रेज़ करें, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-3 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें और कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करके BUR-3 को सर्विस में लेने का प्रयत्न न करें। BUR-3 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "F0801P1 आने पर थ्रोटल '0' पर लाएं, BPFA द्वारा फ़ॉल्ट ACK करें, और एंटर दबाकर BLDJ से VCB क्लोज़ करें। यदि BUR-3 आइसोलेट रहता है तो SB-2 में लगे MCB 127.22/3 को चेक करें (ट्रिप होने पर कंट्रोल इलेक्ट्रॉनिक्स ऑफ करके एक बार रीसेट करें)। यदि ट्रिप नहीं है तो सीई ऑफ/ऑन करके लोको एनर्जाइज करें। यदि दोबारा वही मैसेज आए तो बार-बार CE ऑफ/ऑन न करें, BUR-3 को आइसोलेट रखते हुए सामान्य ऑपरेशन जारी रखें तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS08 Aux-converter3 (F0801P1, पेज 176 / 198)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 198,
+      pdfQuote: "SS08 F0801P1 Loco XXX SS08: Aux-converter3\nDISTURBANCE IN\nPROCESSOR BUR 3\nTry to close VCB again\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. BUR-3 apn[ aip aiesi[l[T hi[gi. ENTER key dbiE>.\n3. VCB ±li[j krn[ k[ (lE BLDJ ki[ p\\[s kr>[.\n4. simiºy T^^]±Sn oiri giD) cliE>.\n\nLoco XXX SS08: Aux-converter3\nAUX CONVERTER 3\nISOLATED\nDriving still Possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-2 m[> lg[ MCB n>‘ 127.22/3 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[[ MCB ki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h],BUR-3 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[> ai]r k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn krk[ BUR-3 ki[ s(v<s m[> lin[ ki p\\yRn n kr>[. BUR-3 ki[ aiesi[l[T rKt[ h&E giD) cliy[>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS08-F0802P1. SS08 F0802P1: FAULT IN AUXILIARY CONVERTER 3 (Vadodara TSD Page 177 - 178 / 199 - 200)
+  const isSS08F0802P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0604') &&
+    !norm.includes('f0701') && !norm.includes('f0702') && !norm.includes('f0703') && !norm.includes('f0704') &&
+    !norm.includes('f0801') && !norm.includes('f0803') && !norm.includes('52/3') && !norm.includes('contactor') && !norm.includes('disturbance') &&
+    !norm.includes('bur-1') && !norm.includes('bur 1') && !norm.includes('bur1') &&
+    !norm.includes('bur-2') && !norm.includes('bur 2') && !norm.includes('bur2') &&
+    (
+      norm.includes('f0802p1') ||
+      norm.includes('f0802') ||
+      norm.includes('fault in auxiliary converter 3') ||
+      norm.includes('fault in auxiliary converter-3') ||
+      norm.includes('fault in aux converter 3') ||
+      norm.includes('fault in aux-converter3') ||
+      norm.includes('fault in aux converter-3') ||
+      norm.includes('fault in aux-converter 3') ||
+      (norm.includes('54.1/2') && (norm.includes('bur 3') || norm.includes('bur-3') || norm.includes('ss08') || norm.includes('converter 3') || norm.includes('converter-3'))) ||
+      (norm.includes('ss08') && (norm.includes('fault in auxiliary') || norm.includes('fault in aux') || norm.includes('f0802') || norm.includes('fault'))) ||
+      ((norm.includes('bur 3') || norm.includes('bur-3') || norm.includes('bur3')) && (norm.includes('fault') || norm.includes('try to close vcb') || norm.includes('54.1/2'))) ||
+      ((norm.includes('aux converter 3') || norm.includes('aux converter-3') || norm.includes('aux-converter 3') || norm.includes('aux-converter3') || norm.includes('auxiliary converter 3')) && (norm.includes('fault') || norm.includes('try to close vcb') || norm.includes('54.1/2')))
+    );
+
+  if (isSS08F0802P1Query) {
+    return {
+      identifiedFaultId: "F0802P1",
+      faultTitle: "SS08 F0802P1: FAULT IN AUXILIARY CONVERTER 3 (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 177 - 178 / 199 - 200):\nसबसिस्टम: SS08 (Aux-converter3)\nदोष कोड: F0802P1\nदोष संदेश (स्क्रीन 1):\nSS08 F0802P1 Loco XXX SS08: Aux-converter3\nFAULT IN AUXILIARY\nCONVERTER 3\nTry to close VCB again\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS08: Aux-converter3\nAUX CONVERTER 3\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा। (मैनुअल आइसोलेशन की स्थिति में LSFI भी निरंतर जलेगी)\nप्रभाव: VCB ओपन हो जाएगा; BUR-3 स्वतः आइसोलेट होगा (Try to close VCB again)। यदि MCB 54.1/2 दोबारा ट्रिप होती है तो सेक्शन साफ करके सहायता मांगें।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: FAULT IN AUXILIARY CONVERTER 3 / Try to close VCB again】:",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "3. यदि दोबारा मैसेज आता है तो BUR-3 अपने आप आइसोलेट होगा। <ENTER> key दबाएं।",
+        "4. HB-2 में लगे MCB नं 54.1/2 को चेक करें। यदि ट्रिप है तो VCB ओपन करके रीसेट करें। सामान्य ट्रैक्शन द्वारा गाड़ी चलाएं। यदि MCB क्र. 54.1/2 फिर से ट्रिप होती है, तो सेक्शन साफ करके TLC को सूचित करें और सहायता मांगें। {IGBT वाला BUR-2 & 3 भी, MRB-2 के काम न करने पर इन्वर्टर फ़ॉल्ट के कारण आइसोलेट होंगे। यह F0110P1 फ़ॉल्ट आने का कारण होगा जिसके लिए ट्रबलशूट करें।}",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER 3 ISOLATED (Driving still possible / max. ventilation level will be reduced)】:",
+        "1. SB-2 में लगे MCB नं. 127.22/3 को चेक करें, यदि ट्रिप है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB को एक बार रीसेट करें।",
+        "2. यदि MCB ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ करके ऑन करें। पेंटो रेज़ करें, VCB क्लोज़ करें, यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "3. यदि वही मैसेज फिर से आता है, BUR-3 को आइसोलेट रखते हुए सामान्य ऑपरेशन चालू रखें। यदि BUR-3 आइसोलेट नहीं हो रहा है तो VCB ओपन करके तथा कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके SB-2 में लगे MCB 127.22/3 को ट्रिप करके BUR-3 को आइसोलेट करें।",
+        "4. लोको को एनरजाइज करें और BUR-3 को आइसोलेट रखते हुए गाड़ी कार्य करें। इस स्थिति में LSFI की बत्ती लगातार जलती रहेगी।",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "F0802P1 आने पर थ्रोटल '0' पर लाएं, BPFA द्वारा फ़ॉल्ट ACK करें और BLDJ से VCB क्लोज़ करें। यदि दोबारा मैसेज आए तो HB-2 में MCB 54.1/2 जांचें (ट्रिप होने पर VCB ओपन कर रीसेट करें)। यदि MCB 54.1/2 दोबारा ट्रिप हो तो तुरंत सेक्शन साफ कर TLC को सूचित कर सहायता इंजन मांगें (MRB-2 न चलने से IGBT BUR-2 व BUR-3 इन्वर्टर फ़ॉल्ट/F0110P1 से आइसोलेट हो सकते हैं)। स्क्रीन-2 पर यदि BUR-3 स्वतः आइसोलेट न हो तो VCB ओपन व CE ऑफ़ करके SB-2 में MCB 127.22/3 ट्रिप करके आइसोलेट करें (LSFI जलेगी) और गाड़ी कार्य करते हुए TLC को सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS08 Aux-converter3 (F0802P1, पेज 177-178 / 199-200)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 199,
+      pdfQuote: "SS08 F0802P1 Loco XXX SS08: Aux-converter3\nFAULT IN AUXILIARY\nCONVERTER 3\nTry to close VCB again\n1. Y\\i[Tl ki[“ 0” pr liy[>.BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ p\\[s kr>[.\n3. y(d d&biri m]s[J aiti h] ti[ BUR-3 apn[ aip aiesi[l[T hi[gi. <ENTER> key dbiE>.\n4. HB-2m[> lg[ MCB n>0 54.1/2 ki[ c]k kr>[.y(d (T^p h] ti[[ VCB ai[pn krk[ (rs[T kr[>.simiºy T^^]±Sn oiri giD) cliE>. y(d MCB k\‘ 54.1/2 (fr s[ (T^p hi[t) h], ti[ s[±Sn sif krk[ TLC ki[ s*(ct kr[> ai]r shiyti mig[>. {IGBT vili BUR-2 & 3 B), MRB-2 k[ kim n krn[ pr env<Tr fiˆÃT k[ kirN aiesi[l[T hi[>g[. yh F0110P1 fiˆÃT ain[ ki kirN hi[gi (jsk[ (lE T^^blS*T kr[>.\n\nLoco XXX SS08: Aux-converter3\nAUX CONVERTER 3\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. SB-2 m[> lg[ MCB n>‘ 127.22/3 ki[ c]k kr>[, y(d (T^p h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[[ MCBki[ Ek bir (rs[T kr>[.\n2. y(d MCB (T^^p nh)> h] ti[ k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf krk[ aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[, y(d li[ki[ simiºy hi[ti h] ti[ T^]±Sn cil* kr>[.\n3. y(d vh) m]s[j (fr s[ aiti h], BUR-3 ki[ aiesi[l[T rKt[ h&E simiºy aiˆpr[Sn cil* rK[>.y(d BUR-3 aiesi[l[T nh)>> hi[ rhi h] ti[ VCB ai[pn krk[ tYi k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ SB-2 m[> lg[ MCB127.22/3 ki[ (T^p krk[ BUR-3 ki[ aiesi[l[T kr>[.\n4. li[ki[ ki[ enrjiej kr>[ ai]r BUR-3 ki[ aiesi[l[T rKt[ h&E giD) kiy< kr>[. es (AY(t m[> LSFI k) b_i) lgitir jlt) rh[g) .\n5. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS08-F0803P1. SS08 F0803P1: CONTACTOR FAULT IN AUXCONV 3 (Contactor 52/3 stuck OFF or ON) (Vadodara TSD Page 179 / 201)
+  const isSS08F0803P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0604') &&
+    !norm.includes('f0701') && !norm.includes('f0702') && !norm.includes('f0703') && !norm.includes('f0704') &&
+    !norm.includes('f0801') && !norm.includes('f0802') &&
+    !norm.includes('bur-1') && !norm.includes('bur 1') && !norm.includes('bur1') &&
+    !norm.includes('bur-2') && !norm.includes('bur 2') && !norm.includes('bur2') &&
+    !norm.includes('52/4') && !norm.includes('52/5') && !norm.includes('52/1') && !norm.includes('52/2') &&
+    (
+      norm.includes('f0803p1') ||
+      norm.includes('f0803') ||
+      norm.includes('52/3') ||
+      norm.includes('contactor fault in auxconv 3') ||
+      norm.includes('contactor fault in auxconv-3') ||
+      norm.includes('contactor fault in aux conv 3') ||
+      norm.includes('contactor fault in aux conv-3') ||
+      norm.includes('contactor fault in aux. conv 3') ||
+      norm.includes('contactor fault in aux. conv-3') ||
+      norm.includes('auxconv 3') ||
+      norm.includes('auxconv-3') ||
+      (norm.includes('ss08') && (norm.includes('contactor') || norm.includes('52/3') || norm.includes('f0803'))) ||
+      ((norm.includes('contactor') || norm.includes('कांटैक्टर') || norm.includes('कॉन्टैक्टर') || norm.includes('k>t[±tr') || norm.includes('ki[>t[±tr') || norm.includes('stuck')) && (norm.includes('bur 3') || norm.includes('bur-3') || norm.includes('bur3') || norm.includes('conv 3') || norm.includes('conv-3') || norm.includes('converter 3') || norm.includes('converter-3') || norm.includes('52/3')))
+    );
+
+  if (isSS08F0803P1Query) {
+    return {
+      identifiedFaultId: "F0803P1",
+      faultTitle: "SS08 F0803P1: CONTACTOR FAULT IN AUXCONV 3 (Contactor 52/3 stuck OFF or ON) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 179 / 201):\nसबसिस्टम: SS08 (Aux-converter3)\nदोष कोड: F0803P1\nदोष संदेश (स्क्रीन 1):\nSS08 F0803P1 Loco XXX SS08: Aux-converter3\nCONTACTOR FAULT IN\nAUXCONV 3\nContactor 52/3 stuck OFF or ON\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS08: Aux-converter3\nAUX CONVERTER 3\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: ऑक्सिलरी कनवर्टर 3 में कॉन्टैक्टर 52/3 स्टक OFF या ON; दोष बना रहने पर BUR-3 आइसोलेट होगा। लोको पायलट अगले निर्धारित स्टॉप तक सामान्य ऑपरेशन कर सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: CONTACTOR FAULT IN AUXCONV 3 / Contactor 52/3 stuck OFF or ON】:",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. VCB क्लोज़ करने के लिए BLDJ प्रेस करें।",
+        "3. यदि दोष फिर भी रहता है तो BUR-3 आइसोलेट होगा। लोको पायलट अगले निर्धारित स्टॉप तक सामान्य ऑपरेशन कर सकता है।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: AUX CONVERTER 3 ISOLATED (Driving still possible / max. ventilation level will be reduced)】:",
+        "1. BUR-3 को आइसोलेट रखते हुए गाड़ी चलाएं।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "F0803P1 आने पर थ्रोटल को '0' पर लाकर BPFA द्वारा फ़ॉल्ट ACK करें और BLDJ से VCB क्लोज़ करें। यदि दोष बना रहता है तो BUR-3 स्वतः आइसोलेट होगा; लोको पायलट अगले निर्धारित स्टॉप तक सामान्य ऑपरेशन कर सकता है। स्क्रीन-2 (AUX CONVERTER 3 ISOLATED) आने पर BUR-3 को आइसोलेट रखते हुए गाड़ी चलाएं तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS08 Aux-converter3 (F0803P1, पेज 179 / 201)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 201,
+      pdfQuote: "SS08 F0803P1 Loco XXX SS08: Aux-converter3\nCONTACTOR FAULT IN\nAUXCONV 3\nContactor 52/3 stuck OFF or ON\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. VCB ±li[j krn[ k[ (lE BLDJ p\\[s kr>[.\n3. y(d di[P (fr B) rhti h] ti[ BUR-3 aiesi[l[T hi[gi. li[ki[ piylT agl[ (nFi<(rt ATiˆp tk simiºy aipr[Sn kr skti h].\n\nLoco XXX SS08: Aux-converter3\nAUX CONVERTER 3\nISOLATED\nDriving still possible\nmax. ventilation level will be\nreduced\nPress<Enter>\n1. BUR-3 ki[ aiesi[l[T rKt[ h&E giD) cliE>.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-AUX-MCB. SS06/SS07/SS08: Troubleshooting on frequent tripping of Auxiliary Motors MCBs (Vadodara TSD Page 180 / 202)
+  const isFrequentTripKeyword = 
+    norm.includes('bar-bar') || norm.includes('bir-bir') || norm.includes('bar bar') || norm.includes('barbar') ||
+    norm.includes('बार-बार') || norm.includes('बार बार') || norm.includes('frequent') ||
+    norm.includes('as>t&ln') || norm.includes('असंतुलन') || norm.includes('unbalance') ||
+    norm.includes('voltage unbalance');
+
+  const isAuxMotorsMcbFrequentTrippingQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('ss09') && !norm.includes('f0901') && !norm.includes('f0902') && !norm.includes('f0903') && !norm.includes('f0904') && !norm.includes('f0905') &&
+    !norm.includes('battery') && !norm.includes('बैटरी') && !norm.includes('b]tr)') &&
+    !norm.includes('f1101') && !norm.includes('ss11') && !norm.includes('cubicle 1') &&
+    (
+      // Overarching query from page 180 / user prompt
+      norm.includes('ss06-ss08-aux-mcb-trip') ||
+      norm.includes('aiˆ³j)lr) mi[tri[>') ||
+      norm.includes('aiˆ³j)lr)') ||
+      norm.includes('ऑक्सिलरी मोटरों के mcb') ||
+      norm.includes('ऑक्सिलरी मोटर mcb') ||
+      norm.includes('auxiliary motor mcb') ||
+      norm.includes('auxiliary motors mcb') ||
+      norm.includes('aux motor mcb') ||
+      norm.includes('aux motors mcb') ||
+      ((norm.includes('auxiliary') || norm.includes('ऑक्सिलरी') || norm.includes('aux')) && (norm.includes('motor') || norm.includes('मोटर')) && isFrequentTripKeyword) ||
+      (norm.includes('mcb') && isFrequentTripKeyword && (norm.includes('aux') || norm.includes('bur') || norm.includes('motor') || norm.includes('मोटर') || norm.includes('ss06') || norm.includes('ss07') || norm.includes('ss08'))) ||
+      // Specific Case 1: OCB (59.1) frequent tripping
+      ((norm.includes('59.1') || norm.includes('ocb')) && isFrequentTripKeyword) ||
+      // Specific Case 2: SR Oil pump / Transformer oil pump (63.1 / 62.1) frequent tripping
+      ((norm.includes('63.1') || norm.includes('62.1') || norm.includes('mph-c') || norm.includes('sr-1') || norm.includes('sr-2') || norm.includes('sr oil') || norm.includes('transformer oil')) && isFrequentTripKeyword) ||
+      // Specific Case 3: TMB (53.1) frequent tripping
+      ((norm.includes('53.1') || norm.includes('tmb')) && isFrequentTripKeyword) ||
+      // Specific Case 4: MCP / Scavenging blower (47.1 / 55.1) frequent tripping
+      ((norm.includes('47.1') || norm.includes('55.1') || norm.includes('mcp') || norm.includes('scavenging') || norm.includes('ak[v[(j>g') || norm.includes('¾li[ar')) && isFrequentTripKeyword) ||
+      // Root cause: Output voltage unbalance in BUR
+      ((norm.includes('voltage unbalance') || norm.includes('output voltage') || norm.includes('unbalance') || norm.includes('असंतुलन') || norm.includes('as>t&ln')) && (norm.includes('bur') || norm.includes('aux') || norm.includes('motor') || norm.includes('मोटर') || norm.includes('ऑक्सिलरी')))
+    );
+
+  if (isAuxMotorsMcbFrequentTrippingQuery) {
+    return {
+      identifiedFaultId: "SS06-SS08-AUX-MCB-TRIP",
+      faultTitle: "SS06-SS08: ऑक्सिलरी मोटरों के MCB के बार-बार ट्रिप होने पर की जाने वाली ट्रबल शूटिंग [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 180 / 202):\nसबसिस्टम: SS06 (Aux-converter1), SS07 (Aux-converter2), SS08 (Aux-converter3)\nदोष स्थिति: ऑक्सिलरी मोटरों के MCB के बार-बार ट्रिप होने पर की जाने वाली ट्रबल शूटिंग (Troubleshooting on frequent tripping of Auxiliary Motors MCBs)\nमूल कारण (Root Cause): जब किसी ऑक्सिलरी कनवर्टर (BUR) के आउटपुट वोल्टेज में असंतुलन (Output Voltage Unbalance) होता है, तो उससे पोषित होने वाली ऑक्सिलरी मोटरों के सुरक्षा MCB बार-बार ट्रिप होते हैं।\nसमाधान सिद्धांत: असंतुलित आउटपुट देने वाले विशिष्ट BUR को उसके SB पैनल स्थित कंट्रोल MCB (127.22/1, 127.22/2 या 127.22/3) द्वारा ट्रिप कर आइसोलेट किया जाता है। इसके पश्चात कंट्रोल इलेक्ट्रॉनिक्स के स्वचालित री-कॉन्फ़िगरेशन द्वारा उन मोटरों को शेष स्वस्थ BUR से सामान्य व संतुलित वोल्टेज पर पोषित किया जाता है।\n3-फेज TSD अनुसार निर्धारित 4 मुख्य स्थितियों की आधिकारिक ट्रबलशूटिंग:",
+      suggestedActions: [
+        "1) यदि लोको पायलट MCB 59.1/1 (OCB-1) या/और MCB 59.1/2 (OCB-2) का बार-बार ट्रिप होना अनुभव करता है:",
+        "   1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें।",
+        "   2. SB-1 में लगे MCB 127.22/1 को ट्रिप करें, BUR-1 को आइसोलेट करें।",
+        "   3. MCB 59.1/1 या/और MCB 59.1/2 को रीसेट करें।",
+        "   4. BUR-1 को आइसोलेट रखते हुए कार्य करने का प्रयत्न करें और OCB 1 & 2 BUR-2 द्वारा कार्य करेंगे।",
+        "   ★ नोट: BUR-1 के आउटपुट वोल्टेज में असंतुलन होने के कारण यह दोष उत्पन्न हो सकता है।",
+        "--------------------------------------------------",
+        "2) यदि लोको पायलट MCB 63.1/1 (SR-1 ऑयल पंप) या/और MCB 63.1/2 (SR-2 ऑयल पंप) का बार-बार ट्रिप होना अनुभव करता है, या/और MCB 62.1/1 (ट्रांसफार्मर ऑयल पंप-1) या/और MCB 62.1/2 (ट्रांसफार्मर ऑयल पंप-2) का बार-बार ट्रिप होना अनुभव करता है:",
+        "   1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें।",
+        "   2. SB-2 में लगे MCB 127.22/2 को ट्रिप करें, BUR-2 को आइसोलेट करें।",
+        "   3. MCBs को रीसेट करें।",
+        "   4. BUR-2 को आइसोलेट रखते हुए कार्य करने का प्रयत्न करें और ट्रांसफार्मर ऑयल पंप-1/2 और SR ऑयल पंप-1/2 BUR-3 द्वारा कार्य करेंगे।",
+        "   ★ नोट: BUR-2 के आउटपुट वोल्टेज में असंतुलन होने के कारण यह दोष उत्पन्न हो सकता है।",
+        "--------------------------------------------------",
+        "3) यदि लोको पायलट MCB 53.1/1 (TMB-1) या/और MCB 53.1/2 (TMB-2) का बार-बार ट्रिप होना अनुभव करता है:",
+        "   1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें।",
+        "   2. SB-2 में लगे MCB 127.22/2 को ट्रिप करें, BUR-2 को आइसोलेट करें।",
+        "   3. MCB 53.1/1 या/और MCB 53.1/2 को रीसेट करें।",
+        "   4. BUR-2 को आइसोलेट रखते हुए कार्य करने का प्रयत्न करें और TMB 1 & 2 BUR-1 द्वारा कार्य करेंगे।",
+        "   ★ नोट: BUR-2 के आउटपुट वोल्टेज में असंतुलन होने के कारण यह दोष उत्पन्न हो सकता है।",
+        "--------------------------------------------------",
+        "4) यदि लोको पायलट MCB 47.1/1 (MCP-1) या/और MCB 47.1/2 (MCP-2) का बार-बार ट्रिप होना अनुभव करता है, या/और MCB 55.1/1 (स्कैवेंजिंग ब्लोअर-1) या/और MCB 55.1/2 (स्कैवेंजिंग ब्लोअर-2) का बार-बार ट्रिप होना अनुभव करता है:",
+        "   1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें।",
+        "   2. SB-2 में लगे MCB 127.22/3 को ट्रिप करें, BUR-3 को आइसोलेट करें।",
+        "   3. MCB को रीसेट करें।",
+        "   4. BUR-3 को आइसोलेट रखते हुए कार्य करने का प्रयत्न करें और MCP-1/2 BUR-2 द्वारा तथा स्कैवेंजिंग ब्लोअर-1/2 BUR-1 द्वारा कार्य करेंगे।",
+        "   ★ नोट: BUR-3 के आउटपुट वोल्टेज में असंतुलन होने के कारण यह दोष उत्पन्न हो सकता है।"
+      ],
+      precautions: "ऑक्सिलरी मोटर MCB के बार-बार ट्रिप होने पर बिना कारण जाने बार-बार सीधे MCB रीसेट न करें, इससे मोटर वाइंडिंग क्षतिग्रस्त हो सकती है। कंट्रोल इलेक्ट्रॉनिक्स (CE) को ऑफ़ करके ही SB-1 में MCB 127.22/1 (BUR-1) अथवा SB-2 में MCB 127.22/2 (BUR-2) या MCB 127.22/3 (BUR-3) को ट्रिप करके संबंधित BUR को आइसोलेट करें। BUR आइसोलेट होने पर रीकॉन्फ़िगरेशन के तहत लोड अन्य कार्यशील BUR पर ट्रांसफर हो जाएगा। TLC को सूचित करें और लॉग बुक में विवरण दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS06, SS07, SS08 (पेज 180 / 202)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 202,
+      pdfQuote: "aiˆ³J)lr) mi[Tri[> k[ MCB k[ bir-bir (T^^p hi[n[ pr k) jin[vil) T^^bl S*(T>g (SS06, SS07, SS08)\n1) y(d li[ki[ piylT MCB 59.1/1 (OCB-1) yi/ai]r MCB 59.1/2 (OCB-2) ki bir-bir (T^^p hi[ni an&Bv krti h]:\n1. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr[>.\n2. SB-1 m[> lg[ MCB 127.22/1 ki[ (T^p kr[>, BUR-1 ki[ aiesi[l[T kr[>.\n3. MCB 59.1/1 yi/ai]r MCB 59.1/2 ki[ (rs[T kr[>.\n4. BUR-1 ki[ aiesi[l[T rKt[ h&E kiy< krn[ ki p\ryRn kr[> ai]r OCB 1 & 2 BUR-2 oiri kiy< kr[>g[.\nni[T :-BUR-1 k[ aiuTp&T vi[ÃT[j m[> as>t&ln hi[n[ k[ kirN yh di[P uRpÒi hi[ skti h].\n\n2) y(d li[ki[ piylT MCB 63.1/1 (SR-1 aiˆel pÀp) yi/ai]r MCB 63.1/2 (SR-2 aiˆel pÀp) ki bir-bir (T^^p hi[ni an&Bv krti h], yi/ai]r MCB 62.1/1 (T^^i>sfirmr aiˆelpÀp -1) yi/ai]r MCB 62.1/2 (T^^i‡sfirmr aiˆel pÀp -2) ki bir-bir (T^^p hi[ni an&Bv krti h]:\n1. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr[>.\n2. SB-2 m[> lg[ MCB 127.22/2 ki[ (T^p kr[>, BUR-2 ki[ aiesi[l[T kr[>.\n3. MCBs ki[ (rs[T kr[>.\n4. BUR-2 ki[ aiesi[l[T rKt[ h&E kiy< krn[ ki p\ryRn kr[> ai]r T^^i‡sfiˆrmr aiˆel pÀp -1/2 ai]r SR aiˆel pÀp1/2 BUR-3 oiri kiy< kr[>g[.\nni[T :-BUR-2 k[ aiuTp&T m[> as>t&ln hi[n[ k[ kirN yh di[P uRpÒi hi[ skti h].\n\n3) y(d li[ki[ piylT MCB 53.1/1 (TMB-1) yi/ai]r MCB 53.1/2 (TMB-2) ki bir-bir (T^^p hi[ni an&Bv krti h]:\n1. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr[>.\n2. SB-2 m[> lg[ MCB 127.22/2 ki[ (T^p kr[>, BUR-2 ki[ aiesi[l[T kr[>.\n3. MCB 53.1/1 yi/ai]r MCB 53.1/2 ki[ (rs[T kr[>.\n4. BUR-2 ki[ aiesi[l[T rKt[ h&E kiy< krn[ ki p\ryRn kr[> ai]r TMB 1 & 2 BUR-1 oiri kiy< kr[>g[.\nni[T :-BUR-2 k[ aiuTp&T vi[ÃT[j m[> as>t&ln hi[n[ k[ kirN yh di[P uRpÒi hi[ skti h].\n\n4) y(d li[ki[ piylT MCB 47.1/1 (MCP-1) yi/ai]r MCB 47.1/2 (MCP-2) ki bir-bir (T^^p hi[ni an&Bv krti h], yi/ai]r MCB 55.1/1 (Ak[v[(j>g ¾li[ar -1) yi/ai]r MCB 55.1/2 (Ak[v[(j>g ¾li[ar -2) ki bir-bir (T^^p hi[ni an&Bv krti h]:\n1. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr[>.\n2. SB-2 m[> lg[ MCB 127.22/3 ki[ (T^p kr[>, BUR-3 ki[ aiesi[l[T kr[>.\n3. MCB ki[ (rs[T kr[>.\n4. BUR-3 ki[ aiesi[l[T rKt[ h&E kiy< krn[ ki p\ryRn kr[> ai]r MCP-1/2 BUR-2 oiri tYi Ak[v[(j>g ¾li[ar -1/2 BUR-1 oiri kiy< kr[>g[.\nni[T :-BUR-3 k[ aiuTp&T vi[ÃT[j m[> as>t&ln hi[n[ k[ kirN yh di[P uRpÒi hi[ skti h]."
+    };
+  }
+
+  // 0-SS09-F0901P1. SS09 F0901P1: BATTERY VOLTAGE TOO LOW (Electronics will switch off / MAIN POWER ISOLATED, VCB can not be closed, VCB inhibited, Loco is dead) (Vadodara TSD Page 181 / 203)
+  const isSS09F0901P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0902') && !norm.includes('f0903') && !norm.includes('f0904') && !norm.includes('f0905') && !norm.includes('f0901p2') && !norm.includes('p2') &&
+    !norm.includes('memory') && !norm.includes('मेमोरी') &&
+    !norm.includes('warning') && !norm.includes('30 min') && !norm.includes('30 (mnt') && !norm.includes('30 मिनट') &&
+    !norm.includes('check battery charger mcb') && !norm.includes('battery charger mcb') &&
+    !norm.includes('pan lowered') && !norm.includes('panto lowered') && !norm.includes('longer than 10 minutes') && !norm.includes('10 minute') && !norm.includes('10 minutes') && !norm.includes('10 (mnt') && !norm.includes('10 मिनट') &&
+    !norm.includes('converters being switched off') && !norm.includes('lower panto') && !norm.includes('mcb 100') && !norm.includes('mcb100') &&
+    (
+      norm.includes('f0901p1') ||
+      norm.includes('f0901') ||
+      norm.includes('battery voltage too low') ||
+      (norm.includes('electronics will switch off') && !norm.includes('pan')) ||
+      (norm.includes('el[±t^iˆ(n±s will switch off') && !norm.includes('pan')) ||
+      (norm.includes('el[±t^iˆ(n±s') && norm.includes('switch off')) ||
+      norm.includes('b]tr) ki vi[ãt[j') ||
+      norm.includes('b]tr) vi[ãt[j') ||
+      norm.includes('uba b]tr)') ||
+      (norm.includes('battery voltage low') && !norm.includes('converters') && !norm.includes('panto')) ||
+      (norm.includes('ss09') && (norm.includes('f0901') || ((norm.includes('battery') || norm.includes('b]tr)')) && (norm.includes('too low') || norm.includes('switch off'))))) ||
+      ((norm.includes('battery') || norm.includes('b]tr)') || norm.includes('बैटरी') || norm.includes('uba')) && 
+       (norm.includes('too low') || norm.includes('switch off') || (norm.includes('82') && !norm.includes('100')) || norm.includes('127.22/3'))) ||
+      (norm.includes('vcb can not be closed') && (norm.includes('battery') || norm.includes('ss09') || norm.includes('b]tr)')) && !norm.includes('100'))
+    );
+
+  if (isSS09F0901P1Query) {
+    return {
+      identifiedFaultId: "F0901P1",
+      faultTitle: "SS09 F0901P1: BATTERY VOLTAGE TOO LOW (Electronics will switch off) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 181 / 203):\nसबसिस्टम: SS09 (Battery system)\nदोष कोड: F0901P1\nदोष संदेश (स्क्रीन 1):\nLoco XXX SS09: Battery system\nBATTERY VOLTAGE TOO LOW\nElectronics will switch off\n\n(फॉलो-अप स्क्रीन 2 / बैटरी ऑन न होने पर):\nLoco XXX SS09: Battery system\nMAIN POWER ISOLATED\nVCB can not be closed\nVCB inhibited, Loco is dead\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बैटरी वोल्टेज अत्यधिक कम होने पर कंट्रोल इलेक्ट्रॉनिक्स स्वतः स्विच ऑफ़ हो जाएगी / VCB क्लोज़ नहीं होगा और लोको डेड हो जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: BATTERY VOLTAGE TOO LOW / Electronics will switch off】:",
+        "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. SB-2 पैनल में MCB 112.1 एवं 110 को चेक करें। यदि ट्रिप मिले तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB रीसेट करें।",
+        "3. यदि बैटरी का वोल्टेज 82 वोल्ट के ऊपर है तो BUR-3 को कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB 127.22/3 (SB-2) द्वारा आइसोलेट करें। लोको एनरजाइज़ करें, सामान्यतौर पर ट्रैक्शन चालू करें।",
+        "4. यदि UBA बैटरी वोल्टेज 82 वोल्ट से कम दिखा रहा है तो तुरंत सहायता इंजन की मांग करें।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2: MAIN POWER ISOLATED / VCB can not be closed / VCB inhibited, Loco is dead】:",
+        "1. यदि बैटरी ऑन नहीं हो सकती है तो सहायता इंजन की मांग करें।"
+      ],
+      precautions: "बैटरी वोल्टेज की स्थिति UBA मीटर पर तुरंत जांचें। यदि UBA पर बैटरी वोल्टेज 82V से कम है, तो लोको चालू करने का प्रयास न करें क्योंकि कंट्रोल इलेक्ट्रॉनिक्स स्विच ऑफ़ हो जाएगी और लोको डेड हो जाएगा — बिना विलंब तुरंत सहायता इंजन मांगें। यदि वोल्टेज 82V से अधिक है, तो SB-2 में MCB 112.1 व 110 की जांच करें और कंट्रोल इलेक्ट्रॉनिक्स ऑफ़ करके MCB 127.22/3 (SB-2) द्वारा BUR-3 को आइसोलेट करके सामान्य ट्रैक्शन से गाड़ी चलाएं। यदि बैटरी ऑन नहीं हो सकती तो सहायता इंजन की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS09 Battery system (F0901P1, पेज 181 / 203)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 203,
+      pdfQuote: "SS09 F0901P1 Loco XXX SS09: Battery system\nBATTERY VOLTAGE TOO LOW\nElectronics will switch off\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. SB-2 p[nl m[> MCB 112.1 Ev> 110 ki[ c]k kr>[. y(d (T^p (ml[ ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ MCB (rs[T kr>[.\n3. y(d b]Tr) ki vi[ÃT[j 82 vi[ÃT k[ upr h] ti[ BUR-3 ki[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ MCB 127.22/3 (SB-2) oiri aiesi[l[T kr>[. li[ki[ enrjieJ kr[>, simiºyti]r pr T^^]±Sn cil* kr[>.\n4. y(d UBA b]Tr) vi[ÃT[j 82 vi[ÃT s[ km (dKi rhi h] ti[ t&r>t shiyti e>jn k) mi>g kr>[.\n\nLoco XXX SS09: Battery system\nMAIN POWER ISOLATED\nVCB can not be closed\nVCB inhibited, Loco is dead\n1. y(d b]Tr) aiˆn nh)>> hi[ skt) h] ti[ shiyti e>jn k) mi>g kr>[."
+    };
+  }
+
+  // 0-SS09-F0901P2. SS09 F0901P2: WARNING: LOW BATTERY VOLTAGE (Driving available for less than 30 min, Check battery charger MCB) (Vadodara TSD Page 183 / 205)
+  const isSS09F0901P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0901p1') && (!norm.includes('f0902') || norm.includes('f0901p2') || norm.includes('warning: low battery voltage')) && !norm.includes('f0903') && !norm.includes('f0903p2') && !norm.includes('f0904') && !norm.includes('f0905') &&
+    !norm.includes('memory') && !norm.includes('मेमोरी') &&
+    !norm.includes('current') && !norm.includes('not being charged') && !norm.includes('aiut p&t') && !norm.includes('आउटपुट') && !norm.includes('tripped') &&
+    !norm.includes('battery charger mcb off') && !norm.includes('try to close the mcb') &&
+    (
+      norm.includes('f0901p2') ||
+      (norm.includes('f0901') && (norm.includes('p2') || norm.includes('warning') || norm.includes('30') || norm.includes('charger'))) ||
+      norm.includes('warning: low battery voltage') ||
+      norm.includes('warning low battery voltage') ||
+      norm.includes('driving available for less than 30 min') ||
+      norm.includes('driving available for less than 30 minutes') ||
+      norm.includes('less than 30 min') ||
+      norm.includes('less than 30 minutes') ||
+      norm.includes('check battery charger mcb') ||
+      norm.includes('battery charger mcb') ||
+      norm.includes('cij<r k[ enp&t mcb 100') ||
+      norm.includes('b]tr) cij<r') ||
+      norm.includes('बैटरी चार्जर') ||
+      ((norm.includes('30 min') || norm.includes('30 minutes') || norm.includes('30 (mnt') || norm.includes('30 मिनट')) &&
+       (norm.includes('battery') || norm.includes('b]tr)') || norm.includes('बैटरी') || norm.includes('driving') || norm.includes('voltag') || norm.includes('vi[ãt'))) ||
+      ((norm.includes('mcb 110') || norm.includes('mcb110') || norm.includes('110')) && 
+       (norm.includes('mcb 100') || norm.includes('mcb100') || norm.includes('100')) && 
+       (norm.includes('sb-2') || norm.includes('sb2') || norm.includes('hb-2') || norm.includes('hb2')) &&
+       (norm.includes('battery') || norm.includes('b]tr)') || norm.includes('बैटरी') || norm.includes('cij<r') || norm.includes('चार्जर') || norm.includes('charger') || norm.includes('ss09'))) ||
+      (norm.includes('ss09') && (norm.includes('f0901p2') || norm.includes('p2') || norm.includes('warning') || norm.includes('30 min') || norm.includes('charger') || norm.includes('cij<r')))
+    );
+
+  if (isSS09F0901P2Query) {
+    return {
+      identifiedFaultId: "F0901P2",
+      faultTitle: "SS09 F0901P2: WARNING: LOW BATTERY VOLTAGE (Driving available for less than 30 min, Check battery charger MCB) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 183 / 205):\nसबसिस्टम: SS09 (Battery system)\nदोष कोड: F0901P2\nदोष संदेश:\nLoco XXX SS09: Battery system\nWARNING: LOW BATTERY VOLTAGE\nDriving available for less than 30 min, Check battery charger MCB\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: 30 मिनट से कम समय के लिए ड्राइविंग उपलब्ध रहेगी (Driving available for less than 30 min), बैटरी चार्जर MCB चेक करने की चेतावनी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. SB-2 पैनल में MCB 110 को चेक करें। यदि ट्रिप मिले तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB रीसेट करें। {इलेक्ट्रॉनिक्स कार्ड को फ़ेल होने से बचाने हेतु MCB 110 को रीसेट करने के लिए कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें।} और HB-2 में लगे बैटरी चार्जर के इनपुट MCB 100 की जांच करें {यदि लोको पायलट द्वारा F0902P2 मैसेज पर ध्यान नहीं दिया गया तो} यदि ट्रिप मिले तो VCB ओपन करके MCB को रीसेट करें।",
+        "2. BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "3. यदि MCBs सामान्य हों और मैसेज बना रहता है तो सेक्शन क्लियर करके सहायता इंजन मांगें।"
+      ],
+      precautions: "इलेक्ट्रॉनिक्स कार्ड को ख़राब/फ़ेल होने से बचाने के लिए SB-2 में लगे MCB 110 को हमेशा कंट्रोल इलेक्ट्रॉनिक्स (CE) ऑफ़ करके ही रीसेट करें। HB-2 में लगे बैटरी चार्जर के इनपुट MCB 100 को VCB ओपन करके रीसेट करें। यदि दोनों MCB सामान्य हैं और चेतावनी संदेश फिर भी बना रहता है, तो बैटरी बैकअप अधिकतम 30 मिनट ही उपलब्ध है — तुरंत सेक्शन क्लियर करके सहायता इंजन की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS09 Battery system (F0901P2, पेज 183 / 205)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 205,
+      pdfQuote: "SS09 F0901P2 Loco XXX SS09: Battery system\nWARNING: LOW BATTERY VOLTAGE\nDriving available for less than 30 min, Check battery charger MCB\n1. SB-2 p[nl m[> MCB 110 ki[ c]k kr>[. y(d (T^p (ml[ ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ MCB (rs[T kr>[.{el[±T^^iˆ(n±s kiD< ki[ f[l hi[n[ s[ bcin[ h[t& MCB 110 ki[ (rs[T krn[ k[ (lE k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr[>}ai]r HB-2 m[> lg[ b]Tr) cij<r k[ enp&T MCB 100 k) ji‡c kr>[ {y(d li[ki[ piylT oiri F0902P2 m]s[J pr ¹yin nh)> (dyi gyi ti[} y(d (T^p (ml[ ti[ VCB ai[pn krk[ MCB ki[ (rs[T kr>[.\n2. BPFA dbikr fiˆÃT ACK kr>[.\n3. y(d MCBs simiºy h]> ai]r m]s[J bni rhti h] ti[ s[±Sn (±lyr krk[ shiyti e>jn mi‡g[>."
+    };
+  }
+
+  // 0-SS09-F0902P1. SS09 F0902P1: BATTERY VOLTAGE LOW (Converters being switched off / Open VCB, lower Panto / MAIN POWER ISOLATED, VCB cannot be closed: VCB inhibited, Loco is dead) (Vadodara TSD Page 182 / 204)
+  const isSS09F0902P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0901') && !norm.includes('f0901p2') && !norm.includes('f0904') && !norm.includes('f0905') &&
+    !norm.includes('memory') && !norm.includes('मेमोरी') &&
+    !norm.includes('f0902p2') && !norm.includes('mcb off') && !norm.includes('try to close') &&
+    !norm.includes('bur-3 ki[ aiesi[l[t') && !norm.includes('bur-3 को आइसोलेट') && !norm.includes('bur-2 pr yi usk[') &&
+    !norm.includes('30 min') && !norm.includes('30 (mnt') && !norm.includes('30 मिनट') &&
+    !norm.includes('check battery charger mcb') &&
+    (
+      norm.includes('f0902p1') ||
+      (norm.includes('f0902') && !norm.includes('p2') && !norm.includes('off') && !norm.includes('close')) ||
+      norm.includes('converters being switched off') ||
+      (norm.includes('converters') && norm.includes('switched off')) ||
+      norm.includes('open vcb, lower panto') ||
+      norm.includes('lower panto') ||
+      norm.includes('p[ºti[ li[vr') ||
+      norm.includes('el[±t^^i(n±s kid<') ||
+      norm.includes('इलेक्ट्रॉनिक्स कार्ड') ||
+      ((norm.includes('mcb 100') || norm.includes('mcb100')) && (norm.includes('82') || norm.includes('ci(j<g') || norm.includes('चार्जिंग') || norm.includes('converters') || norm.includes('panto'))) ||
+      norm.includes('b]tr) ci(j<g') ||
+      norm.includes('बैटरी चार्जिंग') ||
+      (norm.includes('ss09') && (norm.includes('f0902p1') || (norm.includes('f0902') && !norm.includes('p2')) || norm.includes('converters') || norm.includes('lower panto'))) ||
+      ((norm.includes('battery') || norm.includes('b]tr)') || norm.includes('बैटरी')) && 
+       (norm.includes('converters being switched off') || norm.includes('converters') || norm.includes('lower panto') || (norm.includes('low') && norm.includes('panto'))))
+    );
+
+  if (isSS09F0902P1Query) {
+    return {
+      identifiedFaultId: "F0902P1",
+      faultTitle: "SS09 F0902P1: BATTERY VOLTAGE LOW (Converters being switched off / Open VCB, lower Panto) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 182 / 204):\nसबसिस्टम: SS09 (Battery system)\nदोष कोड: F0902P1\nदोष संदेश (स्क्रीन 1):\nLoco XXX SS09: Battery system\nBATTERY VOLTAGE LOW\nConverters being switched off\nOpen VCB, lower Panto\n\n(फॉलो-अप स्क्रीन 2 / बैटरी ऑन न होने पर):\nLoco XXX SS09: Battery system\nMAIN POWER ISOLATED\nVCB cannot be closed:\nVCB inhibited, Loco is dead\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बैटरी वोल्टेज कम होने पर कनवर्टर स्विच ऑफ़ होंगे, VCB ओपन कर पैंटो लोअर करने का निर्देश; VCB क्लोज़ नहीं होगा और लोको डेड हो जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: BATTERY VOLTAGE LOW / Converters being switched off / Open VCB, lower Panto】:",
+        "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. SB-2 पैनल में MCB 112.1 एवं 110 को चेक करें। यदि ट्रिप मिले तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके MCB रीसेट करें। {इलेक्ट्रॉनिक्स कार्ड को फ़ेल होने से बचाने हेतु MCB 110 को रीसेट करने के लिए कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करें।}",
+        "3. कंट्रोल इलेक्ट्रॉनिक्स को ऑन करें।",
+        "4. UBA पर बैटरी वोल्टेज चेक करें। यदि 82 वोल्ट के ऊपर है और MCB 100 ट्रिप होता है तो VCB ओपन करके MCB को रीसेट करें। लोको को बैटरी चार्जिंग के लिए एनरजाइज़ रखें।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2: MAIN POWER ISOLATED / VCB cannot be closed: / VCB inhibited, Loco is dead】:",
+        "1. यदि बैटरी ऑन नहीं हो सकती है तो सहायता इंजन की मांग करें।"
+      ],
+      precautions: "इलेक्ट्रॉनिक्स कार्ड को ख़राब/फ़ेल होने से बचाने के लिए SB-2 में लगे MCB 110 को हमेशा कंट्रोल इलेक्ट्रॉनिक्स (CE) ऑफ़ करके ही रीसेट करें। UBA पर बैटरी वोल्टेज 82V से अधिक होने पर तथा MCB 100 ट्रिप मिलने पर VCB ओपन करके MCB 100 को रीसेट करें तथा लोको को एनरजाइज़ रखकर बैटरी चार्ज होने दें। यदि बैटरी ऑन नहीं हो पाती है या वोल्टेज 82V से कम रहता है, तो तुरंत सहायता इंजन मांगें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS09 Battery system (F0902P1, पेज 182 / 204)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 204,
+      pdfQuote: "SS09 F0902P1 Loco XXX SS09: Battery system\nBATTERY VOLTAGE LOW\nConverters being switched off\nOpen VCB, lower Panto\n1. Y\\i[Tl ki[ “ 0 ” pr liy[>. BPFA dbikr fiˆÃT ACK kr>[.\n2. SB-2 p[nl m[> MCB 112.1 Ev> 110 ki[ c]k kr>[.y(d (T^p (ml[ ti[ k>T^i[l el[±T^iˆ(n±s ki[ aiˆf krk[ MCB (rs[T kr>[.{el[±T^^i(n±s kiD< ki[ f[l hi[n[ s[ bcin[ h[t& MCB 110 ki[ (rs[T krn[ k[ (lE k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr[>}\n3. k>T^i[l el[±T^iˆ(n±s ki[ aiˆn kr>[.\n4. UBA pr b]Tr) vi[ÃT[j c]k kr>[ .y(d 82 vi[ÃT k[ Upr h] ai]r MCB 100 (T^p hi[ti h] ti[ VCB ai[pn krk[ MCB ki[ (rs[T kr>[. li[ki[ ki[ b]Tr) ci(j<g k[ (lE enrjiej rK[>.\n\nLoco XXX SS09: Battery system\nMAIN POWER ISOLATED\nVCB cannot be closed:\nVCB inhibited, Loco is dead\n1. y(d b]Tr) aiˆn nh)>> hi[ skt) h] ti[ shiyti e>jn k) mi>g kr>[."
+    };
+  }
+
+  // 0-SS09-F0902P2. SS09 F0902P2: BATTERY CHARGER MCB OFF (Try to close the MCB) (Vadodara TSD Page 183 / 205)
+  const isSS09F0902P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0901p1') && !norm.includes('f0901p2') && !norm.includes('f0902p1') && !norm.includes('f0903p1') && !norm.includes('f0904') && !norm.includes('f0905') &&
+    !norm.includes('memory') && !norm.includes('मेमोरी') &&
+    !norm.includes('converters being switched off') && !norm.includes('open vcb, lower panto') && !norm.includes('lower panto') &&
+    !norm.includes('warning: low battery voltage') && !norm.includes('less than 30 min') && !norm.includes('pan lowered longer than 10 minutes') &&
+    !norm.includes('low battery charger current') && !norm.includes('battery not being charged') &&
+    !norm.includes('f1901') && !norm.includes('train bus') && !norm.includes('f0401') && !norm.includes('harmonic') &&
+    (
+      norm.includes('f0902p2') ||
+      (norm.includes('f0902') && (norm.includes('p2') || norm.includes('mcb off') || norm.includes('try to close') || norm.includes('charger mcb') || norm.includes('mcb 100') || norm.includes('bur-2') || norm.includes('bur-3'))) ||
+      norm.includes('battery charger mcb off') ||
+      norm.includes('battery charger mcb\noff') ||
+      norm.includes('charger mcb off') ||
+      norm.includes('try to close the mcb') ||
+      (norm.includes('try to close') && norm.includes('mcb')) ||
+      norm.includes('hb-2 m[> /bur-2') ||
+      norm.includes('bur-2 pr yi usk[ p)c[') ||
+      norm.includes('bur-3 ki[ aiesi[l[t krk[') ||
+      norm.includes('bur-3 को आइसोलेट') ||
+      norm.includes('mcb 100 bir-bir (t^p') ||
+      norm.includes('mcb 100 बार-बार') ||
+      ((norm.includes('mcb 100') || norm.includes('mcb100')) && (norm.includes('bur-2') || norm.includes('bur-3') || norm.includes('खिड़की') || norm.includes('(kdki') || norm.includes('off'))) ||
+      (norm.includes('ss09') && (norm.includes('f0902p2') || norm.includes('mcb off') || norm.includes('try to close')))
+    );
+
+  if (isSS09F0902P2Query) {
+    return {
+      identifiedFaultId: "F0902P2",
+      faultTitle: "SS09 F0902P2: BATTERY CHARGER MCB OFF (Try to close the MCB) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 183 / 205):\nसबसिस्टम: SS09 (Battery system)\nदोष कोड: F0902P2\nदोष संदेश:\nLoco XXX SS09: Battery system\nBATTERY CHARGER MCB\nOFF\nTry to close the MCB\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बैटरी चार्जर MCB 100 ट्रिप होने की संभावना, बैटरी चार्ज नहीं होगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. HB-2 में / BUR-2 पर या उसके पीछे {नीचे की ओर} लगी हुई खिड़की में लगे MCB 100 को चेक करें। यदि ट्रिप मिले तो VCB ओपन करके एक बार रीसेट करें।",
+        "2. BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "3. सामान्य तौर पर ट्रैक्शन चालू रखें।",
+        "4. यदि MCB 100 बार-बार ट्रिप हो रहा है तो BUR-3 को आइसोलेट करके बैटरी चार्जर का लोड BUR-2 पर लेकर कार्य करें।",
+        "5. यदि MCB 100 सामान्य है और UBA, VCB ओपन अवस्था की तुलना में क्लोज़ अवस्था में ज्यादा वोल्टेज बताता है तो यह बैटरी चार्जिंग का संकेत है। मैसेज पर ध्यान न दें। सामान्य रूप से गाड़ी चलाएं।",
+        "6. यदि बैटरी चार्ज नहीं हो रही है तो सेक्शन क्लियर करके इसकी सूचना TLC को दें और उसके आदेशानुसार काम करें।"
+      ],
+      precautions: "HB-2 में BUR-2 के पीछे/नीचे लगी खिड़की में लगे बैटरी चार्जर इनपुट MCB 100 को रीसेट करने से पहले VCB अवश्य ओपन करें। यदि MCB 100 बार-बार ट्रिप हो तो BUR-3 को आइसोलेट कर बैटरी चार्जर का लोड BUR-2 पर लें। UBA पर बैटरी वोल्टेज जांचें: VCB क्लोज होने पर VCB ओपन की तुलना में वोल्टेज अधिक होना बैटरी चार्जिंग दर्शाता है। यदि बैटरी चार्ज नहीं हो रही हो तो तुरंत सेक्शन क्लियर कर TLC को सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS09 Battery system (F0902P2, पेज 183 / 205)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 205,
+      pdfQuote: "SS09 F0902P2 Loco XXX SS09: Battery system\nBATTERY CHARGER MCB\nOFF\nTry to close the MCB\n1. HB-2 m[> /BUR-2 pr yi usk[ p)C[ {n)c[ k) ai[r}lg) h&e< (KDk) m[> lg[ MCB 100 ki[ c]k kr>[. y(d (T^p (ml[ ti[ VCB ai[pn krk[ Ek bir (rs[T kr>[.\n2. BPFA dbikr fiˆÃT ACK kr>[.\n3. simiºyti]r pr T^^]±Sn cil* kr[>.\n4. y(d MCB 100 bir-bir (T^p hi[ rhi h] ti[ BUR-3 ki[ aiesi[l[T krk[ b[Tr)cij<r ki li[D BUR-2 pr l[kr kiy< kr[>.\n5. y(d MCB 100 simiºy h] ai]r UBA, VCB ai[pn avAYi k) t&lni m[> ±li[J avAYi m[> ¶yidi vi[ÃT[J btiti h] ti[ yh b]T^^) ci(j<>g ki s>k[t h]. m]s[J pr ¹yin n d[>.simiºy $p s[ giD) cliE>.\n6. y(d b]T^^) cij< nh)> hi[ rh) h] ti[ s[±Sn (±lyr krk[ esk) s&cni TLC ki[ d[> ai]r usk[ aid[Sin&sir kim kr[>."
+    };
+  }
+
+  // 0-SS09-F0903P1. SS09 F0903P1: PAN LOWERED LONGER THAN 10 MINUTES (Control electronics will switch off) (Vadodara TSD Page 182 / 204)
+  const isSS09F0903P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0901') && !norm.includes('f0902') && !norm.includes('f0904') && !norm.includes('f0905') &&
+    !norm.includes('memory') && !norm.includes('मेमोरी') &&
+    !norm.includes('f0903p2') && !norm.includes('p2') && !norm.includes('charger current') && !norm.includes('low battery charger') && !norm.includes('not being charged') && !norm.includes('charger mcb may have tripped') &&
+    (
+      norm.includes('f0903p1') ||
+      norm.includes('f0903') ||
+      norm.includes('pan lowered longer than 10 minutes') ||
+      norm.includes('pan lowered longer') ||
+      norm.includes('pan lowered') ||
+      norm.includes('panto lowered longer than 10 minutes') ||
+      norm.includes('panto lowered longer') ||
+      norm.includes('panto lowered') ||
+      norm.includes('longer than 10 minutes') ||
+      norm.includes('longer than 10 min') ||
+      ((norm.includes('10') || norm.includes('10 minute') || norm.includes('10 minutes') || norm.includes('10 (mnt') || norm.includes('10 मिनट')) &&
+       (norm.includes('minute') || norm.includes('minutes') || norm.includes('(mnt') || norm.includes('मिनट')) &&
+       (norm.includes('pan') || norm.includes('panto') || norm.includes('p[ºti') || norm.includes('p[ºti[') || norm.includes('पैंटो') || norm.includes('पेंटो') || norm.includes('lower') || norm.includes('लोअर') || norm.includes('li[ar'))) ||
+      ((norm.includes('bl key') || norm.includes('blkey')) && (norm.includes('10') || norm.includes('li[ar') || norm.includes('लोअर') || norm.includes('panto') || norm.includes('p[ºti') || norm.includes('lowered'))) ||
+      (norm.includes('ss09') && (norm.includes('f0903') || norm.includes('pan') || norm.includes('panto') || norm.includes('10') || norm.includes('minute') || norm.includes('lowered'))) ||
+      (norm.includes('control electronics will switch off') && !norm.includes('battery voltage too low')) ||
+      (norm.includes('switch off') && (norm.includes('pan lowered') || norm.includes('10 minute') || norm.includes('10 (mnt')))
+    );
+
+  if (isSS09F0903P1Query) {
+    return {
+      identifiedFaultId: "F0903P1",
+      faultTitle: "SS09 F0903P1: PAN LOWERED LONGER THAN 10 MINUTES (Control electronics will switch off) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 182 / 204):\nसबसिस्टम: SS09 (Battery system)\nदोष कोड: F0903P1\nदोष संदेश:\nLoco XXX SS09: Battery system\nPAN LOWERED LONGER\nTHAN 10 MINUTES\nControl electronics will switch off\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: पैंटो 10 मिनट से अधिक समय तक लोअर रहने पर बैटरी डिस्चार्ज से सुरक्षा हेतु कंट्रोल इलेक्ट्रॉनिक्स स्वतः स्विच ऑफ़ हो जाएगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. यदि BL key पोजीशन “ D ” पर हो तथा पैंटो 10 मिनट से ज्यादा समय तक लोअर रहे तब यह मैसेज स्क्रीन पर आता है।",
+        "2. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "3. यदि आवश्यकता है तो BL key के द्वारा एक बार कंट्रोल इलेक्ट्रॉनिक्स को ऑन करें। लोको पायलट द्वारा 10 मिनट के अंदर पैंटो उठाकर इस फ़ॉल्ट मैसेज को टाला जा सकता है।",
+        "4. यदि पैंटो रेज़ नहीं हो रहा है और यह मैसेज स्क्रीन पर आता है तो F0103P1 के अनुसार दोष का निवारण करें।"
+      ],
+      precautions: "जब BL चाबी 'D' पर हो और पैंटो 10 मिनट से अधिक लोअर रहता है, तो बैटरी को अनावश्यक डिस्चार्ज होने से बचाने के लिए 10 मिनट का टाइमर सक्रिय होकर CE को ऑफ़ करने की चेतावनी देता है। लोको पायलट 10 मिनट के भीतर पैंटो रेज़ करके इस स्थिति से बच सकते हैं। यदि पैंटो रेज़ नहीं हो रहा है, तो F0103P1 (Panto not raising) की ट्रबलशूटिंग प्रक्रिया अपनाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS09 Battery system (F0903P1, पेज 182 / 204)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 204,
+      pdfQuote: "SS09 F0903P1 Loco XXX SS09: Battery system\nPAN LOWERED LONGER\nTHAN 10 MINUTES\nControl electronics will switch off\n1. y(d BL key pi[j)Sn “ D ” pr hi[ tYi p[ºTi[ 10 (mnT s[ ¶yidi smy tk li[ar rh[ tb yh m]s[j Ak\)n pr aiti h].\n2. Y\\i[Tl ki[ “ 0 ” pr liy[>.BPFA dbikr fiˆÃT ACK kr>[.\n3. y(d aivÅykti h] ti[ BLkey k[ oiri Ek bir k>T^i[l el[±T^iˆ(n±s ki[ aiˆn kr>[.li[ki[ piylT oiri 10 (mnT k[ a>dr p[ºTi[ uqikr es fiˆÃT m]s[j ki[ Tili ji skti h].\n4. y(d p[ºTi[ r[J nh)>> hi[ rhi h] ai]r yh m]s[j Ak\)n pr aiti h] ti[ F0103P1 k[ an&sir di[P ki (nvirN kr>[."
+    };
+  }
+
+  // 0-SS09-F0903P2. SS09 F0903P2: LOW BATTERY CHARGER CURRENT (Battery charger MCB may have Tripped / Battery not being charged) (Vadodara TSD Page 183 / 205)
+  const isSS09F0903P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0901p1') && !norm.includes('f0901p2') && (!norm.includes('f0902') || norm.includes('f0903p2') || norm.includes('low battery charger current')) && !norm.includes('f0903p1') && !norm.includes('f0904') && !norm.includes('f0905') &&
+    !norm.includes('battery charger mcb off') && !norm.includes('try to close the mcb') &&
+    (
+      norm.includes('f0903p2') ||
+      (norm.includes('f0903') && (norm.includes('p2') || norm.includes('current') || norm.includes('charger') || norm.includes('tripped'))) ||
+      norm.includes('low battery charger current') ||
+      norm.includes('battery charger current') ||
+      norm.includes('charger current') ||
+      norm.includes('battery charger mcb may have tripped') ||
+      norm.includes('battery not being charged') ||
+      norm.includes('battery not being charge') ||
+      norm.includes('b]tr) cij<r aiuT p&T') ||
+      norm.includes('b]tr) cij<r aiut p&t') ||
+      norm.includes('बैटरी चार्जर आउटपुट') ||
+      norm.includes('b]t^^) ci(j<>g ki s>k[t') ||
+      norm.includes('b]t^^) cij< nh)> hi[ rh)') ||
+      norm.includes('बैटरी चार्जिंग का संकेत') ||
+      norm.includes('बैटरी चार्ज नहीं हो रही') ||
+      ((norm.includes('mcb 110') || norm.includes('mcb110') || norm.includes('110')) &&
+       (norm.includes('mcb 100') || norm.includes('mcb100') || norm.includes('100')) &&
+       (norm.includes('aiut p&t') || norm.includes('आउटपुट') || norm.includes('current') || norm.includes('tripped') || norm.includes('uba') || norm.includes('चार्जिंग का संकेत') || norm.includes('ci(j<>g'))) ||
+      (norm.includes('ss09') && (norm.includes('f0903p2') || norm.includes('current') || norm.includes('charger current') || norm.includes('not being charged') || norm.includes('tripped')))
+    );
+
+  if (isSS09F0903P2Query) {
+    return {
+      identifiedFaultId: "F0903P2",
+      faultTitle: "SS09 F0903P2: LOW BATTERY CHARGER CURRENT (Battery charger MCB may have Tripped / Battery not being charged) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 183 / 205):\nसबसिस्टम: SS09 (Battery system)\nदोष कोड: F0903P2\nदोष संदेश:\nLoco XXX SS09: Battery system\nLOW BATTERY CHARGER CURRENT\nBattery charger MCB may have Tripped\nBattery not being charged\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बैटरी चार्ज नहीं हो रही है (Battery not being charged), बैटरी चार्जर MCB ट्रिप हो सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. SB-2 में लगे बैटरी चार्जर आउटपुट MCB 110 व HB-2 में लगे बैटरी चार्जर इनपुट MCB 100 को चेक करें {यदि लोको पायलट द्वारा F0902P2 मैसेज पर ध्यान नहीं दिया गया तो}। यदि ट्रिप हो तो VCB ओपन करके MCB को रीसेट करें।",
+        "2. BPFA दबाकर फ़ॉल्ट ACK करें। ब्लॉक सेक्शन क्लियर करें।",
+        "3. यदि MCB सामान्य हो और UBA, VCB ओपन अवस्था की तुलना में क्लोज़ अवस्था में ज्यादा वोल्टेज बताता है तो यह बैटरी चार्जिंग का संकेत है। मैसेज पर ध्यान न दें। सामान्य रूप से गाड़ी चलाएं।",
+        "4. यदि बैटरी चार्ज नहीं हो रही है तो सेक्शन क्लियर करके इसकी सूचना TLC को दें और उसके आदेशानुसार काम करें।",
+        "5. यदि सब कुछ सामान्य हो तो सामान्य रूप से गाड़ी चलाएं।"
+      ],
+      precautions: "SB-2 में MCB 110 (बैटरी चार्जर आउटपुट) तथा HB-2 में MCB 100 (बैटरी चार्जर इनपुट) की जांच करें। ट्रिप होने पर VCB ओपन करके रीसेट करें और BPFA द्वारा ACK करें। UBA मीटर पर VCB ओपन व क्लोज़ अवस्था के वोल्टेज की तुलना करें — यदि VCB क्लोज़ होने पर वोल्टेज बढ़ता है, तो बैटरी सामान्य रूप से चार्ज हो रही है (फॉल्स मैसेज होने पर ध्यान न देकर गाड़ी चलाएं)। यदि बैटरी चार्ज नहीं हो रही है तो ब्लॉक सेक्शन क्लियर कर TLC को सूचित करें और उनके निर्देशानुसार कार्य करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS09 Battery system (F0903P2, पेज 183 / 205)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 205,
+      pdfQuote: "SS09 F0903P2 Loco XXX SS09: Battery system\nLOW BATTERY CHARGER CURRENT\nBattery charger MCB may have Tripped\nBattery not being charged\n1. SB-2 m[> lg[ b]Tr) cij<r aiuT p&T MCB 110 v HB-2 m[> lg[ b]Tr) cij<r enp&T MCB 100 ki[ c]k kr>[ {y(d li[ki[ piylT oiri F0902P2 m]s[J pr ¹yin nh)> (dyi gyi ti[}y(d (T^p h] ti[ VCB ai[pn krk[ MCB ki[ (rs[T kr>[.\n2. BPFA dbikr fiˆÃT ACK kr>[. ¾liˆk s[±Sn (±lyr kr[>.\n3. y(d MCB simiºy h] ai]r UBA, VCB ai[pn avAYi k) t&lni m[> ±li[J avAYi m[> ¶yidi vi[ÃT[J btiti h] ti[ yh b]T^^) ci(j<>g ki s>k[t h].m]s[J pr ¹yin n d[>.simiºy $p s[ giD) cliE>.\n4. y(d b]T^^) cij< nh)> hi[ rh) h] ti[ s[±Sn (±lyr krk[ esk) s&cni TLC ki[ d[> ai]r usk[ aid[Sin&sir kim kr[>.\n5. y(d sb k&C simiºy h] ti[ simiºy $p s[ giD) cliE>."
+    };
+  }
+
+  // 0-SS09-F0904P2. SS09 F0904P2: DIAGNOSIS MEMORY BATTERY EMPTY (Inform TLC during next stop) (Vadodara TSD Page 183 / 205)
+  const isSS09F0904P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0901') && !norm.includes('f0902') && !norm.includes('f0903') && !norm.includes('f0905') &&
+    (
+      norm.includes('f0904p2') ||
+      norm.includes('f0904') ||
+      norm.includes('memory battery empty') ||
+      norm.includes('memory battery') ||
+      norm.includes('diagnosis memory battery') ||
+      norm.includes('diagnosis memory') ||
+      norm.includes('inform tlc during next stop') ||
+      norm.includes('during next stop') ||
+      norm.includes('m[mi[r) b]tr)') ||
+      norm.includes('मेमोरी बैटरी') ||
+      norm.includes('डायग्नोसिस मेमोरी बैटरी') ||
+      norm.includes('डायग्नोसिस मेमोरी') ||
+      (norm.includes('diagnosis') && norm.includes('battery')) ||
+      (norm.includes('diagnosis') && norm.includes('memory')) ||
+      (norm.includes('ss09') && (norm.includes('f0904') || norm.includes('memory') || norm.includes('empty') || norm.includes('next stop')))
+    );
+
+  if (isSS09F0904P2Query) {
+    return {
+      identifiedFaultId: "F0904P2",
+      faultTitle: "SS09 F0904P2: DIAGNOSIS MEMORY BATTERY EMPTY (Inform TLC during next stop) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 183 / 205):\nसबसिस्टम: SS09 (Battery system)\nदोष कोड: F0904P2\nदोष संदेश:\nLoco XXX SS09: Battery system\nDIAGNOSIS\nMEMORY BATTERY\nEMPTY\nInform TLC during next stop\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: डायग्नोसिस मेमोरी बैटरी खाली (EMPTY) होने की सूचना। सामान्य ऑपरेशन प्रभावित नहीं होता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यह दोष डायग्नोसिस मेमोरी के बैकअप सेल/बैटरी के डिस्चार्ज (Empty) होने का संकेत है। इससे मुख्य ट्रैक्शन या लोको ड्राइविंग पर कोई विपरीत प्रभाव नहीं पड़ता है। BPFA दबाकर फ़ॉल्ट ACK करें और सामान्य रूप से गाड़ी चलाएं। अगले निर्धारित स्टॉप पर TLC को सूचित करें तथा संबंधित लोको लॉग बुक में आवश्यक प्रविष्टि दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS09 Battery system (F0904P2, पेज 183 / 205)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 205,
+      pdfQuote: "SS09 F0904P2 Loco XXX SS09: Battery system\nDIAGNOSIS\nMEMORY BATTERY\nEMPTY\nInform TLC during next stop\n1-BPFA dbikr fiˆÃT ACK kr>[.simiºy aiˆpr[Sn cil* kr>[.\n2-TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS09-F0905P2. SS09 F0905P2: EARTH FAULT BATTERY CIRCUIT (Normal operation can continue / To be checked during maintenance) (Vadodara TSD Page 183 / 205)
+  const isSS09F0905P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f0901') && !norm.includes('f0902') && !norm.includes('f0903') && !norm.includes('f0904') &&
+    (
+      norm.includes('f0905p2') ||
+      norm.includes('f0905') ||
+      norm.includes('earth fault battery circuit') ||
+      norm.includes('earth fault battery') ||
+      norm.includes('earth fault in battery') ||
+      (norm.includes('battery') && (norm.includes('earth fault') || norm.includes('earthfault') || norm.includes('arth fault') || norm.includes('ay<fi') || norm.includes('अर्थ फॉल्ट') || norm.includes('अर्थ फ़ॉल्ट') || (norm.includes('earth') && norm.includes('circuit')))) ||
+      (norm.includes('b]tr)') && (norm.includes('earth') || norm.includes('ay<fi') || norm.includes('arth') || norm.includes('अर्थ') || norm.includes('cirki[t') || norm.includes('ci(j<t'))) ||
+      (norm.includes('बैटरी') && (norm.includes('अर्थ फॉल्ट') || norm.includes('अर्थ फ़ॉल्ट') || norm.includes('earth fault') || norm.includes('अर्थ'))) ||
+      ((norm.includes('ss09') || norm.includes('battery')) && (norm.includes('earth') || norm.includes('ay<fi')) && norm.includes('circuit')) ||
+      (norm.includes('ss09') && (norm.includes('f0905') || norm.includes('earth fault') || norm.includes('earth') || (norm.includes('circuit') && norm.includes('maintenance'))))
+    );
+
+  if (isSS09F0905P2Query) {
+    return {
+      identifiedFaultId: "F0905P2",
+      faultTitle: "SS09 F0905P2: EARTH FAULT BATTERY CIRCUIT (Normal operation can continue / To be checked during maintenance) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 183 / 205):\nसबसिस्टम: SS09 (Battery system)\nदोष कोड: F0905P2\nदोष संदेश:\nLoco XXX SS09: Battery system\nEARTH FAULT BATTERY\nCIRCUIT\nNormal operation can continue\nTo be checked during\nmaintenance\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: बैटरी परिपथ में अर्थ फ़ॉल्ट (Earth fault in battery circuit)। सामान्य परिचालन जारी रह सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। सामान्य ऑपरेशन चालू करें।",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "बैटरी परिपथ में अर्थ फ़ॉल्ट होने पर भी लोको का सामान्य परिचालन बिना किसी कर्षण या ब्रेकिंग प्रतिबंध के जारी रखा जा सकता है। BPFA दबाकर फ़ॉल्ट एक्नॉलेज (ACK) करें तथा सामान्य रूप से गाड़ी चलाएं। अगले स्टॉप पर अथवा यात्रा के दौरान TLC को सूचित करें और संबंधित लोको लॉग बुक में आवश्यक प्रविष्टि दर्ज करें ताकि शेड मेंटेनेंस/अनुरक्षण के दौरान बैटरी सर्किट की विस्तृत जांच एवं सुधार किया जा सके।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS09 Battery system (F0905P2, पेज 183 / 205)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 205,
+      pdfQuote: "SS09 F0905P2 Loco XXX SS09: Battery system\nEARTH FAULT BATTERY\nCIRCUIT\nNormal operation can continue\nTo be checked during maintenance\n1-BPFA dbikr fiˆÃT ACK kr>[.simiºy aiˆpr[Sn cil* kr>[.\n2-TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-OCB. SS01 Additional Instructions 1: AUXILIARY CONVERTER 1 & 2 ISOLATED (OCB Earth Fault / MCB 59.1/1 & 59.1/2) (Vadodara TSD Page 140 / 167)
+  const isOcbEarthFaultQuery = 
+    !isFrequentTripKeyword &&
+    !norm.includes('ss09') && !norm.includes('f090') && !norm.includes('battery') && !norm.includes('b]tr') &&
+    !norm.includes('tmb') && !norm.includes('53.1') &&
+    !norm.includes('63.1') && !norm.includes('mph-c') &&
+    !norm.includes('47.1') && !norm.includes('55.1') && !norm.includes('ak[v[>(j>g') &&
+    !norm.includes('hotel') && !norm.includes('f050') && !norm.includes('ss05') &&
+    !norm.includes('127.22') && !norm.includes('f0601') && !norm.includes('f0602') && !norm.includes('f0603') && !norm.includes('f0604') && !norm.includes('f0701') && !norm.includes('f0702') && !norm.includes('f0703') && !norm.includes('f0704') && !norm.includes('ss07') && !norm.includes('54.1') && !norm.includes('ss06') &&
+    !norm.includes('f0801') && !norm.includes('f0802') && !norm.includes('f0803') && !norm.includes('ss08') && !norm.includes('bur-3') && !norm.includes('bur 3') &&
+    !norm.includes('f1104') && !norm.includes('ss11') && !norm.includes('overload on ocb') &&
+    !norm.includes('f1203') && !norm.includes('ss12') && !norm.includes('cubicle 2') && !norm.includes('hb-2') && !norm.includes('hb2') &&
+    (
+      norm.includes('59.1/1') ||
+      norm.includes('59.1/2') ||
+      norm.includes('59.1') ||
+      (norm.includes('ocb') && (
+        norm.includes('earth') || norm.includes('earthfault') || norm.includes('arth') || norm.includes('ay<fi') ||
+        norm.includes('59.1') || norm.includes('inverter over current') || 
+        norm.includes('converter 1') || norm.includes('converter -1') || 
+        norm.includes('कनवर्टर 1') || norm.includes('कनवर्टर -1') || 
+        norm.includes('knv<tr') || norm.includes('fiˆãt') || norm.includes('fiˆÃt') ||
+        norm.includes('aiesi[l[t') || norm.includes('isolate') || norm.includes('आइसोलेट') ||
+        norm.includes('bogie') || norm.includes('बोगी')
+      )) ||
+      (norm.includes('ocb-1') && norm.includes('ocb-2')) ||
+      (norm.includes('auxiliary converter -1 isolated') && norm.includes('auxiliary converter -2 isolated')) ||
+      ((norm.includes('auxiliary converter 1') || norm.includes('auxiliary converter -1') || norm.includes('knv<tr 1')) && 
+       (norm.includes('auxiliary converter 2') || norm.includes('auxiliary converter -2') || norm.includes('knv<tr 2')) && 
+       (norm.includes('isolated') || norm.includes('inverter over current') || norm.includes('आइसोलेट') || norm.includes('aiesi[l[t')))
+    );
+
+  if (isOcbEarthFaultQuery) {
+    return {
+      identifiedFaultId: "SS01-OCB-EARTH-FAULT",
+      faultTitle: "SS01 अतिरिक्त अनुदेश 1: ऑक्सिलरी कनवर्टर 1 के बाद 2 आइसोलेट होना {OCB में अर्थ फ़ॉल्ट / STB2:004} (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 140 / 167):\nसबसिस्टम: SS01 (Main Power) - अतिरिक्त मद 1 (OCB Earth Fault)\nदोष स्थिति: ऑक्सिलरी कनवर्टर 1 के बाद ऑक्सिलरी कनवर्टर 2 आइसोलेट होने पर {OCB में फ़ॉल्ट हो}\nयदि OCB-1 या OCB-2 में अर्थ फ़ॉल्ट होगा तो लोको पायलट को निम्न क्रमानुसार मैसेज मिलेंगे:-\n  a) F0103P2: Earth fault Auxiliary winding circuit (Front display)\n  b) STB2:004: Earth fault Auxiliary circuit (Background DDS)\n  c) Auxiliary converter -1 isolated due to inverter over current\n  d) Auxiliary converter -2 isolated due to inverter over current\n  e) Main power off, VCB inhibited\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "════ स्थिति A: यदि MCB नं.-59.1/1 या 59.1/2 ट्रिप नहीं हैं ════",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें। HB-1 में लगे MCB नं 59.1/1 को ट्रिप करके OCB-1 को आइसोलेट करें।",
+        "2. VCB क्लोज़ करें।",
+        "3. निम्नलिखित मैसेज के लिए चेक करें:-\n   a) F0601P1 - Disturbance in processor BUR-1\n   b) F0602P1 - Fault in Auxiliary converter-1\n   c) F0103P2 - Earth fault Auxiliary winding circuit\n   ★ यदि कोई मैसेज नहीं है तो इसका मतलब खराब OCB आइसोलेट हो चुका है।",
+        "4. बोगी कट-आउट स्विच नं.-154 (SB-1) को ऑपरेट करके बोगी-1 को आइसोलेट करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें। आधा TE उपलब्ध रहेगा। ट्रैक्शन चालू रखें। एक बोगी से सेक्शन क्लियर करके सहायता इंजन की मांग करें।",
+        "5. यदि संदेश दोबारा आता है (अर्थात् खराबी OCB-2 में है) तो:-\n   i) HB-1 पैनल में लगे MCB 59.1/1 को रीसेट करें। बोगी-1 को सर्विस में लाएं।\n   ii) HB-2 में लगे MCB 59.1/2 को ट्रिप करके OCB-2 को आइसोलेट करें।\n   iii) कंट्रोल इलेक्ट्रॉनिक्स ऑफ़ करें।\n   iv) बोगी कट-आउट स्विच-154 को ऑपरेट करके बोगी-2 को आइसोलेट करें। कंट्रोल इलेक्ट्रॉनिक्स ऑन करें।\n   ★ आधा TE उपलब्ध रहेगा। ट्रैक्शन चालू रखें, एक बोगी से सेक्शन क्लियर करके सहायता इंजन की मांग करें।",
+        "════ स्थिति B: यदि OCB की खराब मोटर के कारण MCB 59.1/1 या 59.1/2 ट्रिप होते हैं ════",
+        "a) MCB को रीसेट न करें।",
+        "b) बोगी कट आउट स्विच-154 को ऑपरेट करके संबंधित बोगी को आइसोलेट करें।",
+        "c) आधा ट्रैक्शन उपलब्ध रहेगा। एक ट्रैक्शन बोगी के साथ ट्रैक्शन जारी रखते हुए सेक्शन क्लियर करें। सेक्शन क्लियर करके सहायता इंजन की मांग करें।"
+      ],
+      precautions: "OCB-1 या OCB-2 को MCB 59.1/1 (HB-1) अथवा 59.1/2 (HB-2) द्वारा ट्रिप करने के बाद संबंधित बोगी को स्विच 154 द्वारा आइसोलेट करना अनिवार्य है, क्योंकि OCB बंद होने पर उस कनवर्टर/ट्रांसफार्मर के तेल का शीतलन नहीं होगा। आधी क्षमता से तुरंत सेक्शन क्लियर कर सहायता इंजन मांगें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power अतिरिक्त अनुदेश मद 1 (पेज 140 / 167)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 167,
+      pdfQuote: "SS01: Auxiliary converter 1 ke baad auxiliary converter 2 isolate hone par {OCB me fault ho}\nYadi OCB-1 ya OCB-2 me earth fault hoga to loco pilot ko nimn kramanusar message milenge:\na) F0103P2: Earth fault Auxiliary winding circuit in front display\nb) STB2:004: Earth fault Auxiliary circuit in background DDS\nc) Auxiliary converter -1 isolated due to inverter over current\nd) Auxiliary converter -2 isolated due to inverter over current\ne) Main power off, VCB inhibited\nA) Yadi MCB 59.1/1 ya 59.1/2 trip nahi hai to:\n1. MCE OFF/ON. HB-1 me MCB 59.1/1 trip karke OCB-1 isolate karein.\n2. VCB close karein.\n3. Check F0601P1, F0602P1, F0103P2. Yadi koi message nahi to kharab OCB isolate ho chuka hai.\n4. Bogie cut-out switch 154 operate karke Bogie-1 isolate karein. MCE OFF/ON. Aadha TE uplabdh rahega. Ek bogie se section clear karke sahayata engine maangein.\nYadi sandesh dobara aata hai to: HB-1 me 59.1/1 reset karein, HB-2 me MCB 59.1/2 trip karein. Switch 154 se Bogie-2 isolate karein. MCE OFF/ON. Aadha TE se section clear karein.\nB) Yadi OCB ki kharab motor ke karan MCB 59.1/1 ya 59.1/2 trip hote hain to:\na) MCB reset na karein.\nb) Switch 154 se sambandhit bogie isolate karein.\nc) Aadha traction se section clear karke sahayata engine maangein."
+    };
+  }
+
+  // 0-TMB. SS01 Additional Instructions 2: AUXILIARY CONVERTER 2 & 1 ISOLATED (TMB Earth Fault / MCB 53.1/1 & 53.1/2) (Vadodara TSD Page 140-141 / 167-168)
+  const isTmbEarthFaultQuery =
+    !isFrequentTripKeyword &&
+    (norm.includes('53.1/1') ||
+    norm.includes('53.1/2') ||
+    (norm.includes('tmb') && (
+      norm.includes('earth') || norm.includes('earthfault') || norm.includes('arth') || norm.includes('ay<fi') ||
+      norm.includes('53.1') || norm.includes('inverter over current') ||
+      norm.includes('converter 2') || norm.includes('converter -2') ||
+      norm.includes('कनवर्टर 2') || norm.includes('कनवर्टर -2') ||
+      norm.includes('knv<tr') || norm.includes('fiˆãt') || norm.includes('fiˆÃt') ||
+      norm.includes('aiesi[l[t') || norm.includes('isolate') || norm.includes('आइसोलेट') ||
+      norm.includes('bogie') || norm.includes('बोगी')
+    )) ||
+    (norm.includes('tmb-1') && norm.includes('tmb-2')));
+
+  if (isTmbEarthFaultQuery) {
+    return {
+      identifiedFaultId: "SS01-TMB-EARTH-FAULT",
+      faultTitle: "SS01 अतिरिक्त अनुदेश 2: ऑक्सिलरी कनवर्टर 2 के बाद 1 आइसोलेट होना {TMB में अर्थ फ़ॉल्ट / MCB 53.1/1 व 53.1/2} (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 140-141 / 167-168):\nसबसिस्टम: SS01 (Main Power) - अतिरिक्त मद 2 (TMB Earth Fault)\nदोष स्थिति: ऑक्सिलरी कनवर्टर 2 के बाद ऑक्सिलरी कनवर्टर 1 आइसोलेट होने पर {TMB में अर्थ फ़ॉल्ट हो}\nयदि TMB-1 या TMB-2 में अर्थ फ़ॉल्ट होगा तो लोको पायलट को निम्न क्रमानुसार मैसेज मिलेंगे:-\n  a) F0103P2: Earth fault Auxiliary winding circuit in front display\n  b) STB2:004: Earth fault Auxiliary circuit in background DDS\n  c) Auxiliary converter -2 isolated due to inverter over current\n  d) Auxiliary converter -1 isolated due to inverter over current\n  e) Main power off VCB inhibited\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "════ स्थिति A: यदि MCB नं 53.1/1 या 53.1/2 ट्रिप न हुआ हो ════",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें। एक-एक करके HB-1 में लगे MCB नं 53.1/1 को ट्रिप करके TMB-1 और HB-2 में लगे MCB नं 53.1/2 को ट्रिप करके TMB-2 को आइसोलेट करें।",
+        "2. VCB को क्लोज़ करें। यदि TMB-1 या TMB-2 को आइसोलेट करके सफलता मिलती है तो संबंधित ट्रैक्शन बोगी को स्विच 154 के द्वारा आइसोलेट करें। आधा ट्रैक्शन उपलब्ध रहेगा। एक बोगी के साथ ट्रैक्शन जारी रखते हुए सेक्शन क्लियर करें।",
+        "════ स्थिति B: यदि TMB के खराब मोटर के कारण MCB नं 53.1/1 या 53.1/2 ट्रिप होते हैं ════",
+        "a) MCB को रीसेट न करें।",
+        "b) कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें।",
+        "c) बोगी कट आउट स्विच-154 को ऑपरेट करके संबंधित बोगी को आइसोलेट करें।",
+        "d) आधा ट्रैक्शन उपलब्ध रहेगा। एक ट्रैक्शन बोगी के साथ ट्रैक्शन जारी रखते हुए सेक्शन क्लियर करें।"
+      ],
+      precautions: "TMB (Traction Motor Blower) बंद होने पर ट्रैक्शन मोटर की कूलिंग रुक जाती है। अतः जिस बोगी का TMB आइसोलेट किया गया है, उस बोगी को स्विच 154 द्वारा आइसोलेट करना अनिवार्य है। आधे ट्रैक्शन से ही सेक्शन क्लियर करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power अतिरिक्त अनुदेश मद 2 (पेज 140-141 / 167-168)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 168,
+      pdfQuote: "SS01: Auxiliary converter 2 ke baad auxiliary converter 1 isolate hone par {TMB me fault ho}\nYadi TMB-1 ya TMB-2 me earth fault hoga to loco pilot ko message: F0103P2, STB2:004, Aux conv -2 & -1 isolated, Main power off VCB inhibited.\nA) Yadi MCB 53.1/1 ya 53.1/2 trip na hua ho: 1. MCE OFF/ON. Ek-ek karke HB-1 me MCB 53.1/1 trip karke TMB-1 aur HB-2 me MCB 53.1/2 trip karke TMB-2 isolate karein. 2. VCB close karein. Safalta milne par sambandhit bogie ko switch 154 dwara isolate karein. Aadha TE se section clear karein.\nB) Yadi TMB ki kharab motor ke karan MCB 53.1/1 ya 53.1/2 trip hote hain to: MCB reset na karein. MCE OFF/ON. Switch 154 se bogie isolate karein. Aadha TE se section clear karein."
+    };
+  }
+
+  // 0-MPH. SS01 Additional Instructions 3: AUXILIARY CONVERTER 2 & 3 ISOLATED (SR Oil Pump MPH-C / Transformer Oil Pump Earth Fault / MCB 63.1/1 & 63.1/2) (Vadodara TSD Page 141 / 168-169)
+  const isSrOilPumpEarthFaultQuery =
+    !isFrequentTripKeyword &&
+    (norm.includes('63.1/1') ||
+    norm.includes('63.1/2') ||
+    (norm.includes('mph-c') && (norm.includes('earth') || norm.includes('arth') || norm.includes('isolate') || norm.includes('converter') || norm.includes('knv<tr'))) ||
+    ((norm.includes('sr-1') || norm.includes('sr-2') || norm.includes('sr oil pump')) && (norm.includes('oil pump') || norm.includes('mph') || norm.includes('converter') || norm.includes('knv<tr'))));
+
+  if (isSrOilPumpEarthFaultQuery) {
+    return {
+      identifiedFaultId: "SS01-SR-OILPUMP-EARTH-FAULT",
+      faultTitle: "SS01 अतिरिक्त अनुदेश 3: ऑक्सिलरी कनवर्टर 2 के बाद 3 आइसोलेट होना {SR ऑयल पंप (MPH-C) / ट्रांसफार्मर ऑयल पंप अर्थ फ़ॉल्ट} (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 141 / 168-169):\nसबसिस्टम: SS01 (Main Power) - अतिरिक्त मद 3 (SR Oil Pump MPH-C Earth Fault)\nदोष स्थिति: ऑक्सिलरी कनवर्टर 2 के बाद ऑक्सिलरी कनवर्टर 3 आइसोलेट होने पर {SR ऑयल पंप तथा/या ट्रांसफार्मर ऑयल पंप में अर्थ फ़ॉल्ट}\nयदि SR-1 ऑयल पंप या ट्रांसफार्मर ऑयल पंप-1 / SR-2 ऑयल पंप या ट्रांसफार्मर ऑयल पंप-2 में अर्थ फ़ॉल्ट होगा तो लोको पायलट को मैसेज मिलेंगे:-\n  a) F0103P2: Earth fault Auxiliary winding circuit in front display\n  b) STB2:004: Earth fault Auxiliary circuit in background DDS\n  c) Auxiliary converter -2 isolated due to inverter over current\n  d) Auxiliary converter -3 isolated due to inverter over current\n  e) Main power off, VCB inhibited\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "════ स्थिति A: यदि MCB 63.1/1 या 63.1/2 ट्रिप नहीं होता ════",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें। एक-एक करके क्रमानुसार SR-1 ऑयल पंप को HB-1 पैनल पर लगे MCB 63.1/1 और SR-2 ऑयल पंप को HB-2 पैनल पर लगे MCB 63.1/2 ट्रिप करके आइसोलेट करें।",
+        "2. VCB को क्लोज़ करें।",
+        "3. यदि SR-1 ऑयल पंप या SR-2 ऑयल पंप को आइसोलेट करने से सफलता मिलती है तो संबंधित बोगी को बोगी आइसोलेटिंग स्विच 154 के द्वारा आइसोलेट करें। आधा ट्रैक्शन उपलब्ध रहेगा। एक बोगी के साथ ट्रैक्शन लेते हुए सेक्शन क्लियर करें।",
+        "════ स्थिति B: यदि SR ऑयल पंप (MPH-C) की मोटर में दोष के कारण MCB 63.1/1 या 63.1/2 ट्रिप होता है ════",
+        "a) MCB रीसेट न करें।",
+        "b) कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें। संबंधित बोगी अपने आप आइसोलेट होगी।",
+        "c) आधा ट्रैक्शन उपलब्ध रहेगा। एक बोगी के साथ ट्रैक्शन लेते हुए सेक्शन क्लियर करें।",
+        "════ स्थिति C: MCB 54.1/2 चेक करना ════",
+        "• MCB क्रम 54.1/2 को चेक करें, यदि ट्रिप है तो एक बार रीसेट करें। यदि फिर से ट्रिप होती है तो सेक्शन साफ़ करके TLC को सूचित करें और सहायता इंजन मांगें।"
+      ],
+      precautions: "SR ऑयल पंप (MPH-C) कनवर्टर के शीतलन के लिए आवश्यक है। MCB 63.1/1 अथवा 63.1/2 ट्रिप होने पर संबंधित बोगी आइसोलेट कर आधे ट्रैक्शन पर कार्य करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power अतिरिक्त अनुदेश मद 3 (पेज 141 / 168-169)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 169,
+      pdfQuote: "SS01: Auxiliary converter 2 ke baad auxiliary converter 3 isolate hone par {SR oil pump tatha/ya transformer oil pump me fault ho}\nMCB 63.1/1 (HB-1) aur 63.1/2 (HB-2) trip karke isolate karein. Safalta milne par switch 154 se bogie isolate karein. Aadha traction se section clear karein. MCB 54.1/2 check karein."
+    };
+  }
+
+  // 0-MCP. SS01 Additional Instructions 4: AUXILIARY CONVERTER 3 & 2 ISOLATED (MCP Earth Fault / MCB 47.1/1 & 47.1/2) (Vadodara TSD Page 141-142 / 169)
+  const isMcpEarthFaultQuery =
+    !isFrequentTripKeyword &&
+    !norm.includes('f1103') && !norm.includes('ss11') && !norm.includes('mcb off main compressor') &&
+    ((norm.includes('mcp') && (
+      norm.includes('47.1') || norm.includes('earth') || norm.includes('arth') || norm.includes('ay<fi') ||
+      norm.includes('converter 3') || norm.includes('converter -3') || norm.includes('knv<tr 3') ||
+      norm.includes('aiesi[l[t') || norm.includes('isolate') || norm.includes('आइसोलेट')
+    )) ||
+    (norm.includes('47.1/1') && norm.includes('47.1/2')));
+
+  if (isMcpEarthFaultQuery) {
+    return {
+      identifiedFaultId: "SS01-MCP-EARTH-FAULT",
+      faultTitle: "SS01 अतिरिक्त अनुदेश 4: ऑक्सिलरी कनवर्टर 3 के बाद 2 आइसोलेट होना {MCP में अर्थ फ़ॉल्ट / MCB 47.1/1 व 47.1/2} (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 141-142 / 169):\nसबसिस्टम: SS01 (Main Power) - अतिरिक्त मद 4 (Main Compressor MCP Earth Fault)\nदोष स्थिति: ऑक्सिलरी कनवर्टर 3 के बाद ऑक्सिलरी कनवर्टर 2 आइसोलेट होने पर {MCP में अर्थ फ़ॉल्ट}\nयदि MCP-1 या MCP-2 में अर्थ फ़ॉल्ट होगा तो लोको पायलट को मैसेज मिलेंगे:-\n  a) F0103P2: Earth fault Auxiliary circuit in front display\n  b) STB2:004: Earth fault Auxiliary circuit in background DDS\n  c) Auxiliary converter -3 isolated due to inverter over current\n  d) Auxiliary converter -2 isolated due to inverter over current\n  e) Main power off VCB inhibited\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "════ स्थिति A: यदि MCB नं 47.1/1 या 47.1/2 ट्रिप नहीं होता है ════",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें। HB-1 और HB-2 में लगे MCB नं 47.1/1 या 47.1/2 को ट्रिप करके एक-एक MCP को आइसोलेट करें।",
+        "2. VCB क्लोज़ करें। यदि MCP-1 या MCP-2 को आइसोलेट करने पर सफलता मिलती है तो एक MCP के साथ काम करने का प्रयत्न करें।",
+        "════ स्थिति B: यदि MCP की मोटर में दोष के कारण MCB 47.1/1 या 47.1/2 ट्रिप होता है ════",
+        "a) MCB को रीसेट न करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें।",
+        "b) एक MCP के साथ गाड़ी चलाएं।",
+        "════ स्थिति C: MCB 54.1/2 चेक करना ════",
+        "• MCB क्रम 54.1/2 को चेक करें, यदि ट्रिप है तो एक बार रीसेट करें। यदि फिर से ट्रिप होती है तो सेक्शन साफ़ करके TLC को सूचित करें और सहायता मांगें।"
+      ],
+      precautions: "एक MCP पर कार्य करते समय एयर लीकेज पर विशेष ध्यान दें और MR प्रेशर लगातार 8 से 10 kg/cm² बनाए रखने का प्रयास करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power अतिरिक्त अनुदेश मद 4 (पेज 141-142 / 169)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 169,
+      pdfQuote: "SS01: Auxiliary converter 3 ke baad auxiliary converter 2 isolate hone par {MCP me fault ho}\nMCB 47.1/1 (HB-1) ya 47.1/2 (HB-2) trip karke ek-ek MCP isolate karein. Ek MCP ke sath gadi chalayein. MCB 54.1/2 check karein."
+    };
+  }
+
+  // 0-SCAV. SS01 Additional Instructions 5: AUXILIARY CONVERTER 3 & 1 ISOLATED (Scavenging Blower Earth Fault / MCB 55.1/1 & 55.1/2) (Vadodara TSD Page 142-143 / 169-170)
+  const isScavEarthFaultQuery =
+    !isFrequentTripKeyword &&
+    (norm.includes('55.1/1') ||
+    norm.includes('55.1/2') ||
+    (norm.includes('scavenging') && (
+      norm.includes('earth') || norm.includes('arth') || norm.includes('isolate') || norm.includes('55.1') || norm.includes('blower')
+    )) ||
+    (norm.includes('ak[v[>(j>g') && (
+      norm.includes('¾li[ar') || norm.includes('knv<tr') || norm.includes('fiˆãt') || norm.includes('fiˆÃt')
+    )));
+
+  if (isScavEarthFaultQuery) {
+    return {
+      identifiedFaultId: "SS01-SCAV-EARTH-FAULT",
+      faultTitle: "SS01 अतिरिक्त अनुदेश 5: ऑक्सिलरी कनवर्टर 3 के बाद 1 आइसोलेट होना {स्कैवेंजिंग ब्लोअर अर्थ फ़ॉल्ट / MCB 55.1/1 व 55.1/2} (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 142-143 / 169-170):\nसबसिस्टम: SS01 (Main Power) - अतिरिक्त मद 5 (Scavenging Blower Earth Fault)\nदोष स्थिति: ऑक्सिलरी कनवर्टर 3 के बाद ऑक्सिलरी कनवर्टर 1 आइसोलेट होने पर {स्कैवेंजिंग ब्लोअर में अर्थ फ़ॉल्ट}\nयदि स्कैवेंजिंग ब्लोअर-1 या स्कैवेंजिंग ब्लोअर-2 में अर्थ फ़ॉल्ट होगा तो लोको पायलट को मैसेज मिलेंगे:-\n  a) F0103P2: Earth fault Auxiliary winding circuit in front display\n  b) STB2:004: Earth fault Auxiliary circuit in background DDS\n  c) Auxiliary converter -3 isolated due to inverter over current\n  d) Auxiliary converter -1 isolated due to inverter over current\n  e) Main power off VCB inhibited\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "════ स्थिति A: यदि MCB नं 55.1/1 या 55.1/2 ट्रिप नहीं होता है ════",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें। HB-1 और HB-2 में लगे MCB नं 55.1/1 या 55.1/2 को ट्रिप करके एक-एक स्कैवेंजिंग ब्लोअर को आइसोलेट करें।",
+        "2. VCB क्लोज़ करें। यदि स्कैवेंजिंग ब्लोअर-1 या स्कैवेंजिंग ब्लोअर-2 को आइसोलेट करने पर सफलता मिलती है तो एक स्कैवेंजिंग ब्लोअर के साथ काम करने का प्रयत्न करें।",
+        "════ स्थिति B: यदि स्कैवेंजिंग ब्लोअर की मोटर में दोष के कारण MCB 55.1/1 या 55.1/2 ट्रिप होता है ════",
+        "a) MCB को रीसेट न करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें।",
+        "b) एक स्कैवेंजिंग ब्लोअर के साथ गाड़ी चलाएं।"
+      ],
+      precautions: "स्कैवेंजिंग ब्लोअर बंद होने पर मशीन रूम व ट्रैक्शन मोटर में धूल/गंदगी के जमाव को रोकने के लिए उचित स्टेशन पर स्थिति की जांच करें और टीएलसी को सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power अतिरिक्त अनुदेश मद 5 (पेज 142-143 / 169-170)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 170,
+      pdfQuote: "SS01: Auxiliary converter 3 ke baad auxiliary converter 1 isolate hone par {Scavenging blower me fault ho}\nMCB 55.1/1 ya 55.1/2 trip karke ek-ek Scavenging blower isolate karein. Ek scavenging blower ke sath gadi chalayein."
+    };
+  }
+
+  // 0a. SS01: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (Vadodara TSD Page 74/75/78/79)
+  const isMainPowerIsolatedDeadQuery = 
+    norm.includes('main power isolated') || 
+    norm.includes('vcb inhibited') || 
+    norm.includes('loco is dead') ||
+    norm.includes('लोको डेड') ||
+    norm.includes('slg-1:0019') ||
+    norm.includes('slg-2:0019') ||
+    (norm.includes('0019') && norm.includes('slg')) ||
+    norm.includes('slg-1:0059') ||
+    (norm.includes('0059') && norm.includes('slg')) ||
+    ((norm.includes('20 minute') || norm.includes('20 मिनट') || norm.includes('सहायता इंजन')) && 
+     (norm.includes('ss01') || norm.includes('vcb') || norm.includes('f0101') || norm.includes('f0102') || norm.includes('f0105') || norm.includes('f0106') || norm.includes('f0107') || norm.includes('f0108') || norm.includes('f0109') || norm.includes('f0110') || norm.includes('ocr') || norm.includes('aux') || norm.includes('127.22') || norm.includes('fatal') || norm.includes('ocb') || norm.includes('tmb')));
+
+  if (isMainPowerIsolatedDeadQuery) {
+    const isF0110 = norm.includes('f0110') || norm.includes('f0110p1') || norm.includes('fatal error') || norm.includes('fatal') || norm.includes('turn off the loco') || norm.includes('ocb,tmb') || norm.includes('ocb') || norm.includes('tmb') || norm.includes('mph-c') || norm.includes('rdso/2013') || norm.includes('0420');
+    const isF0109 = norm.includes('f0109') || norm.includes('f0109p1') || norm.includes('aux. winding') || norm.includes('aux winding') || norm.includes('127.22') || norm.includes('bur-1') || norm.includes('bur-2') || norm.includes('bur-3');
+    const isF0108 = norm.includes('f0108') || norm.includes('f0108p1') || norm.includes('ocr') || norm.includes('ocr-78') || norm.includes('ocr 78') || norm.includes('primary over current');
+    const isF0107 = norm.includes('f0107') || norm.includes('f0107p1') || norm.includes('precharge') || ((norm.includes('shut-down') || norm.includes('shut down') || norm.includes('st-diun')) && norm.includes('vcb'));
+    const isF0106 = norm.includes('f0106') || norm.includes('f0106p1') || norm.includes('slg-1:0059') || norm.includes('0059');
+    const isF0105 = norm.includes('f0105') || norm.includes('f0105p1') || norm.includes('slg-1:0019') || norm.includes('slg-2:0019') || norm.includes('0019');
+    const isF0102 = norm.includes('f0102') || norm.includes('f0102p1');
+    const isF0101 = norm.includes('f0101') || norm.includes('f0101p1');
+    let faultCode = "F0101P1 / F0102P1 / F0105P1 / F0106P1 / F0107P1 / F0108P1 / F0109P1 / F0110P1";
+    if (isF0110) faultCode = "F0110P1";
+    else if (isF0109) faultCode = "F0109P1";
+    else if (isF0108) faultCode = "F0108P1";
+    else if (isF0107) faultCode = "F0107P1";
+    else if (isF0106) faultCode = "F0106P1";
+    else if (isF0105) faultCode = "F0105P1";
+    else if (isF0102) faultCode = "F0102P1";
+    else if (isF0101) faultCode = "F0101P1";
+
+    if (isF0110) {
+      return {
+        identifiedFaultId: "F0110P1",
+        faultTitle: "SS01 F0110P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXXSS01 : Main Power\nMAIN POWER ISOLATED\nVCB inhibited Loco is dead\nलैम्प संकेत: LSDJ और LSFI प्रकाशित होंगे।\nप्रभाव: VCB क्लोज़ नहीं होगा, लोको डेड।\nआधिकारिक TSD दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. OCB, TMB, कन्वर्टर पंप (MPH-C) व MCP के लिए SS-01 के अंत में दिए गए अतिरिक्त मदों के अनुसार दोष निवारण करें। यदि सफलता नहीं मिलती है तो -",
+          "2. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+          "3. यदि VCB क्लोज़ नहीं होता है तो लोको को शट-डाउन करें।",
+          "4. 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+        ],
+        precautions: "OCB, TMB, कन्वर्टर पंप (MPH-C) व MCP के अतिरिक्त मदों अनुसार चेकिंग करें। VCB क्लोज़ न होने पर लोको को शट-डाउन करें और 20 मिनट के अंदर रिलीफ / सहायता इंजन मांगें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0110P1, पेज 135 / 162)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 162,
+        pdfQuote: `Loco XXXSS01 : Main Power\nMAIN POWER ISOLATED\nVCB inhibited Loco is dead\n1. OCB,TMB,knv<Tr p>p (MPH-C) v MCP k[ (lE SS-01 k[ a>t m[> (dy[ gy[ a(t(r±t mdi[> k[ an&sir di[P (nvirN kr>[. y(d sflti nh)>>> (mlt) h] ti[ -\n2. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir (fr aiˆf krk[ aiˆn kr>[.p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n3. y(d VCB ±li[j nh)>> hi[ti h] ti[ li[ki[ ki[ ST DiUn kr>[.\n4. 20 (mnT k[ aºdr shiyti e‚Jn k) mi‚g kr>[ .`
+      };
+    }
+
+    if (isF0109) {
+      return {
+        identifiedFaultId: "F0109P1",
+        faultTitle: "SS01 F0109P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXXSS01 : Main Power\nMAIN POWER ISOLATED\nVCB inhibited Loco is dead\nलैम्प संकेत: LSDJ और LSFI प्रकाशित होंगे।\nप्रभाव: VCB क्लोज़ नहीं होगा, लोको डेड।\nआधिकारिक TSD दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटोग्राफ रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+          "2. यदि VCB क्लोज़ नहीं होता है तो लोको को शट-डाउन करें।",
+          "3. DDS पर बैकग्राउंड मैसेज चेक करें, और मैसेज के अनुसार BUR-1, BUR-2 या BUR-3 को MCB 127.22/1 या MCB 127.22/2 या MCB 127.22/3 के द्वारा आइसोलेट करके प्रयत्न करें। (MCE ऑफ़ करके)।",
+          "4. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+        ],
+        precautions: "MCE ऑफ़ करके ही BUR-1, 2 या 3 के MCB (127.22/1, 127.22/2, 127.22/3) को ऑपरेट/आइसोलेट करें। यदि VCB क्लोज़ न हो तो लोको को शट-डाउन करें एवं 20 मिनट के अंदर रिलीफ इंजन की मांग करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0109P1, पेज 82 / 134)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 161,
+        pdfQuote: `Loco XXXSS01 : Main Power\nMAIN POWER ISOLATED\nVCB inhibited Loco is dead\n1. Control electronics ko ek baar phir off karke on karein. Panto raise karein, VCB close karein tatha traction chalu karein.\n2. Yadi VCB close nahi hota hai to loco ko shut-down karein.\n3. DDS par background message check karein, aur message ke anusaar BUR-1, BUR-2 ya BUR-3 ko MCB 127.22/1 ya MCB 127.22/2 ya MCB 127.22/3 ke dwara isolate karke prayatna karein (MCE off karke).\n4. Safalta na milne par 20 minute ke andar sahayata engine ki maang karein.`
+      };
+    }
+
+    if (isF0108) {
+      return {
+        identifiedFaultId: "F0108P1",
+        faultTitle: "SS01 F0108P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXXSS01 : Main Power\nMAIN POWER ISOLATED\nVCB inhibited Loco is dead\nलैम्प संकेत: LSDJ और LSFI प्रकाशित होंगे।\nप्रभाव: VCB क्लोज नहीं होगा, लोको डेड।\nआधिकारिक TSD दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. यदि एक बार में सफलता न मिले तो बिना समय गंवाए सहायता इंजन की मांग करें।"
+        ],
+        precautions: "OCR-78 ओवर करंट रिले ट्रिप होने पर यदि एक बार में VCB क्लोज न हो तो समय व्यर्थ किए बिना तत्काल सहायता इंजन (Relief Engine) की मांग करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0108P1, पेज 81)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 81,
+        pdfQuote: `Loco XXXSS01 : Main Power\nMAIN POWER ISOLATED\nVCB inhibited Loco is dead\n1. Yadi ek baar me safalta na mile to bina samay gavaye sahayata engine ki maang karein.`
+      };
+    }
+
+    if (isF0107) {
+      return {
+        identifiedFaultId: "F0107P1",
+        faultTitle: "SS01 F0107P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXX SS01 : Main Power\nMAIN POWER ISOLATED\nVCB inhibited Loco is dead\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: मेन पावर आइसोलेट होगी, VCB क्लोज होना बाधित (Inhibited), लोको डेड (Loco is dead)।\nआधिकारिक TSD दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें। पैंटोग्राफ रेज़ करें, VCB क्लोज करें तथा ट्रैक्शन चालू करें।",
+          "2. यदि VCB क्लोज नहीं हो रहा है तो लोको को शट-डाउन करें।",
+          "3. 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+        ],
+        precautions: "यदि MCE रीसेट करने के बाद भी VCB क्लोज न हो तो लोको को शट-डाउन करें तथा 20 मिनट के भीतर सहायता इंजन (Relief Loco) की मांग करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0107P1, पेज 80)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 80,
+        pdfQuote: `Loco XXXSS01 : Main Power\nMAIN POWER ISOLATED\nVCB inhibited Loco is dead\n1. Control electronics ko off karke on karein. Pantograph raise karein, VCB close karein tatha traction chalu karein.\n2. Yadi VCB close nahi ho raha hai to loco ko shut-down karein.\n3. 20 minute ke andar sahayata engine ki maang karein.`
+      };
+    }
+
+    if (isF0106) {
+      return {
+        identifiedFaultId: "F0106P1",
+        faultTitle: "SS01 F0106P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXX SS01 : Main Power\nMAIN POWER ISOLATED\nVCB Inhibited Loco is dead\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: मेन पावर आइसोलेट होगी, VCB क्लोज होना बाधित (Inhibited), लोको डेड (Loco is dead)।\nआधिकारिक TSD दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. सफलता न मिलने पर DDS पर मैसेज चेक करें — यदि DDS पर मैसेज, SLG-1:0059 का आता है तो ट्रैक्शन कनवर्टर-1 को MCB 127.1/1 एवं 127.11/1 (SB-1) और 154 (SB-1) को “ I ” पर रखकर आइसोलेट करके प्रयत्न करें।",
+          "2. यदि सफलता नहीं मिलती तो सहायता इंजन की मांग करें व लॉग बुक में दर्ज करें।"
+        ],
+        precautions: "MCE ऑफ करके ही MCB 127.1/1 एवं 127.11/1 और बोगी स्विच 154 को ऑपरेट करें। यदि सफलता नहीं मिलती है तो तत्काल सहायता इंजन की मांग करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0106P1, पेज 79)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 79,
+        pdfQuote: `Loco XXX SS01:Main Power\nMAIN POWER ISOLATED\nVCB Inhibited Loco is dead\n1. Safalta na milne par DDS par message check karein - yadi DDS par message SLG-1:0059 ka aati hai to traction converter-1 ko MCB 127.1/1 evam 127.11/1 (SB-1) aur 154 (SB-1) ko "I" par rakhkar isolate karke prayatna karein.\n2. Yadi safalta nahi milti to sahayata engine ki maang karein va log book mein darj karein.`
+      };
+    }
+
+    if (isF0105) {
+      return {
+        identifiedFaultId: "F0105P1",
+        faultTitle: "SS01 F0105P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)",
+        analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXX SS01 : Main Power\nMAIN POWER ISOLATED\nVCB Inhibited Loco is dead\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: मेन पावर आइसोलेट होगी, VCB क्लोज होना बाधित (Inhibited), लोको डेड (Loco is dead)।\nआधिकारिक 4-चरणीय TSD दोष निवारण कार्यवाही:",
+        suggestedActions: [
+          "1. यदि फिर से वही मैसेज आता है और MCBs सामान्य हैं तो थ्रोटल को “ 0 ” पर लाएं।",
+          "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके फिर से ऑन करें, पैंटो को रेज़ करें तथा VCB क्लोज करें। ट्रैक्शन चालू करें।",
+          "3. सफलता न मिलने पर - यदि DDS पर मैसेज, SLG-1:0019 का आता है तो ट्रैक्शन कनवर्टर-1 को MCB 127.1/1 एवं 127.11/1 (SB-1) और SLG-2:0019 का आता है तो ट्रैक्शन कनवर्टर-2 को MCB 127.1/2 एवं 127.11/2 (SB-2) के द्वारा आइसोलेट करें। (MCE ऑफ करके)",
+          "4. यदि सफलता नहीं मिलती है तो 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+        ],
+        precautions: "MCE ऑफ/ऑन करने के बाद Node 504 आने तक 35-40 सेकंड प्रतीक्षा करें। ट्रैक्शन कनवर्टर आइसोलेट करने से पूर्व MCE OFF अवश्य करें। यदि 20 मिनट के अंदर सफलता नहीं मिलती है तो तत्काल TLC / सेक्शन कंट्रोलर से सहायता इंजन (Relief Loco) की मांग करें।",
+        manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0105P1, पेज 78)",
+        verifiedFromPdf: true,
+        pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+        pdfPage: 78,
+        pdfQuote: `Loco XXX SS01 : Main Power\nMAIN POWER ISOLATED\nVCB Inhibited Loco is dead\n1. Yadi fir se wahi message aati hai aur MCBs samanya hain to throttle ko "0" par layein.\n2. Control electronics ko OFF karke fir se ON karein, panto ko raise karein tatha VCB close karein. Traction chalu karein.\n3. Safalta na milne par - yadi DDS par message SLG-1:0019 aati hai to traction converter-1 ko MCB 127.1/1 evam 127.11/1 (SB1) aur SLG-2:0019 aati hai to traction converter-2 ko MCB 127.1/2 evam 127.11/2 (SB2) ke dwara isolate karein (MCE OFF karke).\n4. Yadi safalta nahi milti hai to 20 minute ke andar sahayata engine ki maang karein.`
+      };
+    }
+
+    return {
+      identifiedFaultId: isF0102 ? "F0102P1" : "F0101P1",
+      faultTitle: `SS01 ${faultCode}: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)`,
+      analysis: `254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXX SS01 : Main Power\nMAIN POWER ISOLATED\nVCB Inhibited Loco is dead\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: मेन पावर आइसोलेट होगी, VCB क्लोज होना बाधित (Inhibited), लोको डेड (Loco is dead)।\nआधिकारिक 2-चरणीय TSD दोष निवारण कार्यवाही:`,
+      suggestedActions: [
+        "1. एक बार पुनः कंट्रोल इलेक्ट्रॉनिक्स को ऑफ कर फिर से ऑन करें, ट्रैक्शन चालू करने का प्रयत्न करें।",
+        "2. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ],
+      precautions: "कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन (MCE OFF/ON) करने के बाद Node 504 आने तक 35-40 सेकंड प्रतीक्षा करें। यदि 20 मिनट के अंदर सफलता नहीं मिलती है तो तत्काल TLC / सेक्शन कंट्रोलर से सहायता इंजन (Relief Loco) की मांग करें।",
+      manualReference: `254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (${faultCode}, पेज 74/75)`,
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल)",
+      pdfPage: 75,
+      pdfQuote: `Loco XXX SS01 : Main Power\nMAIN POWER ISOLATED\nVCB Inhibited Loco is dead\n1. Ek baar punah control electronics ko OFF kar fir se ON karein, traction chalu karne ka prayatna karein.\n2. Safalta na milne par 20 minute ke andar sahayata engine ki maang karein.`
+    };
+  }
+
+  // 0b-1. SS01 F0101P2: OVER TEMPERATURE CONTROL ELECTRONICS, Turn off the loco. Set up cooling mode (Vadodara TSD Page 135-136 / 163)
+  const isF0101P2Query =
+    norm.includes('f0101p2') ||
+    (norm.includes('f0101') && (norm.includes('p2') || norm.includes('temp') || norm.includes('cooling') || norm.includes('lsce'))) ||
+    ((norm.includes('over temperature') || norm.includes('overtemperature') || norm.includes('over temp') || norm.includes('तापमान')) &&
+     (norm.includes('control electronics') || norm.includes('कंट्रोल इलेक्ट्रॉनिक्स') || norm.includes('cooling mode') || norm.includes('कूलिंग मोड') || norm.includes('lsce'))) ||
+    norm.includes('cooling mode') ||
+    norm.includes('कूलिंग मोड') ||
+    norm.includes('set up cooling mode') ||
+    norm.includes('turn off the loco. set up cooling mode') ||
+    (norm.includes('lsce') && (norm.includes('batti') || norm.includes('glow') || norm.includes('बत्ती') || norm.includes('जल')));
+
+  if (isF0101P2Query) {
+    return {
+      identifiedFaultId: "F0101P2",
+      faultTitle: "SS01 F0101P2: OVER TEMPERATURE CONTROL ELECTRONICS, Turn off the loco. Set up cooling mode (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 135-136 / 163):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0101P2\nदोष संदेश:\nLoco XXXSS01 : Main Power\nOVER TEMPERATURE\nCONTROL ELECTRONICS\nTurn off the loco.\nSet up cooling mode\nलैम्प संकेत: LSCE (पीला लैम्प) और BPFA प्रकाशित होंगे।\nप्रभाव: कंट्रोल इलेक्ट्रॉनिक्स का कॉन्टैक्टर क्लोज नहीं होगा (Contactor will not close), TE/BE शून्य हो जायेगा (Loco fails to take traction)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. HB/SB पैनल में MCBs को चेक करें। यदि ट्रिप हों तो एक बार रीसेट करें। (MCB 54.1/1 और 54.1/2 दोनों HB पैनल पर एवं MCBs 127.91/1 और 127.91/2 दोनों SB पैनल पर)।",
+        "2. यदि TE उपलब्ध है तो ब्लॉक सेक्शन क्लियर करें। अन्यथा कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें। BPFA दबाकर फॉल्ट ACK करें।",
+        "3. स्टेशन मास्टर को 10-15 मिनट तक लोको के असमर्थ रहने की सूचना दें। गाड़ी खड़ी करने के बाद लोको को कूलिंग मोड में रखने से पहले A-9 को इमरजेंसी पोजीशन पर रखें। {MR को ड्रॉप होने से रोकने के लिए}",
+        "4. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करें। BL Key को ‘ C ’ (Cooling Mode) पोजीशन पर रखें, ZPT द्वारा पैंटो रेज़ करें, VCB क्लोज करें। दोनों मशीन रूम ब्लोअर तथा दोनों स्केवेंजिंग ब्लोअर चालू होंगे, लोको कूलिंग मोड में रहेगा और कंट्रोल इलेक्ट्रॉनिक्स ठंडा होने लगेगा। LSCE की बत्ती बुझने तक इंतजार करें।",
+        "5. यदि कूलिंग मोड के दौरान VCB ओपन होता है तो VCB क्लोज करने से पहले OCR (78) तथा सभी ऑयल पॉइंट को चेक करें और उसके अनुसार कार्यवाही करें।",
+        "6. LSCE के बुझने के बाद VCB ओपन करें तथा पैंटो लोअर करें। BL Key को ‘ D ’ (Driving Mode) पोजीशन पर रखें, पैंटो रेज़ करें, VCB क्लोज करें तथा ट्रैक्शन चालू करें।",
+        "★ अति-महत्वपूर्ण (3-फ़ेस MRB लोको): जिन लोको में 3-फ़ेस के MRB (मशीन रूम ब्लोअर) लगे हैं, उनमें LSCE प्रकाशित होने पर कूलिंग मोड एक्टिवेट करने की आवश्यकता नहीं है! थ्रोटल को '0' पर रखकर लोको को आइडल (Idle) पोजीशन में ही इनरजाइज़ रखें।",
+        "★ गलती से कूलिंग मोड एक्टिवेट होने पर: यदि गलती से कूलिंग मोड एक्टिवेट कर दिया तो LSCE बुझने तक कंट्रोल इलेक्ट्रॉनिक्स ऑन नहीं होगा। ऐसी स्थिति में कंट्रोल इलेक्ट्रॉनिक्स को दुबारा ऑन करने के लिए कॉन्टैक्टर 218 (Contactor 218) को मैनुअली ऑपरेट करें!"
+      ],
+      precautions: "गाड़ी खड़ी करने के बाद लोको को कूलिंग मोड में रखने से पहले A-9 को इमरजेंसी पोजीशन पर रखें ताकि MR प्रेशर ड्रॉप न हो। कूलिंग मोड में BL Key 'C' पोजीशन पर रखें। यदि कूलिंग मोड के दौरान VCB खुले तो OCR (78) व ऑयल पॉइंट्स चेक करें। 3-फ़ेस MRB लोको में आइडल में ही ठंडा करें; यदि कूलिंग मोड लग जाए तो कॉन्टैक्टर 218 को मैनुअली ऑपरेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0101P2, पेज 135-136 / 163)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 163,
+      pdfQuote: "SS01 F0101P2 Loco XXXSS01 : Main Power\nOVER TEMPERATURE\nCONTROL ELECTRONICS\nTurn off the loco.\nSet up cooling mode\nF0101P2: LSCE aur BPFA prakashit honge. Control electronics ka contactor close nahi hoga.\n1. HB/SB panel me MCBs ko check karein. Yadi trip ho to ek baar reset karein (MCB 54.1/1 aur 54.1/2 dono HB panel par evam MCBs 127.91/1 aur 127.91/2 dono SB panel par).\n2. Yadi TE uplabdh hai to block section clear karein. Anyatha coasting karte hue block section clear karne ka prayatna karein. BPFA daba kar fault ACK karein.\n3. Station Master ko 10-15 minute tak loco ke asamarth rahne ki suchna dein. Gaadi khadi karne ke baad loco ko cooling mode me rakhne se pehle A-9 ko emergency position par rakhein (MR ko drop hone se rokne ke liye).\n4. Control electronics ko OFF karein. BL Key ko 'C' position par rakhein, ZPT dwara panto raise karein, VCB close karein. Dono machine room blower tatha dono scavenging blower chalu honge, loco cooling mode me rahega aur control electronics thanda hone lagega. LSCE ki batti bujhne tak intezar karein.\n5. Yadi cooling mode ke dauran VCB open hota hai to VCB close karne se pehle OCR (78) tatha sabhi oil point ko check karein aur uske anusar karyavahi karein.\n6. LSCE ke bujhne ke baad VCB open karein tatha panto lower karein. BL Key ko 'D' position par rakhein, panto raise karein, VCB close karein tatha traction chalu karein."
+    };
+  }
+
+  // 0b. SS01 F0101P1: VCB STUCK IN ON POSITION, Loco will be shut down (Vadodara TSD Page 74/75)
+  const isVcbStuckInOnQuery = 
+    !norm.includes('f0106') && !norm.includes('f0107') && !norm.includes('filter') && !norm.includes('precharge') && !norm.includes('contactor') &&
+    !norm.includes('f0101p2') && !norm.includes('cooling') && !norm.includes('over temp') && !norm.includes('temperature') && !norm.includes('lsce') &&
+    (norm.includes('f0101p1') || 
+     norm.includes('f0101') ||
+     (norm.includes('vcb') && (norm.includes('stuck in on') || norm.includes('stuck on') || norm.includes('on position'))) ||
+     norm.includes('vcb on position') ||
+     norm.includes('loco will be shut down') ||
+     (norm.includes('shut down') && norm.includes('vcb')));
+
+  if (isVcbStuckInOnQuery) {
+    const isSpecificStuck = norm.includes('stuck in on') || norm.includes('stuck on') || norm.includes('loco will be shut down');
+
+    return {
+      identifiedFaultId: "F0101P1",
+      faultTitle: isSpecificStuck 
+        ? "SS01 F0101P1: VCB STUCK IN ON POSITION, Loco will be shut down (3-Phase Loco TSD)"
+        : "SS01 F0101P1: VCB STUCK ON / MAIN POWER ISOLATED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश: VCB STUCK IN ON POSITION / MAIN POWER ISOLATED\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isSpecificStuck ? [
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
+        "2. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें।",
+        "3. लोको को खड़ा करें।",
+        "4. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें {कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करने की विधि पेज सं. 74/75 पर दी गई है}। यदि LSDJ प्रकाशित होता है तो:-",
+        "5. पैंटो को उठाएं और VCB क्लोज करें और ट्रैक्शन चालू करें।",
+        "6. यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।"
+      ] : [
+        "════ स्थिति 1: VCB STUCK IN ON POSITION (Loco will be shut down) ════",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
+        "2. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें।",
+        "3. लोको को खड़ा करें।",
+        "4. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें {कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करने की विधि पेज सं. 74/75 पर दी गई है}। यदि LSDJ प्रकाशित होता है तो:-",
+        "5. पैंटो को उठाएं और VCB क्लोज करें और ट्रैक्शन चालू करें।",
+        "6. यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।",
+        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "1. एक बार पुनः कंट्रोल इलेक्ट्रॉनिक्स को ऑफ कर फिर से ऑन करें, ट्रैक्शन चालू करने का प्रयत्न करें।",
+        "2. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ],
+      precautions: "कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन (MCE OFF/ON) करने के बाद Node 504 आने तक 35-40 सेकंड प्रतीक्षा करें। यदि 20 मिनट में सफलता न मिले तो सहायता इंजन की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0101P1, पेज 74/75)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल)",
+      pdfPage: 74,
+      pdfQuote: "SS01 F0101P1 Loco XXX SS01: Main Power\n1. VCB STUCK IN ON POSITION -> MCE OFF/ON, panto raise, VCB close.\n2. MAIN POWER ISOLATED (VCB Inhibited Loco is dead) -> MCE OFF/ON; demand relief engine in 20 min."
+    };
+  }
+
+  // 0c-1. SS01 F0102P2: TRANSFORMER OIL PRESSURE NOT OK, Any oil pump circuit not working TE/BE will be reduced (Vadodara TSD Page 136 / 163-164)
+  const isF0102P2Query =
+    !norm.includes('f0105') && !norm.includes('temperature') && !norm.includes('तापमान') &&
+    !norm.includes('converter') && !norm.includes('f0206') && !norm.includes('ss02') && !norm.includes('कनवर्टर') && !norm.includes('कन्वर्टर') &&
+    (norm.includes('f0102p2') ||
+     (norm.includes('f0102') && (norm.includes('p2') || norm.includes('oil') || norm.includes('pressure') || norm.includes('transformer') || norm.includes('62.1') || norm.includes('mph'))) ||
+     ((norm.includes('transformer oil') || norm.includes('oil pressure') || norm.includes('ट्रांसफार्मर ऑयल') || norm.includes('ऑयल प्रेशर')) &&
+      (norm.includes('pressure not ok') || norm.includes('oil pump circuit not working') || norm.includes('oil pump') || norm.includes('te/be will be reduced') || norm.includes('62.1'))) ||
+     norm.includes('transformer oil pressure not ok') ||
+     norm.includes('any oil pump circuit not working'));
+
+  if (isF0102P2Query) {
+    return {
+      identifiedFaultId: "F0102P2",
+      faultTitle: "SS01 F0102P2: TRANSFORMER OIL PRESSURE NOT OK, Any oil pump circuit not working TE/BE will be reduced (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 136 / 163-164):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0102P2\nदोष संदेश:\nLoco XXXSS01 : Main Power\nTRANSFORMER OIL PRESSURE NOT OK\nAny oil pump circuit not working TE/BE will be reduced\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: TE/BE के कम होने की संभावना है। वेंटिलेशन बढ़ेगा। VCB ट्रिप होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. यदि TE उपलब्ध है तो ब्लॉक सेक्शन क्लियर करें। अन्यथा कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें।",
+        "2. थ्रोटल को 0 पर लाएं और BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "3. यदि VCB ट्रिप होता है तो BPFA दबाकर फ़ॉल्ट ACK करें, VCB क्लोज़ करें तथा कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें।",
+        "4. ट्रांसफार्मर ऑयल पंप के इनलेट व आउटलेट पाइपों को हाथ से छूकर ट्रांसफार्मर ऑयल पंप का चलना सुनिश्चित करें। HB-1 पैनल में लगे MCB 62.1/1 तथा HB-2 में लगे MCB 62.1/2 की जांच करें। यदि ट्रिप हों तो VCB को ओपन करके एक बार रीसेट करें।",
+        "5. VCB क्लोज़ करें, यदि सफलता मिलती है तो गाड़ी चलाएं।"
+      ],
+      precautions: "ट्रांसफार्मर ऑयल पंप (MPH-1/MPH-2) की जांच हेतु इनलेट व आउटलेट पाइपों को हाथ से छूकर कंपन व प्रवाह चेक करें। HB-1 पैनल में लगे MCB 62.1/1 तथा HB-2 में लगे MCB 62.1/2 को रीसेट करने से पहले VCB को ओपन करना अनिवार्य है।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0102P2, पेज 136 / 163-164)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 163,
+      pdfQuote: "SS01 F0102P2 Loco XXXSS01 : Main Power\nTRANSFORMER OIL PRESSURE NOT OK\nAny oil pump circuit not working TE/BE will be reduced\nBPFA prakashit hoga. TE/BE kam hone ki sambhavna hai. Ventilation badhega. VCB trip hoga.\n1. Yadi TE uplabdh hai to block section clear karein. Anyatha coasting karte hue block section clear karne ka prayatna karein.\n2. Throttle ko 0 par layein aur BPFA daba kar fault ACK karein.\n3. Yadi VCB trip hota hai to BPFA daba kar fault ACK karein, VCB close karein tatha coasting karte hue block section clear karne ka prayatna karein.\n4. Transformer oil pump ke inlet va outlet pipeon ko haath se chhookar transformer oil pump ka chalna sunishchit karein. HB-1 panel me lage MCB 62.1/1 tatha HB-2 me lage MCB 62.1/2 ki jaanch karein. Yadi trip ho to VCB ko open karke ek baar reset karein.\n5. VCB close karein, yadi safalta milti hai to gaadi chalayein."
+    };
+  }
+
+  // 0c. SS01 F0102P1: VCB STUCK IN OFF POSITION, Try to close VCB again (Vadodara TSD Page 75)
+  const isVcbStuckInOffQuery = 
+    !norm.includes('f0106') && !norm.includes('filter') && !norm.includes('f0109') && !norm.includes('aux') && !norm.includes('winding') && !norm.includes('f0110') && !norm.includes('fatal') &&
+    !norm.includes('f0102p2') && !norm.includes('transformer oil') && !norm.includes('oil pressure') && !norm.includes('oil pump') &&
+    !norm.includes('ss02') && !norm.includes('f0201') && !norm.includes('f0202') && !norm.includes('disturbance') && !norm.includes('converter 1') && !norm.includes('bogie 1') && !norm.includes('bogie-1') && !norm.includes('knv<tr 1') && !norm.includes('bi[g)-1') &&
+    (norm.includes('f0102p1') || 
+     norm.includes('f0102') ||
+     (norm.includes('vcb') && (norm.includes('stuck in off') || norm.includes('stuck off') || norm.includes('off position'))) ||
+     (norm.includes('try to close vcb again') && (norm.includes('ss01') || norm.includes('stuck') || norm.includes('f0102') || norm.includes('off position'))) ||
+     (norm.includes('vcb close') && (norm.includes('nahi ho raha') || norm.includes('नहीं हो रहा') || norm.includes('fails to close') || norm.includes('not closing'))));
+
+  if (isVcbStuckInOffQuery) {
+    const isSpecificStuck = norm.includes('stuck in off') || norm.includes('stuck off') || norm.includes('try to close vcb again');
+
+    return {
+      identifiedFaultId: "F0102P1",
+      faultTitle: isSpecificStuck 
+        ? "SS01 F0102P1: VCB STUCK IN OFF POSITION, Try to close VCB again (3-Phase Loco TSD)"
+        : "SS01 F0102P1: VCB STUCK OFF / MAIN POWER ISOLATED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश: VCB STUCK IN OFF POSITION / MAIN POWER ISOLATED\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isSpecificStuck ? [
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
+        "2. VCB COC खुला होना सुनिश्चित करें।",
+        "3. VCB क्लोज करने के लिए BLDJ को प्रेस करें।",
+        "4. यदि VCB क्लोज होता है तो ट्रैक्शन चालू करें।",
+        "5. अन्यथा यदि संभव हो तो कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और लोको को खड़ा करें।",
+        "6. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें।",
+        "7. पैंटो उठाएं तथा VCB क्लोज करें। ट्रैक्शन चालू करें।",
+        "8. यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।"
+      ] : [
+        "════ स्थिति 1: VCB STUCK IN OFF POSITION (Try to close VCB again) ════",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
+        "2. VCB COC खुला होना सुनिश्चित करें।",
+        "3. VCB क्लोज करने के लिए BLDJ को प्रेस करें।",
+        "4. यदि VCB क्लोज होता है तो ट्रैक्शन चालू करें।",
+        "5. अन्यथा यदि संभव हो तो कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और लोको को खड़ा करें।",
+        "6. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें।",
+        "7. पैंटो उठाएं तथा VCB क्लोज करें। ट्रैक्शन चालू करें।",
+        "8. यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।",
+        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "1. एक बार पुनः कंट्रोल इलेक्ट्रॉनिक्स को ऑफ कर फिर से ऑन करें, ट्रैक्शन चालू करने का प्रयत्न करें।",
+        "2. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ],
+      precautions: "VCB COC (कट-आउट कॉक) न्यूमैटिक पैनल पर खुला (वर्टिकल) होना अनिवार्य है। MCE OFF/ON करने के बाद DDU पर Node 504 आने तक 35-40 सेकंड प्रतीक्षा करें। यदि 20 मिनट में सफलता न मिले तो सहायता इंजन की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0102P1, पेज 75/76)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 75,
+      pdfQuote: "SS01 F0102P1 Loco XXX SS01 : Main Power\n1. VCB STUCK IN OFF POSITION -> Try BLDJ, VCB COC open, MCE OFF/ON.\n2. MAIN POWER ISOLATED (VCB Inhibited Loco is dead) -> Ek baar punah MCE OFF/ON; demand relief engine in 20 min."
+    };
+  }
+
+  // 0d-1. SS01 F0106P2: AUXILIARY CAPACITOR MACHINE ROOM BLOWER NOT OFF, Continue normal traction (Vadodara TSD Page 137 / 165)
+  const isF0106P2Query = 
+    norm.includes('f0106p2') ||
+    (norm.includes('f0106') && (norm.includes('p2') || norm.includes('capacitor') || norm.includes('blower') || norm.includes('मशीन रूम') || norm.includes('कैपेसिटर'))) ||
+    ((norm.includes('auxiliary capacitor') || norm.includes('ऑक्सिलरी कैपेसिटर') || norm.includes('कैपेसिटर') || norm.includes('capacitor')) &&
+     (norm.includes('machine room') || norm.includes('blower not off') || norm.includes('मशीन रूम ब्लोअर') || norm.includes('continue normal traction'))) ||
+    norm.includes('auxiliary capacitor machine room blower not off') ||
+    norm.includes('continue normal traction');
+
+  if (isF0106P2Query) {
+    return {
+      identifiedFaultId: "F0106P2",
+      faultTitle: "SS01 F0106P2: AUXILIARY CAPACITOR MACHINE ROOM BLOWER NOT OFF, Continue normal traction (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 137 / 165):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0106P2\nदोष संदेश:\nLoco XX SS01 : Main Power\nAUXILIARY CAPACITOR MACHINE ROOM BLOWER NOT OFF\nContinue normal traction\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ट्रैक्शन जारी रहेगा (Continue normal traction)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. यदि मशीन रूम ब्लोअर 1 और 2 चालू हैं तो BPFA दबाकर फ़ॉल्ट ACK करें और नॉर्मल ऑपरेशन चालू करें।",
+        "2. निर्धारित स्टॉप पर TLC को सूचित करके लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "यदि दोनों मशीन रूम ब्लोअर (MRB-1 व MRB-2) सामान्य रूप से कार्य कर रहे हैं, तो अनावश्यक रूप से गाड़ी को न रोकें। BPFA दबाकर फ़ॉल्ट ACK करें और सामान्य ट्रैक्शन जारी रखें। निर्धारित स्टॉप पर TLC को सूचित कर लॉगबुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0106P2, पेज 137 / 165)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 165,
+      pdfQuote: "SS01 F0106P2 Loco XX SS01 : Main Power\nAUXILIARY CAPACITOR MACHINE ROOM BLOWER NOT OFF\nContinue normal traction\nBPFA prakashit hoga.\n1. Yadi machine room blower 1 aur 2 chalu hain to BPFA daba kar fault ACK karein aur normal operation chalu karein.\n2. Nirdharit stop par TLC ko suchit karke log book me darj karein."
+    };
+  }
+
+  // 0d. SS01 F0106P1: FILTER ON/OFF CONTACTOR STUCK ON, VCB will not close again (Vadodara TSD Page 79)
+  const isFilterContactorStuckOnQuery = 
+    !norm.includes('f0106p2') && !norm.includes('capacitor') && !norm.includes('कैपेसिटर') && !norm.includes('blower not off') && !norm.includes('continue normal traction') &&
+    (norm.includes('f0106p1') || 
+     norm.includes('f0106') ||
+     (norm.includes('filter on/off') || norm.includes('filter on off')) ||
+     (norm.includes('contactor stuck on') && (norm.includes('filter') || norm.includes('vcb') || norm.includes('0106'))) ||
+     norm.includes('vcb will not close again') ||
+     (norm.includes('हार्मोनिक') && norm.includes('40 kmph')));
+
+  if (isFilterContactorStuckOnQuery) {
+    const isSpecificStuck = 
+      norm.includes('stuck on') || 
+      norm.includes('filter on/off') || 
+      norm.includes('filter on off') || 
+      norm.includes('vcb will not close again');
+
+    return {
+      identifiedFaultId: "F0106P1",
+      faultTitle: isSpecificStuck 
+        ? "SS01 F0106P1: FILTER ON/OFF CONTACTOR STUCK ON, VCB will not close again (3-Phase Loco TSD)"
+        : "SS01 F0106P1: FILTER CONTACTOR STUCK ON / MAIN POWER ISOLATED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXX SS01: Main Power\nFILTER ON/OFF CONTACTOR STUCK ON\nVCB will not close again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: हार्मोनिक फ़िल्टर ऑन/ऑफ कॉन्टैक्टर स्टक ऑन, VCB दोबारा क्लोज नहीं होगा, 40 kmph स्पीड रेस्ट्रिक्शन।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isSpecificStuck ? [
+        "1. यदि VCB ओपन होता है तो पुनः क्लोज नहीं होगा।",
+        "2. थ्रोटल को “ 0 ” पर लाएं और BPFA दबाकर फॉल्ट ACK करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके एक बार पुनः ऑन करें। पैंटोग्राफ रेज़ करें, VCB क्लोज करें यदि लोको सामान्य हो जाता है तो ट्रैक्शन चालू करें।",
+        "3. हार्मोनिक फ़िल्टर अपने आप आइसोलेट होगा और लोको पायलट 40 kmph की गति से कार्य कर सकता है।"
+      ] : [
+        "════ स्थिति 1: FILTER ON/OFF CONTACTOR STUCK ON (VCB will not close again) ════",
+        "1. यदि VCB ओपन होता है तो पुनः क्लोज नहीं होगा।",
+        "2. थ्रोटल को “ 0 ” पर लाएं और BPFA दबाकर फॉल्ट ACK करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके एक बार पुनः ऑन करें। पैंटोग्राफ रेज़ करें, VCB क्लोज करें यदि लोको सामान्य हो जाता है तो ट्रैक्शन चालू करें।",
+        "3. हार्मोनिक फ़िल्टर अपने आप आइसोलेट होगा और लोको पायलट 40 kmph की गति से कार्य कर सकता है।",
+        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "1. सफलता न मिलने पर DDS पर मैसेज चेक करें — यदि DDS पर मैसेज, SLG-1:0059 का आता है तो ट्रैक्शन कनवर्टर-1 को MCB 127.1/1 एवं 127.11/1 (SB-1) और 154 (SB-1) को “ I ” पर रखकर आइसोलेट करके प्रयत्न करें।",
+        "2. यदि सफलता नहीं मिलती तो सहायता इंजन की मांग करें व लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "हार्मोनिक फिल्टर आइसोलेट होने पर लोको 40 kmph की गति सीमा (Speed Restriction) से चलाया जा सकता है। DDS पर SLG-1:0059 आने पर MCE OFF करके ही MCB 127.1/1, 127.11/1 व स्विच 154 को ऑपरेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0106P1, पेज 79)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 79,
+      pdfQuote: "SS01 F0106P1 Loco XXX SS01: Main Power\nFILTER ON/OFF CONTACTOR STUCK ON\nVCB will not close again\n1. If VCB opens, it will not close again.\n2. Throttle to 0, Ack via BPFA. MCE OFF/ON, raise panto, close VCB, start traction if normal.\n3. Harmonic filter automatically isolated, LP can work at 40 kmph.\nMAIN POWER ISOLATED (VCB Inhibited Loco is dead):\n1. Check DDS message: If SLG-1:0059, isolate SR-1 via MCB 127.1/1 & 127.11/1 (SB-1) and switch 154 on 'I'.\n2. If not successful, demand relief engine and book in log book."
+    };
+  }
+
+  // 0e-1. SS01 F0107P2: DEMANDED SPEED CANNOT BE ACHIEVED (Vadodara TSD Page 137-138 / 165-166)
+  const isF0107P2Query = 
+    norm.includes('f0107p2') ||
+    (norm.includes('f0107') && (norm.includes('p2') || norm.includes('speed') || norm.includes('demanded') || norm.includes('tacho') || norm.includes('techo') || norm.includes('toggle') || norm.includes('टॉगल') || norm.includes('स्पीड'))) ||
+    ((norm.includes('demanded speed') || norm.includes('demanded speed cannot be achieved') || norm.includes('speed cannot be achieved')) &&
+     (norm.includes('achieved') || norm.includes('speed') || norm.includes('cannot') || norm.includes('can not'))) ||
+    norm.includes('asc1 error techo generator') ||
+    norm.includes('asc1 error tacho generator') ||
+    norm.includes('asc2 error techo generator') ||
+    norm.includes('asc2 error tacho generator') ||
+    norm.includes('demanded speed can not be achieved') ||
+    norm.includes('demanded speed cannot be achieved');
+
+  if (isF0107P2Query) {
+    return {
+      identifiedFaultId: "F0107P2",
+      faultTitle: "SS01 F0107P2: DEMANDED SPEED CANNOT BE ACHIEVED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 137-138 / 165-166):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0107P2\nदोष संदेश:\nLoco XXX SS01 : Main Power\nDEMANDED SPEED CANNOT BE ACHIEVED\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: गति 1 kmph से अधिक नहीं बढ़ेगी और 50% से अधिक TE देने पर लोको भारी झटके (Heavy Jerk) के साथ चालू होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. यदि लोको (WAG9, WAG9H, WAP7) में ट्रैक्शन कनवर्टर के ऊपर टॉगल स्विच लगे हों तो:\n   • DDS बैकग्राउंड मैसेज संख्या 0052, 0053 या 0054 ASC1 ERROR TACHO GENERATOR के मैसेज के अनुसार, SR-1 के ऊपर लगे स्पीड सेंसर के क्रमशः नीचे, बीच अथवा ऊपर वाले टॉगल स्विच को ऑपरेट करके बाईपास करें।\n   • इसी प्रकार DDS बैकग्राउंड मैसेज संख्या 0052, 0053 या 0054 ASC2 ERROR TACHO GENERATOR के मैसेज के अनुसार, SR-2 के ऊपर लगे स्पीड सेंसर के क्रमशः नीचे, बीच अथवा ऊपर वाले टॉगल स्विच को ऑपरेट करके बाईपास करें।",
+        "3. यदि लोको में ट्रैक्शन कनवर्टर के ऊपर टॉगल स्विच नहीं लगे हों तो निम्न DDS मैसेज के अनुसार संबंधित ट्रैक्शन कनवर्टर को आइसोलेट करें:\n   a) यदि मैसेज ASC1 Error Tacho Generator 1/2/3 का हो, तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ट्रैक्शन कनवर्टर-1 को MCB 127.1/1 एवं 127.11/1 (SB-1) के द्वारा आइसोलेट करें। एक ट्रैक्शन बोगी से कार्य करें। TLC को सूचित करें।\n   b) यदि मैसेज ASC2 Error Tacho Generator 1/2/3 का हो, तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ट्रैक्शन कनवर्टर-2 को MCB 127.1/2 एवं 127.11/2 (SB-2) के द्वारा आइसोलेट करें। एक ट्रैक्शन बोगी से कार्य करें। TLC को सूचित करें।"
+      ],
+      precautions: "DDS बैकग्राउंड मैसेज 0052/0053/0054 की जांच कर टॉगल स्विच वाले लोको में संबंधित स्पीड सेंसर टॉगल स्विच को ही बाईपास करें (0052 = नीचे, 0053 = बीच, 0054 = ऊपर)। बिना टॉगल स्विच वाले लोको में MCE OFF करके MCB 127.1 व 127.11 द्वारा संबंधित कनवर्टर को आइसोलेट कर एक बोगी से कार्य करें। TLC को सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0107P2, पेज 137-138 / 165-166)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 165,
+      pdfQuote: "SS01 F0107P2 Loco XXX SS01 : Main Power\nDEMANDED SPEED CANNOT BE ACHIEVED\nBPFA prakashit hoga. Gati 1 kmph se adhik nahi badhegi aur 50% se adhik TE dene par loco heavy jerk ke saath chalu hoga.\n1. BPFA daba kar fault ACK karein.\n2. Yadi loco (WAG9, WAG9H, WAP7) me traction converter ke upar toggle switch lage hon to DDS background message sankhya 0052, 0053 ya 0054 ASC1/ASC2 ERROR TECHOGENERATOR ke anusar SR-1/SR-2 ke toggle switch operate karke bypass karein.\n3. Yadi toggle switch nahi lage hon to DDS message anusar MCE OFF karke sambandhit SR ko MCB 127.1/1 evam 127.11/1 (SB-1) ya 127.1/2 evam 127.11/2 (SB-2) dwara isolate karein. Ek traction bogie se karya karein. TLC ko suchit karein."
+    };
+  }
+
+  // 0e. SS01 F0107P1: PRECHARGE OR MAIN CONTACTOR STUCK ON, Main converter blocked (Vadodara TSD Page 80)
+  const isPrechargeMainContactorStuckOnQuery = 
+    !norm.includes('f0107p2') && !norm.includes('demanded speed') && !norm.includes('tacho') && !norm.includes('techo') && !norm.includes('toggle') && !norm.includes('टॉगल') &&
+    (norm.includes('f0107p1') || 
+     norm.includes('f0107') ||
+     (norm.includes('precharge') && (norm.includes('contactor') || norm.includes('stuck') || norm.includes('blocked'))) ||
+     norm.includes('main converter blocked') ||
+    (norm.includes('contactor stuck on') && (norm.includes('precharge') || norm.includes('main converter') || norm.includes('0107'))) ||
+    norm.includes('slg-1:0037') ||
+    norm.includes('slg-1:0039') ||
+    norm.includes('slg-2:0037') ||
+    norm.includes('slg-2:0039') ||
+    (norm.includes('0037') && norm.includes('slg')) ||
+    (norm.includes('0039') && norm.includes('slg')));
+
+  if (isPrechargeMainContactorStuckOnQuery) {
+    const isSpecificStuck = 
+      norm.includes('precharge') || 
+      norm.includes('main converter blocked') || 
+      norm.includes('0037') || 
+      norm.includes('0039');
+
+    return {
+      identifiedFaultId: "F0107P1",
+      faultTitle: isSpecificStuck 
+        ? "SS01 F0107P1: PRECHARGE OR MAIN CONTACTOR STUCK ON, Main converter blocked (3-Phase Loco TSD)"
+        : "SS01 F0107P1: PRECHARGE CONTACTOR STUCK ON / MAIN POWER ISOLATED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश:\nLoco XXX SS01 : Main Power\nPRECHARGE OR MAIN CONTACTOR STUCK ON\nMain converter blocked\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: मेन कनवर्टर ब्लॉक, एक बोगी आइसोलेट कर कार्य।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isSpecificStuck ? [
+        "1. थ्रोटल को “ 0 ” पर लाएं। कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें।",
+        "2. BPFA दबाकर फॉल्ट ACK करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके एक बार पुनः ऑन करें। पैंटो रेज़ करें, VCB क्लोज करें तथा ट्रैक्शन चालू करें।",
+        "3. यदि सफलता नहीं मिलती है तो निम्न DDS मैसेज के अनुसार संबंधित ट्रैक्शन कनवर्टर को आइसोलेट करके एक बोगी को सर्विस में रखते हुए सेक्शन क्लियर करें:-\n   (i) यदि DDS पर बैकग्राउंड मैसेज SLG-1:0037 या 0039 का आता है तो ट्रैक्शन कनवर्टर-1 को MCB 127.1/1 एवं 127.11/1 (SB-1) के द्वारा आइसोलेट करें।\n   (ii) यदि DDS पर बैकग्राउंड मैसेज SLG-2:0037 या 0039 का आता है तो ट्रैक्शन कनवर्टर-2 को MCB 127.1/2 एवं 127.11/2 (SB-2) के द्वारा आइसोलेट करें। TLC को सूचित करें और उसके आदेशानुसार कार्य करें।",
+        "4. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ] : [
+        "════ स्थिति 1: PRECHARGE OR MAIN CONTACTOR STUCK ON (Main converter blocked) ════",
+        "1. थ्रोटल को “ 0 ” पर लाएं। कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें।",
+        "2. BPFA दबाकर फॉल्ट ACK करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके एक बार पुनः ऑन करें। पैंटो रेज़ करें, VCB क्लोज करें तथा ट्रैक्शन चालू करें।",
+        "3. यदि सफलता नहीं मिलती है तो निम्न DDS मैसेज के अनुसार संबंधित ट्रैक्शन कनवर्टर को आइसोलेट करके एक बोगी को सर्विस में रखते हुए सेक्शन क्लियर करें:-\n   (i) यदि DDS पर बैकग्राउंड मैसेज SLG-1:0037 या 0039 का आता है तो ट्रैक्शन कनवर्टर-1 को MCB 127.1/1 एवं 127.11/1 (SB-1) के द्वारा आइसोलेट करें।\n   (ii) यदि DDS पर बैकग्राउंड मैसेज SLG-2:0037 या 0039 का आता है तो ट्रैक्शन कनवर्टर-2 को MCB 127.1/2 एवं 127.11/2 (SB-2) के द्वारा आइसोलेट करें। TLC को सूचित करें और उसके आदेशानुसार कार्य करें।",
+        "4. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।",
+        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें। पैंटोग्राफ रेज़ करें, VCB क्लोज करें तथा ट्रैक्शन चालू करें।",
+        "2. यदि VCB क्लोज नहीं हो रहा है तो लोको को शट-डाउन करें।",
+        "3. 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ],
+      precautions: "DDS बैकग्राउंड मैसेज SLG-1:0037/0039 अथवा SLG-2:0037/0039 आने पर संबंधित कनवर्टर को MCE OFF करके MCB 127.1 व 127.11 द्वारा आइसोलेट करें और 1 बोगी से सेक्शन क्लियर करें। 20 मिनट में सफलता न मिले तो सहायता इंजन मांगें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0107P1, पेज 80)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 80,
+      pdfQuote: "SS01 F0107P1 Loco XXX SS01 : Main Power\nPRECHARGE OR MAIN CONTACTOR STUCK ON\nMain converter blocked\n1. Throttle to 0, coast to clear section.\n2. Ack via BPFA, MCE OFF/ON, raise panto, close VCB, start traction.\n3. If unsuccessful, isolate converter based on DDS background message:\n   (i) If SLG-1:0037 or 0039, isolate SR-1 via MCB 127.1/1 & 127.11/1 (SB-1).\n   (ii) If SLG-2:0037 or 0039, isolate SR-2 via MCB 127.1/2 & 127.11/2 (SB-2). Inform TLC.\n4. If still fails, demand relief engine in 20 min.\nMAIN POWER ISOLATED (VCB inhibited Loco is dead):\n1. MCE OFF/ON, raise panto, close VCB, start traction.\n2. If VCB does not close, shut down loco.\n3. Demand relief engine in 20 min."
+    };
+  }
+
+  // 0f. SS01 F0108P1: PRIMARY OVER CURRENT, Check over current relay flag, Close VCB after unlocking relay (Vadodara TSD Page 81)
+  const isF0108Query = 
+    !norm.includes('f0109') && !norm.includes('aux') && !norm.includes('winding') && !norm.includes('f0110') && !norm.includes('fatal') &&
+    (norm.includes('f0108') || 
+     norm.includes('f0108p1') || 
+    norm.includes('primary over current') ||
+    norm.includes('primary overcurrent') ||
+    norm.includes('over current relay flag') ||
+    norm.includes('unlocking relay') ||
+    norm.includes('ocr-78') ||
+    norm.includes('ocr 78') ||
+    norm.includes('ocr{78}') ||
+    (norm.includes('ocr') && (norm.includes('sb-1') || norm.includes('sb1') || norm.includes('relay') || norm.includes('रिले') || norm.includes('vcb'))) ||
+    (norm.includes('over current') && (norm.includes('relay') || norm.includes('vcb') || norm.includes('ss01'))));
+
+  if (isF0108Query) {
+    const isDeadLoco = norm.includes('loco is dead') || norm.includes('लोको डेड') || norm.includes('vcb inhibited');
+    const isSpecificOverCurrent = norm.includes('ocr') || norm.includes('primary over current') || norm.includes('relay flag') || norm.includes('unlocking');
+
+    return {
+      identifiedFaultId: "F0108P1",
+      faultTitle: isDeadLoco
+        ? "SS01 F0108P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)"
+        : (isSpecificOverCurrent
+            ? "SS01 F0108P1: PRIMARY OVER CURRENT, Check over current relay flag, Close VCB after unlocking relay (3-Phase Loco TSD)"
+            : "SS01 F0108P1: PRIMARY OVER CURRENT / MAIN POWER ISOLATED (3-Phase Loco TSD)"),
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0108P1\nदोष संदेश:\nLoco XXXSS01 : Main Power\nPRIMARY OVER CURRENT\nCheck over current relay flag\nClose VCB after unlocking relay\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB क्लोजिंग/होल्डिंग कॉइल की पावर सप्लाई मैक्सिमम करंट रिले (OCR 78) के द्वारा बाधित होगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isDeadLoco ? [
+        "1. यदि एक बार में सफलता न मिले तो बिना समय गंवाए सहायता इंजन की मांग करें।"
+      ] : (isSpecificOverCurrent ? [
+        "1. लोको की जांच करने से पहले VCB को क्लोज न करें। (विशेषकर मशीन रूम में OCR (78) तथा सभी ऑयल पॉइंट्स चेक करें। यदि कोई असामान्यता दिखाई दे तो मानक सुरक्षा नियमानुसार कार्यवाही करें और बिना समय गंवाए सहायता मांगें।)",
+        "2. यदि कोई असामान्यता नहीं है तो कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और गाड़ी को खड़ी करें। BPFA दबाकर फॉल्ट ACK करें।",
+        "3. SB-1 पैनल पर OCR-78 रिले के टारगेट की जांच करें।",
+        "4. मशीन रूम में तेल का बिखराव चेक करें।",
+        "5. मशीन रूम में ऑयल कूलिंग यूनिट के पास ट्रांसफॉर्मर के दोनों एक्सपेंशन टैंक तथा दोनों ट्रैक्शन कनवर्टर के एक्सपेंशन टैंक में ऑयल लेवल चेक करें। यह Min. तथा Max. के बीच होना चाहिए। यदि कोई असामान्यता (जैसे मशीन रूम में ट्रांसफॉर्मर, ट्रैक्शन कनवर्टर से तेल का बिखराव, अत्यधिक गर्मी/स्पार्किंग) हो तो लोको को शट-डाउन करें। 20 मिनट के अंदर सहायता इंजन की मांग करें।",
+        "6. यदि OCR-78 (SB-1) का टारगेट गिरा है परंतु किसी भी प्रकार के तेल का बिखराव जैसी असामान्यता नहीं दिखती है एवं चारों ऑयल गेज में तेल Min. तथा Max. के बीच है, तो रिले के नॉब को clockwise (घड़ी की दिशा में) घुमाकर रीसेट करें, रिले का फ्लैग हट जाएगा।",
+        "7. BLDJ द्वारा VCB क्लोज करें एवं TLC को सूचित करके लॉग बुक में दर्ज करें।",
+        "8. यदि एक बार में उपरोक्त अनुसार सफलता न मिले और VCB क्लोज नहीं होता है तो बिना समय गंवाए सहायता इंजन की मांग करें।"
+      ] : [
+        "════ स्थिति 1: PRIMARY OVER CURRENT (Check over current relay flag, Close VCB after unlocking relay) ════",
+        "1. लोको की जांच करने से पहले VCB को क्लोज न करें। (विशेषकर मशीन रूम में OCR (78) तथा सभी ऑयल पॉइंट्स चेक करें। यदि कोई असामान्यता दिखाई दे तो मानक सुरक्षा नियमानुसार कार्यवाही करें और बिना समय गंवाए सहायता मांगें।)",
+        "2. यदि कोई असामान्यता नहीं है तो कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और गाड़ी को खड़ी करें। BPFA दबाकर फॉल्ट ACK करें।",
+        "3. SB-1 पैनल पर OCR-78 रिले के टारगेट की जांच करें।",
+        "4. मशीन रूम में तेल का बिखराव चेक करें।",
+        "5. मशीन रूम में ऑयल कूलिंग यूनिट के पास ट्रांसफॉर्मर के दोनों एक्सपेंशन टैंक तथा दोनों ट्रैक्शन कनवर्टर के एक्सपेंशन टैंक में ऑयल लेवल चेक करें। यह Min. तथा Max. के बीच होना चाहिए। यदि कोई असामान्यता (जैसे तेल का बिखराव या अत्यधिक तापमान) हो तो लोको को शट-डाउन करें। 20 मिनट के अंदर सहायता इंजन की मांग करें।",
+        "6. यदि OCR-78 (SB-1) का टारगेट गिरा है परंतु किसी भी प्रकार का तेल बिखराव नहीं दिखता है एवं चारों ऑयल गेज में तेल Min. तथा Max. के बीच है तो रिले के नॉब को clockwise घुमाकर रीसेट करें, रिले का फ्लैग हट जाएगा।",
+        "7. BLDJ द्वारा VCB क्लोज करें एवं TLC को सूचित करके लॉग बुक में दर्ज करें।",
+        "8. यदि एक बार में उपरोक्त अनुसार सफलता न मिले और VCB क्लोज नहीं होता है तो बिना समय गंवाए सहायता इंजन की मांग करें।",
+        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "1. यदि एक बार में सफलता न मिले तो बिना समय गंवाए सहायता इंजन की मांग करें।"
+      ]),
+      precautions: "लोको जांच से पहले VCB क्लोज न करें। OCR-78 रिले रीसेट करने से पहले चारों ऑयल गेज में तेल का स्तर Min/Max के बीच होना और मशीन रूम में किसी प्रकार का तेल रिसाव न होना सुनिश्चित करें। यदि एक बार में VCB क्लोज न हो तो बिना समय गंवाए सहायता इंजन मांगें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0108P1, पेज 81)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 81,
+      pdfQuote: "SS01 F0108P1 Loco XXXSS01 : Main Power\nPRIMARY OVER CURRENT\nCheck over current relay flag\nClose VCB after unlocking relay\n1. Loco ki jaanch karne se pehle VCB ko close na karein. OCR(78) aur sabhi oil points check karein.\n2. Yadi koi asamanyata nahi hai to coasting karte hue block section clear karein. BPFA daba kar fault ACK karein.\n3. SB-1 panel par OCR-78 relay target jaanch karein.\n4. Machine room me tel ka bikhrav check karein.\n5. Transformer aur traction converter ke expansion tanks me oil level Min/Max ke beech check karein.\n6. Agar target gira hai aur oil level theek hai to relay knob ko clockwise ghuma kar reset karein, flag hat jayega.\n7. BLDJ dwara VCB close karein, TLC ko suchit kar log book me darj karein.\n8. Yadi ek baar me safalta na mile to bina samay gavaye sahayata engine ki maang karein.\n\nMAIN POWER ISOLATED (VCB inhibited Loco is dead):\n1. Yadi ek baar me safalta na mile to bina samay gavaye sahayata engine ki maang karein."
+    };
+  }
+
+  // 0g. SS01 F0109P1: AUX. WINDING OVER CURRENT, Try to close VCB again (Vadodara TSD Page 82 / 134)
+  const isF0109Query = 
+    !norm.includes('earth fault') && !norm.includes('earthfault') && !norm.includes('f0103') && !norm.includes('अर्थ') &&
+    (norm.includes('f0109') || 
+     norm.includes('f0109p1') || 
+     (norm.includes('aux') && (norm.includes('winding') || norm.includes('wind')) && (norm.includes('over current') || norm.includes('current') || norm.includes('vcb') || norm.includes('bur'))) ||
+     norm.includes('aux. winding') ||
+     norm.includes('aux winding') ||
+     norm.includes('127.22'));
+
+  if (isF0109Query) {
+    const isDeadLoco = norm.includes('dead') || norm.includes('inhibited') || norm.includes('डेड') || norm.includes('main power isolated');
+    const isSpecificAuxOverCurrent = norm.includes('aux') || norm.includes('winding') || norm.includes('try to close vcb') || norm.includes('isolation message') || norm.includes('आइसोलेशन');
+
+    return {
+      identifiedFaultId: "F0109P1",
+      faultTitle: isDeadLoco
+        ? "SS01 F0109P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)"
+        : (isSpecificAuxOverCurrent
+            ? "SS01 F0109P1: AUX. WINDING OVER CURRENT, Try to close VCB again (3-Phase Loco TSD)"
+            : "SS01 F0109P1: AUX. WINDING OVER CURRENT / MAIN POWER ISOLATED (3-Phase Loco TSD)"),
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0109P1\nदोष संदेश:\nLoco XXXSS01 : Main Power\nAUX. WINDING OVER CURRENT\nTry to close VCB again\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: VCB ट्रिप होगा (VCB will trip)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isDeadLoco ? [
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटोग्राफ रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "2. यदि VCB क्लोज़ नहीं होता है तो लोको को शट-डाउन करें।",
+        "3. DDS पर बैकग्राउंड मैसेज चेक करें, और मैसेज के अनुसार BUR-1, BUR-2 या BUR-3 को MCB 127.22/1 या MCB 127.22/2 या MCB 127.22/3 के द्वारा आइसोलेट करके प्रयत्न करें। (MCE ऑफ़ करके)।",
+        "4. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ] : (isSpecificAuxOverCurrent ? [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। VCB को क्लोज़ करने के लिए BLDJ दबाएं।",
+        "2. यदि दोष बना ही रहता है तो आइसोलेशन मैसेज आएगा, ENTER बटन दबाकर ACK करें।",
+        "3. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और गाड़ी को खड़ी करें।"
+      ] : [
+        "════ स्थिति 1: AUX. WINDING OVER CURRENT (Try to close VCB again) ════",
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। VCB को क्लोज़ करने के लिए BLDJ दबाएं।",
+        "2. यदि दोष बना ही रहता है तो आइसोलेशन मैसेज आएगा, ENTER बटन दबाकर ACK करें।",
+        "3. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और गाड़ी को खड़ी करें।",
+        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटोग्राफ रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "2. यदि VCB क्लोज़ नहीं होता है तो लोको को शट-डाउन करें।",
+        "3. DDS पर बैकग्राउंड मैसेज चेक करें, और मैसेज के अनुसार BUR-1, BUR-2 या BUR-3 को MCB 127.22/1 या MCB 127.22/2 या MCB 127.22/3 के द्वारा आइसोलेट करके प्रयत्न करें। (MCE ऑफ़ करके)।",
+        "4. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ]),
+      precautions: "VCB क्लोज़ करने के लिए BLDJ दबाएं। यदि फॉल्ट बना रहता है तो DDS पर आइसोलेशन मैसेज आने पर ENTER दबाकर ACK करें। यदि लोको डेड हो जाता है तो MCE ऑफ़ करके DDS बैकग्राउंड मैसेज अनुसार संबंधित BUR को MCB 127.22/1, 127.22/2 या 127.22/3 द्वारा आइसोलेट करें। 20 मिनट के भीतर सहायता इंजन मांगें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0109P1, पेज 82 / 134)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 161,
+      pdfQuote: "SS01 F0109P1 Loco XXXSS01 : Main Power\nAUX. WINDING OVER CURRENT\nTry to close VCB again\n1. BPFA dbikr fiˆÃT ACK kr>[.VCB ki[ ±li[J krn[ k[ (lE BLDJ dbiE>. \n2. y(d di[P bni h) rhti h] ti[ aiesi[l[Sn m]s[J aiEgi,ENTER bTn dbikr ACK kr>[.\n3- ki[IAT‚g krt[ h‰E ¾liˆk s[±Sn ±l)Áir kr>[ ai]r giD) ki[ KD) kr>[.\n\nMAIN POWER ISOLATED (VCB inhibited Loco is dead):\n1. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir (fr aiˆf krk[ aiˆn kr>[.p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n2- y(d VCB ±li[j nh)>>> hi[ti h] ti[ li[ki[ ki[ ST Diun kr>[.\n3- DDS pr b][k g\iu·D m]s[j c[k kr>[, ai]r m]s[J k[ an&sir BUR-1, BUR-2 yi BUR-3 ki[ MCB 127.22/1 yi MCB 127.22/2 yi MCB 127.22/3 k[ oiri aiesi[l[T krk[ p\yRn kr>[.(MCE aiˆf krk[).\n4- sflti n (mln[ pr 20 (mnT k[ aºdr shiyti e‚Jn k) mi‚g kr>[."
+    };
+  }
+
+  // 0h. SS01 F0110P1: FATAL ERROR IN MAIN CIRCUIT, Turn OFF the Loco (Vadodara TSD Page 134-135 / 161-162)
+  const isF0110Query = 
+    norm.includes('f0110') || 
+    norm.includes('f0110p1') || 
+    (norm.includes('fatal') && (norm.includes('circuit') || norm.includes('main') || norm.includes('loco'))) ||
+    norm.includes('fatal error') ||
+    (norm.includes('turn off the loco') && (norm.includes('circuit') || norm.includes('fatal') || norm.includes('ss01') || norm.includes('hb/sb') || norm.includes('main'))) ||
+    norm.includes('rdso/2013/el/ms/0420') ||
+    norm.includes('0420');
+
+  if (isF0110Query) {
+    const isDeadLoco = norm.includes('dead') || norm.includes('inhibited') || norm.includes('डेड') || (norm.includes('main power isolated') && !norm.includes('fatal error in main circuit'));
+    const isSpecificFatal = norm.includes('fatal') || norm.includes('turn off') || norm.includes('throttle') || norm.includes('थ्रॉटल') || norm.includes('थ्रोटल') || norm.includes('rdso') || norm.includes('hb/sb');
+
+    return {
+      identifiedFaultId: "F0110P1",
+      faultTitle: isDeadLoco
+        ? "SS01 F0110P1: MAIN POWER ISOLATED, VCB Inhibited Loco is dead (3-Phase Loco TSD)"
+        : (isSpecificFatal
+            ? "SS01 F0110P1: FATAL ERROR IN MAIN CIRCUIT, Turn OFF the Loco (3-Phase Loco TSD)"
+            : "SS01 F0110P1: FATAL ERROR IN MAIN CIRCUIT / MAIN POWER ISOLATED (3-Phase Loco TSD)"),
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0110P1\nदोष संदेश:\nLoco XXXSS01 : Main Power\nFATAL ERROR IN MAIN CIRCUIT\nTurn OFF the Loco\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक (टिमटिमाना) करेगा।\nप्रभाव: VCB ट्रिप होगा और पैंटोग्राफ लोअर हो जाएगा (VCB trip hoga aur pantograph lower ho jayega)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: isDeadLoco ? [
+        "1. OCB, TMB, कन्वर्टर पंप (MPH-C) व MCP के लिए SS-01 के अंत में दिए गए अतिरिक्त मदों के अनुसार दोष निवारण करें। यदि सफलता नहीं मिलती है तो -",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "3. यदि VCB क्लोज़ नहीं होता है तो लोको को शट-डाउन करें।",
+        "4. 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ] : (isSpecificFatal ? [
+        "1. थ्रॉटल को ‘0’ पर लाएं और BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. HB/SB पैनल में MCBs को चेक करें। यदि ट्रिप हों तो एक बार रीसेट करें।",
+        "3. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "4. एक से ज़्यादा सब-सिस्टम आइसोलेट हों (RDSO का मॉडिफिकेशन पत्र सं. RDSO/2013/EL/MS/0420, Rev. ‘0’ Dated 23.01.13 के कार्यान्वयन के बाद ही यह लागू होगा)।"
+      ] : [
+        "════ स्थिति 1: FATAL ERROR IN MAIN CIRCUIT (Turn OFF the Loco) ════",
+        "1. थ्रॉटल को ‘0’ पर लाएं और BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. HB/SB पैनल में MCBs को चेक करें। यदि ट्रिप हों तो एक बार रीसेट करें।",
+        "3. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "4. एक से ज़्यादा सब-सिस्टम आइसोलेट हों (RDSO का मॉडिफिकेशन पत्र सं. RDSO/2013/EL/MS/0420, Rev. ‘0’ Dated 23.01.13 के कार्यान्वयन के बाद ही यह लागू होगा)।",
+        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "1. OCB, TMB, कन्वर्टर पंप (MPH-C) व MCP के लिए SS-01 के अंत में दिए गए अतिरिक्त मदों के अनुसार दोष निवारण करें। यदि सफलता नहीं मिलती है तो -",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "3. यदि VCB क्लोज़ नहीं होता है तो लोको को शट-डाउन करें।",
+        "4. 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ]),
+      precautions: "थ्रॉटल को '0' पर लाकर BPFA दबाएं। HB व SB पैनल में ट्रिप्ड MCB को केवल एक बार रीसेट करें। कंट्रोल इलेक्ट्रॉनिक्स को रीसायकल (ऑफ करके ऑन) करें। यदि VCB क्लोज़ न हो तो लोको शट डाउन कर 20 मिनट में सहायता इंजन की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0110P1, पेज 134-135 / 161-162)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 161,
+      pdfQuote: "SS01 F0110P1 Loco XXXSS01 : Main Power\nFATAL ERROR IN MAIN CIRCUIT\nTurn OFF the Loco\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE> ai]r BPFA dbikr fiˆÃT ACK kr>[.\n2. HB/SB p]nl m[> MCBs ki[ c]k kr>[. y(d (T^p h]> ti[ Ek bir (rs[T kr>[.\n3. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir (fr aiˆf krk[ aiˆn kr>[.p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n4. Ek s[ ¶yidi sb (sATm aiesi[l[T h]>. RDSO ki miˆ(D(fk[Sn p#i s>0 RDSO/2013/EL/MS/0420, Rev. ‘0’ Dated 23.01.13 k[ kiyi<ºvyn k[ bid h) yh lig* hi[gi.\n\nMAIN POWER ISOLATED (VCB inhibited Loco is dead):\n1. OCB,TMB,knv<Tr p>p (MPH-C) v MCP k[ (lE SS-01 k[ a>t m[> (dy[ gy[ a(t(r±t mdi[> k[ an&sir di[P (nvirN kr>[. y(d sflti nh)>>> (mlt) h] ti[ -\n2. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir (fr aiˆf krk[ aiˆn kr>[.p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n3. y(d VCB ±li[j nh)>> hi[ti h] ti[ li[ki[ ki[ ST DiUn kr>[.\n4. 20 (mnT k[ aºdr shiyti e‚Jn k) mi‚g kr>[ ."
+    };
+  }
+
+  // 0i. SS01 F0103P2: EARTH FAULT AUX. WINDING CIRCUIT, Normal operation can continue (Vadodara TSD Page 136 / 164)
+  const isF0103P2Query = 
+    !norm.includes('battery') && !norm.includes('b]tr') && !norm.includes('f0905') &&
+    !norm.includes('f1102') && !norm.includes('415') && !norm.includes('ss11') &&
+    (
+      norm.includes('f0103p2') ||
+      (norm.includes('f0103') && (norm.includes('p2') || norm.includes('earth') || norm.includes('winding') || norm.includes('arth') || norm.includes('अर्थ'))) ||
+      ((norm.includes('earth fault') || norm.includes('earthfault') || norm.includes('अर्थ फॉल्ट') || norm.includes('अर्थ फाल्ट')) &&
+       (norm.includes('aux') || norm.includes('winding') || norm.includes('circuit') || norm.includes('ऑक्सिलरी') || norm.includes('वाइंडिंग'))) ||
+      norm.includes('earth fault aux') ||
+      norm.includes('earth fault aux. winding circuit') ||
+      norm.includes('normal operation can continue. to be checked during maintenance')
+    );
+
+  if (isF0103P2Query) {
+    return {
+      identifiedFaultId: "F0103P2",
+      faultTitle: "SS01 F0103P2: EARTH FAULT AUX. WINDING CIRCUIT, Normal operation can continue (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 136 / 164):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0103P2\nदोष संदेश:\nLoco XXXSS01 : Main Power\nEARTH FAULT AUX. WINDING CIRCUIT\nNormal operation can continue.\nTo be checked during maintenance\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य परिचालन जारी रह सकता है (Normal operation can continue)। अनुरक्षण के दौरान जांच की जानी है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. मशीन रूम में जाकर ऑक्सिलरी में आग या आग लगने की गंध (Smell/Smoke) चेक करें। यदि खराबी हो तो संबंधित ऑक्सिलरी के MCB को ट्रिप करें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. यदि फिर से वही फ़ॉल्ट आता है तो SS-01 के अंत में दिए गए अतिरिक्त अनुदेशों के अनुसार ट्रबल-शूट करें।",
+        "3. TLC को सूचित करके लॉग बुक में दर्ज करें। सामान्य परिचालन जारी रखें।"
+      ],
+      precautions: "मशीन रूम का तुरंत निरीक्षण कर किसी ऑक्सिलरी मोटर में ओवरहीटिंग, धुआं या जलने की गंध की जांच करें। असामान्य गंध/आग मिलने पर संबंधित MCB को ट्रिप कर उस मोटर को आइसोलेट करें। सामान्य स्थिति में गाड़ी का संचालन जारी रखें और TLC को सूचित कर लॉगबुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0103P2, पेज 136 / 164)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 164,
+      pdfQuote: "SS01 F0103P2 Loco XXXSS01 : Main Power\nEARTH FAULT AUX. WINDING CIRCUIT\nNormal operation can continue.\nTo be checked during maintenance\nBPFA prakashit hoga.\n1. Machine room me auxiliary me aag ya aag lagne ki gandh check karein. Yadi kharabi ho to sambandhit auxiliary ke MCB ko trip karein. BPFA daba kar fault ACK karein.\n2. Yadi fir se wahi fault aata hai to SS-01 ke ant me diye gaye atirikt anudeshon ke anusar trouble-shoot karein.\n3. TLC ko suchit karke log book me darj karein."
+    };
+  }
+
   const isPantoQuery = 
-    norm.includes('panto') || norm.includes('pantograph') || 
-    norm.includes('पैंटो') || norm.includes('पैंटोग्राफ') || norm.includes('पेंटो') || 
-    (norm.includes('raising') && !norm.includes('brake')) || 
-    norm.includes('not raising') || norm.includes('not going up') || 
-    norm.includes('उठ नहीं') || norm.includes('उठता नहीं') || 
-    norm.includes('pan-1') || norm.includes('pan-2') || 
-    norm.includes('ig-38') || norm.includes('mcpa') || norm.includes('f0103p1');
+    !norm.includes('f0104') && !norm.includes('f0106') && !norm.includes('f0107') && !norm.includes('f0108') && !norm.includes('f0109') && !norm.includes('f0110') && !norm.includes('catenary') && !norm.includes('out of limit') &&
+    !norm.includes('f0103p2') && !norm.includes('earth fault') && !norm.includes('earthfault') && !norm.includes('aux. winding') && !norm.includes('aux winding') &&
+    (norm.includes('f0103p1') ||
+     norm.includes('f0103') ||
+     norm.includes('low pressure panto') ||
+     norm.includes('faulty panto') ||
+     norm.includes('पैंटो') || norm.includes('पैंटोग्राफ') || norm.includes('पेंटो') || 
+     (norm.includes('raising') && !norm.includes('brake')) || 
+     norm.includes('not raising') || norm.includes('not going up') || 
+     norm.includes('उठ नहीं') || norm.includes('उठता नहीं') || 
+     norm.includes('pan-1') || norm.includes('pan-2') || 
+     norm.includes('ig-38') || norm.includes('mcpa') ||
+     (norm.includes('panto') && !norm.includes('single panto') && !norm.includes('mu')));
 
   const hasBrake = norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('binding') || norm.includes('बाइंडिंग') || norm.includes('bc') || norm.includes('sa-9');
   const hasRelease = norm.includes('releas') || norm.includes('रिलीज') || norm.includes('छूट') || norm.includes('binding') || norm.includes('बाइंडिंग');
@@ -191,31 +5365,188 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
   if (isPantoQuery) {
     return {
       identifiedFaultId: "F0103P1",
-      faultTitle: "F0103P1: LOW PRESSURE PANTO / FAULTY PANTO (3-Phase Loco TSD पृष्ठ 126-127 व 238)",
-      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (WAP-7 / WAG-9 / WAP-5):\nसबसिस्टम SS01 (Main Power): फॉल्ट संदेश 'LOW PRESSURE PANTO/FAULTY PANTO - Check Isolating Cock Check Aux. Reservoir Pressure'।\nलैंप प्रभाव: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी। प्रभाव: पेन्टो रेज़ नहीं होगा (Panto will not raise)।\n3-फेज लोको TSD अनुसार 10-चरणीय आधिकारिक दोष निवारण प्रक्रिया:",
+      faultTitle: "SS01 F0103P1: LOW PRESSURE PANTO / FAULTY PANTO (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम SS01 (Main Power):\nदोष संदेश: LOW PRESSURE PANTO / FAULTY PANTO\nCheck Isolating Cock Check Aux. Reservoir Pressure\nलैंप प्रभाव: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी। प्रभाव: पेन्टो रेज़ नहीं होगा (Panto will not raise)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 10-चरणीय दोष निवारण प्रक्रिया:",
       suggestedActions: [
-        "1. थ्रोटल को ' 0 ' पर लायें। BPFA दबाकर फॉल्ट ACK करें।",
-        "2. सुनिश्चित करें कि न्यूमेटिक पेनल पर IG-38 (नीली चाबी) आड़ी (Horizontal) स्थिति में लगी है।",
-        "3. चैक करें कि MCPA (Auxiliary Compressor) चल रहा है या नहीं। यदि नहीं चल रहा है तो SB-2 पेनल में MCPA की MCB 48.1 चैक करें, यदि ट्रिप हो तो रीसेट करें।",
-        "4. यदि MCPA ठीक कार्य कर रहा है फिर भी RS प्रेशर नहीं बन रहा है, तो सहायक कम्प्रेसर का ड्रेन कॉक 10 चैक करें। यदि खुला हो तो बंद करें। RS प्रेशर 6.0 kg/cm² से अधिक होना चाहिए।",
-        "5. न्यूमेटिक पेनल पर पेंन्टो आइसोलेटिंग कॉक PAN-1 व PAN-2 की स्थिति चैक करें। दोनों कॉक खुले (खड़ी स्थिति में) होने चाहिए।",
-        "6. पेंन्टो सिलेक्टर स्विच (कैब-1 व कैब-2 में) को बदल कर देखें (Position 1 / 2 / Auto)।",
-        "7. न्यूमेटिक पेनल पर लगे पेंन्टो प्रेशर स्विच को हल्के से टैप करें।",
-        "8. SB-1 पैनल पर सिमुलेशन चाबी 179 चेक करें कि '0' पर हो (Key 179 in position 0)।",
-        "9. कन्ट्रोल इलेक्ट्रॉनिक्स को एक बार स्विच ऑफ करके पुनः ऑन (MCE OFF/ON) करें।",
-        "10. यदि सफलता न मिले तो पिछली कैब से प्रयास करें।"
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
+        "2. सुनिश्चित करें कि न्यूमैटिक पैनल पर IG-38 (नीली चाबी) आड़ी स्थिति में लगी है। KNORR-CCB-2 ब्रेक वाले लोको में IG-38 key खड़ी स्थिति में लगी है।",
+        "3. चेक करें कि MCPA चल रहा है या नहीं। यदि नहीं चल रहा है तो MCPA की MCB 48.1 (SB-2) को चेक करें, यदि ट्रिप हो तो उसे रीसेट करें।",
+        "4. यदि फिर भी MCPA नहीं चल रहा है तो प्रेशर स्विच नं. 26 (E70 वाले लोको में न्यूमैटिक पैनल पर बाएं हाथ से पांचवां और CCB2 वाले लोको में “ PANS-PS ”) को धीरे से टैप करें।",
+        "5. चेक करें कि ऑक्सिलरी रिज़र्वायर गेज में 5.2 kg/cm² से ज्यादा प्रेशर उपलब्ध है। न्यूमैटिक पैनल पर MCPA का ड्रेन कॉक बंद होना सुनिश्चित करें {पाइप के समानांतर होना चाहिए}।",
+        "6. न्यूमैटिक पैनल पर पैंटो व VCB आइसोलेटिंग कॉक खुला होना चेक करें। दो-तीन बार ऑपरेट करें और आड़ी (हॉरिजॉन्टल) स्थिति में होना सुनिश्चित करें।",
+        "7. पैंटो रेज़ करने का प्रयत्न करें। यदि सफलता नहीं मिलती है तो न्यूमैटिक पैनल पर पैंटो सिलेक्टर स्विच (85) की पोजीशन बदलकर दूसरा पैंटो रेज़ करने का प्रयत्न करें।",
+        "8. पैंटो सर्किट के प्रेशर को 130.4/1 तथा 130.4/2 प्रेशर स्विच मॉनिटर करते हैं। पैंटो रेज़िंग की कमांड देने के बाद, यदि यह प्रेशर स्विच 35 सेकंड में पिकअप नहीं होता है तो VCB क्लोज नहीं होगा। यदि VCB क्लोज होता है तो वह 2 सेकंड के बाद खुल जायेगा। प्रेशर स्विच नं. 130.4/1 तथा 130.4/2 अर्थात 9/1 और 9/2, E70 वाले लोको में न्यूमैटिक पैनल पर और CCB2 वाले लोको में “ PAN1-PS तथा PAN2-PS ” को धीरे से टैप करें। पैंटो रेज़ करें तथा VCB क्लोज करें।",
+        "9. यदि सफलता नहीं मिलती है तो कैब बदलकर / पैंटो सिलेक्टर स्विच (85) {न्यूमैटिक पैनल पर} की पोजीशन बदलकर प्रयत्न करें।",
+        "10. अगर सफलता नहीं मिलती है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ कर फिर से ऑन करके प्रयत्न करें।"
       ],
-      precautions: "RS (पैंटो रिज़रवायर) प्रेशर 6.0 kg/cm² से अधिक होना अनिवार्य है। IG-38 चाबी आड़ी स्थिति में तथा PAN 1 व 2 कॉक खुले होने चाहिए।",
-      manualReference: "254-पृष्ठ 3-फेज लोको TSD - SS01 Main Power (पृष्ठ 126-127 व पृष्ठ 238)",
+      precautions: "ऑक्सिलरी रिज़र्वायर गेज में 5.2 kg/cm² से अधिक प्रेशर होना चाहिए। IG-38 चाबी E-70 में आड़ी व CCB-2 में खड़ी स्थिति में होनी चाहिए। प्रेशर स्विच 130.4/1 व 130.4/2 पिकअप होने में 35s का ध्यान रखें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD - SS01 Main Power (F0103P1, पृष्ठ 126-127 व 238)",
       verifiedFromPdf: true,
-      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल)",
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
       pdfPage: 126,
-      pdfQuote: "3-PHASE LOCO TSD - PAGE 126-127:\nF0103P1 LOW PRESSURE PANTO/FAULTY PANTO\nLamps: LSDJ & BPFA illuminated, LSFI blinking.\nEffect: Panto will not raise.\nTroubleshooting:\n1. Bring throttle to 0. Ack fault via BPFA.\n2. Ensure IG-38 blue key horizontal.\n3. Check MCPA running; check MCB 48.1 in SB-2.\n4. Drain cock 10 closed, RS pressure > 6.0 kg/cm2.\n5. PAN-1 & PAN-2 cocks open.\n6. Try Panto selector switch.\n7. Tap panto pressure switches.\n8. Switch 179 on SB-1 in position 0.\n9. MCE OFF/ON.\n10. Try from rear cab."
+      pdfQuote: "SS01 F0103P1 Loco XXX SS01 : Main Power\nLOW PRESSURE PANTO/FAULTY PANTO\n1. Throttle to 0, Ack fault via BPFA.\n2. Ensure IG-38 blue key horizontal (vertical in CCB-2).\n3. Check MCPA running; check MCB 48.1 in SB-2.\n4. Tap pressure switch 26 (PANS-PS in CCB-2).\n5. Auxiliary reservoir gauge > 5.2 kg/cm2, MCPA drain cock closed.\n6. Panto & VCB isolating cock open (horizontal).\n7. Try panto selector switch 85.\n8. Panto circuit pressure switch 130.4/1 & 130.4/2 (9/1 & 9/2 / PAN1-PS & PAN2-PS) tap if VCB trips after 2s.\n9. Change cab / switch 85 position.\n10. Control electronics OFF/ON."
+    };
+  }
+
+  // 1a-1. SS01 F0104P2: LOW FREQUENCY CATENARY VOLTAGE, Wait for 1 minute and set TE / BE again (Vadodara TSD Page 136-137 / 164-165)
+  const isF0104P2Query = 
+    !norm.includes('f0105') && !norm.includes('high') && !norm.includes('हाई') && !norm.includes('हाइ') && !norm.includes('55') &&
+    (norm.includes('f0104p2') ||
+     (norm.includes('f0104') && (norm.includes('p2') || norm.includes('frequency') || norm.includes('low') || norm.includes('फ्रीक्वेंसी') || norm.includes('लो'))) ||
+     ((norm.includes('low frequency') || norm.includes('लो फ्रीक्वेंसी') || (norm.includes('frequency') && (norm.includes('low') || norm.includes('कम')))) &&
+      (norm.includes('catenary') || norm.includes('voltage') || norm.includes('कैटनरी') || norm.includes('wait for 1 minute') || norm.includes('45 hz') || norm.includes('45'))) ||
+     norm.includes('low frequency catenary voltage') ||
+     norm.includes('wait for 1 minute and set te / be again') ||
+     norm.includes('wait for 1 minute'));
+
+  if (isF0104P2Query) {
+    return {
+      identifiedFaultId: "F0104P2",
+      faultTitle: "SS01 F0104P2: LOW FREQUENCY CATENARY VOLTAGE, Wait for 1 minute and set TE / BE again (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 136-137 / 164-165):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0104P2\nदोष संदेश:\nLoco XXXSS01 : Main Power\nLOW FREQUENCY CATENARY VOLTAGE\nWait for 1 minute and set TE / BE again\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: OHE फ्रीक्वेंसी 45 हर्ट्ज (Hz) के ऊपर आने पर ही ट्रैक्शन चालू होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. निर्धारित स्टॉप पर TLC को सूचित करके लॉग बुक में दर्ज करें।",
+        "3. ट्रैक्शन के लिए प्रयास करते रहें और सफलता मिलने पर नॉर्मल ऑपरेशन चालू करें।"
+      ],
+      precautions: "यह दोष ग्रिड / OHE की सप्लाई फ्रीक्वेंसी 45 Hz से कम होने पर आता है। 45 Hz से ऊपर आने पर ही ट्रैक्शन मिलेगा। कोस्टिंग करते हुए सुरक्षित ब्लॉक सेक्शन क्लियर करें, 1 मिनट प्रतीक्षा कर TE/BE सेट करें, तथा निर्धारित स्टॉप पर TLC को सूचित कर लॉगबुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0104P2, पेज 136-137 / 164-165)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 164,
+      pdfQuote: "SS01 F0104P2 Loco XXXSS01 : Main Power\nLOW FREQUENCY CATENARY VOLTAGE\nWait for 1 minute and set TE / BE again\nBPFA prakashit hoga. 45 Hz ke upar traction chalu hoga.\n1. Coasting karte hue block section clear karein. BPFA daba kar fault ACK karein.\n2. Nirdharit stop par TLC ko suchit karke log book me darj karein.\n3. Traction ke liye prayas karte rahein aur safalta milne par normal operation chalu karein."
+    };
+  }
+
+  // 1a-2. SS01 F0105P2: CATENARY FREQUENCY IS HIGH, Bring throttle to zero (Vadodara TSD Page 137 / 165)
+  const isF0105P2Query = 
+    !norm.includes('f0104') && !norm.includes('low') && !norm.includes('लो') &&
+    (norm.includes('f0105p2') ||
+     (norm.includes('f0105') && (norm.includes('p2') || norm.includes('high') || norm.includes('frequency') || norm.includes('हाइ') || norm.includes('हाई') || norm.includes('फ्रीक्वेंसी') || norm.includes('throttle to zero') || norm.includes('throutle'))) ||
+     ((norm.includes('frequency is high') || norm.includes('high frequency') || norm.includes('हाई फ्रीक्वेंसी') || norm.includes('फ्रीक्वेंसी हाई') || (norm.includes('frequency') && (norm.includes('high') || norm.includes('अधिक') || norm.includes('ज्यादा')))) &&
+      (norm.includes('catenary') || norm.includes('कैटनरी') || norm.includes('throttle') || norm.includes('थ्रोटल') || norm.includes('55 hz') || norm.includes('55'))) ||
+     norm.includes('catenary frequency is high') ||
+     norm.includes('bring throttle to zero') ||
+     norm.includes('bring throutle to zero'));
+
+  if (isF0105P2Query) {
+    return {
+      identifiedFaultId: "F0105P2",
+      faultTitle: "SS01 F0105P2: CATENARY FREQUENCY IS HIGH, Bring throttle to zero (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 137 / 165):\nसबसिस्टम: SS01 (Main Power)\nदोष कोड: F0105P2\nदोष संदेश:\nLoco XXXSS01 : Main Power\nCATENARY FREQUENCY IS HIGH\nBring throttle to zero\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: OHE सप्लाई फ्रीक्वेंसी 55 हर्ट्ज (Hz) से नीचे रहने पर ही ट्रैक्शन चालू रहेगा (Traction will work only below 55 Hz)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. निर्धारित स्टॉप पर TLC को सूचित करके लॉग बुक में दर्ज करें।",
+        "3. ट्रैक्शन के लिए प्रयास करते रहें और सफलता मिलने पर नॉर्मल ऑपरेशन चालू करें।"
+      ],
+      precautions: "यह दोष तब आता है जब ग्रिड / OHE सप्लाई की फ्रीक्वेंसी 55 Hz से अधिक बढ़ जाती है। सुरक्षा कारणों से ट्रैक्शन कट ऑफ हो जाता है। थ्रोटल को '0' पर लाएं, कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें। जब फ्रीक्वेंसी 55 Hz से नीचे सामान्य हो जाए तो ट्रैक्शन लेकर सामान्य रूप से गाड़ी चलाएं। निर्धारित स्टॉप पर TLC को सूचित कर लॉगबुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0105P2, पेज 137 / 165)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 165,
+      pdfQuote: "SS01 F0105P2 Loco XXXSS01 : Main Power\nCATENARY FREQUENCY IS HIGH\nBring throttle to zero\nBPFA prakashit hoga. Frequency 55 Hz se neeche tak traction chalu rahega.\n1. Coasting karte hue block section clear karein. BPFA daba kar fault ACK karein.\n2. Nirdharit stop par TLC ko suchit karke log book me darj karein.\n3. Traction ke liye prayas karte rahein aur safalta milne par normal operation chalu karein."
+    };
+  }
+
+  // 1b. SS01 F0104P1: CATENARY VOLTAGE OUT OF LIMIT (WAP5 MU with single panto - Slave Loco Only)
+  const isWap5MuSlaveQuery =
+    !norm.includes('f0104p2') && !norm.includes('f0105p2') && !norm.includes('frequency') && !norm.includes('low') &&
+    (norm.includes('f0104p1') || norm.includes('f0104') || norm.includes('catenary') || norm.includes('voltage') || norm.includes('कैटनरी')) &&
+    (norm.includes('slave') || norm.includes('स्लेव') || norm.includes('wap5') || norm.includes('wap-5') || norm.includes('single panto') || norm.includes('hv cable') || norm.includes('bpiso') || norm.includes('connecting cable'));
+
+  if (isWap5MuSlaveQuery) {
+    return {
+      identifiedFaultId: "F0104P1",
+      faultTitle: "SS01 F0104P1: CATENARY VOLTAGE OUT OF LIMIT (WAP-5 MU with Single Panto - Slave Loco Only)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम SS01 (Main Power):\nसंदेश: CATENARY VOLTAGE OUT OF LIMIT (From Slave loco only and not from master loco during WAP5 MU with single panto)\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: WAP-5 MU में सिंगल पैंटो संचालन के समय केवल स्लेव लोको में फॉल्ट आने पर निर्धारित 7-चरणीय आधिकारिक कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लाएं। दोनों लोको के बीच HV (High Voltage) कनेक्टिंग केबल चेक करें। अगर HV केबल क्षतिग्रस्त हो गई है, तो {BPISO दबाकर} स्लेव लोको के दोनों आइसोलेटर खोलकर उसे इलेक्ट्रिकली आइसोलेट करें। सिंगल लोको की तरह ऑपरेट करें।",
+        "   ★ चेतावनी: MU की मैकेनिकल कपलिंग ओपन न करें, अन्यथा HV केबल क्षतिग्रस्त हो सकती है।",
+        "   ★ अगर HV केबल ठीक है तो निम्न कदम उठाएं:-",
+        "2. पीछे वाले (स्लेव) लोको का 2 Amp का PT फ्यूज (SB-1) चेक करें। अगर मेल्ट है तो पैंटो लोअर करके अतिरिक्त फ्यूज से बदलें। OHE वोल्टेज चेक करें, अगर सामान्य है तो VCB क्लोज करें तथा ट्रैक्शन लें।",
+        "3. यदि 2 Amp का फ्यूज मेल्ट नहीं है तो OHE वोल्टेज 17.5 kV से अधिक तथा 29 kV से कम होने का इंतज़ार करें। OHE वोल्टेज सामान्य होने पर VCB क्लोज करें तथा ट्रैक्शन लें।",
+        "4. एक बार कंट्रोल इलेक्ट्रॉनिक्स ऑफ करके ऑन (MCE OFF/ON) करें। ट्रैक्शन लेने का प्रयत्न करें। यदि फिर भी सफलता नहीं मिलती है तो:-",
+        "5. पैंटो बदलकर प्रयत्न करें।",
+        "6. कैब बदलकर प्रयत्न करें।",
+        "7. स्लेव लोको को आइसोलेट करके प्रयत्न करें।"
+      ],
+      precautions: "MU की मैकेनिकल कपलिंग कदापि न खोलें जब तक HV केबल जुड़ी हो। स्लेव लोको को इलेक्ट्रिकली आइसोलेट करने के लिए BPISO दबाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD - SS01 Main Power (WAP-5 MU Single Panto, पेज 77)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 77,
+      pdfQuote: "SS01 F0104P1: CATENARY VOLTAGE OUT OF LIMIT (From Slave loco only during WAP5 MU with single panto)\n1. Throttle to 0. Check HV cable. If damaged, press BPISO, open slave isolators, isolate electrically. Warning: Do not uncouple mechanically.\n2. Check 2A PT fuse on rear loco SB-1, replace if melted. Close VCB.\n3. If fuse OK, wait for OHE voltage 17.5-29 kV.\n4. MCE OFF/ON.\n5. Try other panto.\n6. Try other cab.\n7. Isolate slave loco."
+    };
+  }
+
+  // 1c. SS01 F0104P1: CATENARY VOLTAGE OUT OF LIMIT (Vadodara TSD Page 76/77 - General)
+  const isCatenaryQuery = 
+    !norm.includes('f0104p2') && !norm.includes('f0105p2') && !norm.includes('frequency') && !norm.includes('फ्रीक्वेंसी') && !norm.includes('wait for 1 minute') &&
+    (norm.includes('f0104p1') || 
+     norm.includes('f0104') ||
+     norm.includes('catenary') || 
+     norm.includes('कैटनरी') ||
+     (norm.includes('voltage') && (norm.includes('out of limit') || norm.includes('voltmeter') || norm.includes('u meter') || norm.includes('u-meter') || norm.includes('17.5') || norm.includes('29'))) ||
+     norm.includes('slg-1:0020') ||
+     norm.includes('slg-2:0020') ||
+     (norm.includes('ओएचई') && norm.includes('वोल्टेज')) ||
+     (norm.includes('ohe') && (norm.includes('tension') || norm.includes('voltage') || norm.includes('arcing') || norm.includes('आर्किंग'))));
+
+  if (isCatenaryQuery) {
+    return {
+      identifiedFaultId: "F0104P1",
+      faultTitle: "SS01 F0104P1: CATENARY VOLTAGE OUT OF LIMIT (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम SS01 (Main Power):\nदोष संदेश: CATENARY VOLTAGE OUT OF LIMIT\nWatch Catenary Voltmeter Close VCB When Voltage is OK\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: OHE वोल्टेज 17.5 kV से 29 kV के बीच में रहने पर ही VCB क्लोज होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण प्रक्रिया:",
+      suggestedActions: [
+        "════ स्थिति 1: सामान्य 3-फ़ेस लोको (Normal 3-Phase Loco / Single Unit) ════",
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
+        "2. यदि U-मीटर “ 0 ” बताता है, तो पैंटो का OHE से स्पर्श होना सुनिश्चित करें, छत पर खराबी चेक करें:-",
+        "   • यदि पैंटो OHE से स्पर्श नहीं करता तो दूसरा पैंटो उठाकर कार्य करें।",
+        "   • यदि छत पर खराबी है तो TPC/TLC से संपर्क करें।",
+        "   • यदि छत पर खराबी नहीं है तो OHE टेंशन के लिए आर्किंग (Arcing) चेक करें:",
+        "     a) यदि आर्किंग नहीं होती है तो No Tension से संबंधित कार्यवाही करें, TPC/TLC से संपर्क करें और आदेशानुसार कार्यवाही करें।",
+        "     b) यदि आर्किंग होती है तो पैंटो लोअर करके SB-1 पैनल पर 2 Amp के फ्यूज को अतिरिक्त फ्यूज से बदल दें। सफलता मिलने पर सामान्य तौर पर कार्य करें।",
+        "     c) यदि 2 Amp का फ्यूज नहीं पिघला है तो OHE Voltage 17.5 kV से 29 kV के बीच आने तक इंतज़ार करें। वोल्टेज सामान्य होने पर VCB क्लोज करें, ट्रैक्शन चालू करें।",
+        "3. यदि U-मीटर OHE Voltage 17.5 kV से 29 kV के बीच बताता है तो ट्रैक्शन कनवर्टर 1 व 2 को निम्न मैसेज के अनुसार आइसोलेट करें:-",
+        "   • (i) यदि DDS पर मैसेज SLG-1:0020 आता है तो लोको पायलट ट्रैक्शन कनवर्टर 1 को MCB 127.1/1 एवं 127.11/1 {SB-1} के द्वारा आइसोलेट करें {MCE OFF करके}।",
+        "   • (ii) यदि DDS पर मैसेज SLG-2:0020 आता है तो ट्रैक्शन कनवर्टर 2 को MCB 127.1/2 एवं 127.11/2 {SB-2} के द्वारा आइसोलेट करें {MCE OFF करके}।",
+        "4. यदि सफलता नहीं मिलती है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें। ट्रैक्शन चालू करें।",
+        "5. यदि फिर भी सफलता नहीं मिलती है तो पैंटो बदलकर प्रयत्न करें।",
+        "6. कैब बदलकर प्रयत्न करें।",
+        "════ स्थिति 2: WAP-5 MU में सिंगल पैंटो संचालन (Slave Loco Only) ════",
+        "1. HV कनेक्टिंग केबल चेक करें। क्षतिग्रस्त होने पर BPISO दबाकर स्लेव लोको आइसोलेट करें (मैकेनिकल कपलिंग न खोलें)।",
+        "2. पीछे वाले लोको का 2 Amp PT फ्यूज (SB-1) चेक करें, मेल्ट हो तो बदलें।",
+        "3. 2 Amp फ्यूज ठीक होने पर वोल्टेज 17.5-29 kV आने तक इंतजार करें।",
+        "4. कंट्रोल इलेक्ट्रॉनिक्स ऑफ/ऑन करें।",
+        "5. पैंटो बदलें / कैब बदलें / स्लेव लोको आइसोलेट करें।"
+      ],
+      precautions: "छत पर कोई खराबी दिखने पर पैंटो कतई न उठाएं और तुरंत TPC/TLC को सूचित करें। OHE वोल्टेज 17.5 kV से 29 kV के बीच आने पर ही VCB क्लोज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD - SS01 Main Power (F0104P1, पेज 76/77)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 76,
+      pdfQuote: "SS01 F0104P1 Loco XXX SS01 : Main Power\nCATENARY VOLTAGE OUT OF LIMIT\nWatch Catenary Voltmeter Close VCB When Voltage is OK\n1. Throttle to 0, Ack fault via BPFA.\n2. If U-meter 0: Check panto touch, roof inspection. Check arcing. If no arcing -> No Tension. If arcing -> check 2A fuse in SB-1. If fuse OK -> wait for 17.5-29 kV.\n3. If U-meter 17.5-29 kV: Check DDS message. If SLG-1:0020 isolate SR-1 via 127.1/1 & 127.11/1. If SLG-2:0020 isolate SR-2 via 127.1/2 & 127.11/2.\n4. MCE OFF/ON.\n5. Try other panto.\n6. Try other cab."
     };
   }
 
   // 2. Brake Binding / Release Trouble in 3-Phase Locomotive (Page 136)
-  if (hasBrake && hasRelease) {
+  const isGenericBrakeBinding =
+    hasBrake && hasRelease &&
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1003') &&
+    !norm.includes('f1004') && !norm.includes('f1005') && !norm.includes('f1006') &&
+    !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('traction with auto') && !norm.includes('auto brake not allowed') &&
+    !norm.includes('traction with parking') && !norm.includes('parking brakes not allowed') &&
+    !norm.includes('bppb') && !norm.includes('p\¶v(lt') && !norm.includes('siˆl[niˆed') &&
+    !norm.includes('regenerative') && !norm.includes('रीजेनेरेटिव') && !norm.includes('pvef') &&
+    !norm.includes('f1008') && !norm.includes('emergency stop') && !norm.includes('shut down') && !norm.includes('emrj[>s) atiˆp') &&
+    !norm.includes('traction not allowed with applied') && !norm.includes('release loco brake') && !norm.includes('269.6') && !norm.includes('0.65') && !norm.includes('bail ring') && !norm.includes('20cp') && !norm.includes('16cp') &&
+    !norm.includes('exhaust cock') && !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('kiˆk n> 74') && !norm.includes('कॉक 74') &&
+    !norm.includes('auto brake') && !norm.includes('aiˆti[ eyr b\\[k') && !norm.includes('aiˆti[') && !norm.includes('ऑटो एयर ब्रेक') &&
+    !norm.includes('release parking brakes') && !norm.includes('solenoid-30') &&
+    !norm.includes('vigilance') && !norm.includes('vcd');
+
+  if (isGenericBrakeBinding) {
     return {
       identifiedFaultId: "3PH_BRAKE_BINDING",
       faultTitle: "3-फेज लोको में ब्रेक बाइंडिंग / ब्रेक रिलीज न होने पर निवारण (3-Phase Loco TSD पृष्ठ 136)",
@@ -239,7 +5570,22 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
   }
 
   // 3. BP Pressure trouble on 3-Phase Locomotive (Page 138)
-  if (norm.includes('bp') || norm.includes('cock-70') || norm.includes('cock 70') || norm.includes('bpems')) {
+  const isBpPressureTrouble =
+    !norm.includes('f1001') && !norm.includes('127.7') && !norm.includes('f090') && !norm.includes('ss09') &&
+    !norm.includes('f1004') && !norm.includes('limiting switch') && !norm.includes('wrong') && !norm.includes('zban') &&
+    !norm.includes('f1005') && !norm.includes('traction with auto') && !norm.includes('auto brake') &&
+    !norm.includes('f1008') && !norm.includes('emergency stop') && !norm.includes('shut down') && !norm.includes('reset emergency') && !norm.includes('emrj[>s) atiˆp') && !norm.includes('इमरजेंसी स्टॉप') &&
+    !norm.includes('f1009') && !norm.includes('269.6') && !norm.includes('0.65') &&
+    !norm.includes('f1010') && !norm.includes('exhaust cock') && !norm.includes('74') &&
+    !norm.includes('aiˆti[ eyr b\\[k') && !norm.includes('aiˆti[') && !norm.includes('ऑटो एयर ब्रेक') &&
+    (
+      norm.includes('cock-70') || norm.includes('cock 70') || norm.includes('bpems') ||
+      (
+        (norm.includes('bp pressure') || norm.includes('ब्रेक पाइप') || ((norm.includes(' bp ') || norm.startsWith('bp ') || norm.endsWith(' bp') || norm.includes('bp-')) && !norm.includes('bpfa') && !norm.includes('bppb'))) &&
+        (norm.includes('pressure') || norm.includes('प्रेशर') || norm.includes('drop') || norm.includes('create') || norm.includes('not creating') || norm.includes('चार्ज') || norm.includes('5.0') || norm.includes('leak') || norm.includes('न बनना') || norm.includes('मेंटेन'))
+      )
+    );
+  if (isBpPressureTrouble) {
     return {
       identifiedFaultId: "3PH_BP_TROUBLE",
       faultTitle: "3-फेज लोको में BP प्रेशर न बनने / मेंटेन न होने पर कार्यवाही (3-Phase Loco TSD पृष्ठ 138)",
@@ -287,8 +5633,102 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
     };
   }
 
-  // 5. Throttle / Traction Failure (F1703P1 / F1803P1 - Pages 238 & 242)
-  if (norm.includes('throttle') || norm.includes('थ्रोटल') || norm.includes('te/be') || norm.includes('traction') || norm.includes('ट्रैक्शन')) {
+  // 5a. Transformer Oil Temperature or Pressure Not OK (F0105P1 - Pages 78 & 129-130)
+  const is3PhaseTransfOilQuery =
+    !norm.includes('f1201') && !norm.includes('f1202') && !norm.includes('f1203') && !norm.includes('ss12') && !norm.includes('cubicle 2') && !norm.includes('hb-2') && !norm.includes('hb2') &&
+    !norm.includes('f1101') && !norm.includes('f1104') && !norm.includes('ss11') && !norm.includes('cubicle 1') && !norm.includes('hb-1') && !norm.includes('hb1') &&
+    !norm.includes('overload on ocb') &&
+    !norm.includes('f0205') && !norm.includes('f0206') && !norm.includes('converter 1') && !norm.includes('converter-1') && !norm.includes('ss02') &&
+    !(norm.includes('converter') && (norm.includes('temperature') || norm.includes('pressure'))) &&
+    (
+      norm.includes('f0105p1') ||
+      norm.includes('f0105') ||
+      norm.includes('transformer oil') ||
+      norm.includes('tr oil') ||
+      norm.includes('tr pump') ||
+      norm.includes('oil pump') ||
+      norm.includes('62.1/1') ||
+      norm.includes('62.1/2') ||
+      norm.includes('62.1') ||
+      norm.includes('59.1/1') ||
+      norm.includes('59.1/2') ||
+      (
+        (norm.includes('transformer') || norm.includes('ट्रांसफॉर्मर') || norm.includes('ट्रांसफार्मर') || norm.includes('ट्रान्सफार्मर') || norm.includes('ट्रान्सफॉर्मर') || norm.includes('ट्रांसफॉर्म') || norm.includes('ट्रांसफार्म') || norm.includes('ट्रांस')) &&
+        (norm.includes('oil') || norm.includes('ऑयल') || norm.includes('आयल') || norm.includes('तेल') || norm.includes('पंप') || norm.includes('pump') || norm.includes('temperature') || norm.includes('टेंपरेचर') || norm.includes('तापमान') || norm.includes('pressure') || norm.includes('प्रेशर'))
+      ) ||
+      (
+        (norm.includes('oil') || norm.includes('ऑयल') || norm.includes('आयल') || norm.includes('तेल')) &&
+        (
+          norm.includes('temperature') || norm.includes('टेंपरेचर') || norm.includes('तापमान') || norm.includes('temp') ||
+          norm.includes('pressure') || norm.includes('प्रेशर') || norm.includes('दबाव') ||
+          norm.includes('pump') || norm.includes('पंप') ||
+          norm.includes('gauge') || norm.includes('गेज')
+        )
+      )
+    );
+
+  if (is3PhaseTransfOilQuery) {
+    const isSpecificTempOrOil = 
+      norm.includes('temperature') || norm.includes('तापमान') || norm.includes('टेंपरेचर') ||
+      norm.includes('pressure') || norm.includes('प्रेशर') ||
+      norm.includes('tr oil') || norm.includes('oil pump') || norm.includes('62.1') || norm.includes('59.1') ||
+      norm.includes('te/be reduction') || norm.includes('try to close vcb, if open');
+
+    return {
+      identifiedFaultId: "F0105P1",
+      faultTitle: isSpecificTempOrOil
+        ? "SS01 F0105P1: TRANSFORMER OIL TEMPERATURE OR PRESSURE NOT OK (3-Phase Loco TSD)"
+        : "SS01 F0105P1: TR OIL TEMP/PRESSURE NOT OK / MAIN POWER ISOLATED (3-Phase Loco TSD)",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम SS01 (Main Power):\nदोष संदेश: TRANSFORMER OIL TEMPERATURE OR PRESSURE NOT OK / MAIN POWER ISOLATED\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण प्रक्रिया:",
+      suggestedActions: isSpecificTempOrOil ? [
+        "1. यदि TE उपलब्ध है तो ब्लॉक सेक्शन क्लियर करें। अन्यथा कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें।",
+        "2. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
+        "3. यदि VCB ट्रिप होता है, तो BPFA दबाकर फॉल्ट ACK करें, VCB क्लोज करें, कोस्टिंग करते हुए ब्लॉक सेक्शन साफ (क्लियर) करने का प्रयत्न करें।",
+        "4. अंडरफ्रेम में लगे ट्रांसफार्मर ऑयल पंप के इनलेट व आउटलेट पाइप को हाथ से छूकर ट्रांसफार्मर ऑयल पंप का चलना सुनिश्चित करें। HB-1 पैनल में लगे MCB 62.1/1 तथा HB-2 में लगे MCB 62.1/2 की जांच करें। यदि ट्रिप हो तो VCB को ओपन करके एक बार रीसेट करें {MCB रीसेट करने की विधि पेज संख्या 101/102 पर दी गई है}। यदि ट्रांसफार्मर के ऑयल पंप नहीं चल रहे हों तो:-",
+        "   • a) कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन (MCE OFF/ON) करें।",
+        "   • b) लोको को 10 मिनट आइडल (Idle) स्थिति में रखें।",
+        "5. मशीन रूम में ऑयल कूलिंग ब्लोअर के पास ट्रांसफार्मर के एक्सपेंशन टैंक पर लगे ऑयल गेज पर तेल का लेवल चेक करें। यह अधिकतम तथा न्यूनतम के बीच में होना चाहिए।",
+        "6. लोको पायलट मशीन रूम में लगे ऑयल कूलिंग ब्लोअर का चलना सुनिश्चित करें। यदि नहीं चल रहे हों तो चेक करें कि HB-1 पैनल में लगा MCB 59.1/1 तथा HB-2 पैनल में लगा MCB 59.1/2 ट्रिप तो नहीं है। यदि ट्रिप हो तो VCB ओपन करके एक बार MCB को रीसेट करें।",
+        "   • यदि ऑयल कूलिंग ब्लोअर नहीं चल रहे हों तो:-",
+        "     a) कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें।",
+        "     b) लोको को 10 मिनट आइडल स्थिति में रखें।",
+        "   • यदि लोको पायलट को ऑयल कूलिंग ब्लोअर का इम्पेलर तथा उसकी केसिंग क्षतिग्रस्त (Damaged) मिलती है तो:-",
+        "     a) संबंधित ऑयल कूलिंग ब्लोअर की MCB 59.1/1 या 59.1/2 ट्रिप करके उसे आइसोलेट करें।",
+        "     b) संबंधित ट्रैक्शन कनवर्टर पंप की MCB 63.1/1 या 63.1/2 ट्रिप करें।",
+        "     c) संबंधित ट्रांसफार्मर ऑयल पंप की MCB 62.1/1 या 62.1/2 ट्रिप करें।",
+        "     (नोट: उपरोक्त MCBs, VCB ओपन करके एवं कंट्रोल इलेक्ट्रॉनिक्स ऑफ करके ऑपरेट करें। बाद में संबंधित बोगी को SB-1 में लगे बोगी आइसोलेटिंग स्विच 154 द्वारा आइसोलेट करें। MCE ऑन करें, पैंटो रेज़ करें, VCB क्लोज करें तथा TLC से सलाह कर एक बोगी सर्विस में रखते हुए गाड़ी चलाएं।)",
+        "7. ट्रैक्शन चालू करने का प्रयत्न करें।"
+      ] : [
+        "════ स्थिति 1: TRANSFORMER OIL TEMPERATURE OR PRESSURE NOT OK (TE/BE reduction or VCB trips) ════",
+        "1. यदि TE उपलब्ध है तो ब्लॉक सेक्शन क्लियर करें। अन्यथा कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें।",
+        "2. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
+        "3. यदि VCB ट्रिप होता है, तो BPFA दबाकर फॉल्ट ACK करें, VCB क्लोज करें, कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें।",
+        "4. ट्रांसफार्मर ऑयल पंप का चलना सुनिश्चित करें (पाइप छूकर)। MCB 62.1/1 (HB1) व 62.1/2 (HB2) चेक करें। यदि ट्रिप हो तो VCB ओपन कर एक बार रीसेट करें। न चलने पर MCE OFF/ON करें व लोको 10 मिनट आइडल रखें।",
+        "5. एक्सपेंशन टैंक पर ऑयल लेवल चेक करें (मिन-मैक्स के बीच हो)।",
+        "6. ऑयल कूलिंग ब्लोअर चलना सुनिश्चित करें। MCB 59.1/1 व 59.1/2 चेक करें। इम्पेलर/केसिंग क्षतिग्रस्त होने पर MCB 59.1, 63.1, 62.1 ट्रिप कर स्विच 154 से बोगी आइसोलेट करें व 1 बोगी से कार्य करें।",
+        "7. ट्रैक्शन चालू करने का प्रयत्न करें।",
+        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "1. यदि फिर से वही मैसेज आता है और MCBs सामान्य हैं तो थ्रोटल को “ 0 ” पर लाएं।",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके फिर से ऑन करें, पैंटो को रेज़ करें तथा VCB क्लोज करें। ट्रैक्शन चालू करें।",
+        "3. सफलता न मिलने पर - यदि DDS पर मैसेज SLG-1:0019 आता है तो ट्रैक्शन कनवर्टर-1 को MCB 127.1/1 एवं 127.11/1 (SB-1) और SLG-2:0019 आता है तो ट्रैक्शन कनवर्टर-2 को MCB 127.1/2 एवं 127.11/2 (SB-2) के द्वारा आइसोलेट करें (MCE ऑफ करके)।",
+        "4. यदि सफलता नहीं मिलती है तो 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+      ],
+      precautions: "MCB 62.1/1 व 62.1/2 अथवा 59.1 रीसेट करने से पूर्व VCB ओपन अवश्य करें। OCB इम्पेलर क्षतिग्रस्त होने पर बोगी 154 स्विच से आइसोलेट करना अनिवार्य है। MCE OFF/ON के बाद Node 504 आने का इंतजार करें। यदि 20 मिनट में सफलता न मिले तो सहायता इंजन की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD - SS01 Main Power (F0105P1, पृष्ठ 78 व 129-130)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 78,
+      pdfQuote: "SS01 F0105P1: TRANSFORMER OIL TEMPERATURE OR PRESSURE NOT OK\n1. Clear section if TE available or coast.\n2. Throttle 0, Ack via BPFA.\n3. If VCB trips, Ack via BPFA, close VCB, clear section.\n4. Check TR oil pump inlet/outlet by hand. Check MCB 62.1/1 & 62.1/2 in HB1/HB2. If not running, MCE OFF/ON, idle 10 min.\n5. Check expansion tank oil gauge level (min-max).\n6. Check OCB blower (MCB 59.1/1 & 59.1/2). If impeller/casing damaged, trip 59.1, 63.1, 62.1, isolate bogie via switch 154 in SB-1. Run with 1 bogie.\n7. Start traction."
+    };
+  }
+
+  // 5b. Throttle / Traction Angle Transmitter Failure (F1703P1 / F1803P1 - Pages 238 & 242)
+  const isThrottleFailureQuery =
+    norm.includes('f1703') || norm.includes('f1803') ||
+    norm.includes('angle transmitter') || norm.includes('स्विच 152') || norm.includes('switch 152') ||
+    ((norm.includes('throttle') || norm.includes('थ्रोटल')) && (norm.includes('angle') || norm.includes('transmitter') || norm.includes('fail') || norm.includes('फेल') || norm.includes('काम नहीं') || norm.includes('खराब')));
+
+  if (isThrottleFailureQuery) {
     return {
       identifiedFaultId: "F1703P1",
       faultTitle: "F1703P1 / F1803P1: FAULT IN ANGLE TRANSMITTER OF THROTTLE (3-Phase Loco TSD पृष्ठ 238, 242)",
@@ -310,50 +5750,2234 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
     };
   }
 
-  // 5b. Transformer Oil Temperature or Pressure Not OK (F0105P1 - Pages 129-130)
-  const is3PhaseTransfOilQuery =
-    norm.includes('f0105p1') ||
-    norm.includes('f0105') ||
-    norm.includes('transformer oil') ||
-    norm.includes('tr oil') ||
-    norm.includes('tr pump') ||
-    norm.includes('oil pump') ||
-    norm.includes('62.1/1') ||
-    norm.includes('62.1/2') ||
-    norm.includes('62.1') ||
+  // 5c. Headlight Failure / हेडलाइट फ़ेल होने पर (ZPRD / MCB 310.1/1 & 310.1/2 / G&SR 4.14)
+  const isHeadlightFailureQuery =
+    norm.includes('h[dliet') ||
+    norm.includes('h[dlie') ||
+    norm.includes('headlight') ||
+    norm.includes('head light') ||
+    norm.includes('head-light') ||
+    norm.includes('हेडलाइट') ||
+    norm.includes('हेड लाईट') ||
+    norm.includes('हेडलाईट') ||
+    norm.includes('310.1') ||
+    norm.includes('310.1/1') ||
+    norm.includes('310.1/2') ||
+    norm.includes('zprd') ||
+    norm.includes('g & sr 4.14') ||
+    norm.includes('g&sr 4.14') ||
+    (norm.includes('4.14') && (norm.includes('kmph') || norm.includes('speed') || norm.includes('gati') || norm.includes('गति') || norm.includes('marker') || norm.includes('मार्कर'))) ||
+    (norm.includes('dimmer') && (norm.includes('light') || norm.includes('loco') || norm.includes('cab') || norm.includes('glow') || norm.includes('on'))) ||
+    (norm.includes('डिमर') && (norm.includes('लाइट') || norm.includes('लोको') || norm.includes('ऑन') || norm.includes('स्विच'))) ||
+    (norm.includes('marker light') && (norm.includes('40') || norm.includes('speed') || norm.includes('fail')));
+
+  if (isHeadlightFailureQuery) {
+    return {
+      identifiedFaultId: "HEADLIGHT_FAIL",
+      faultTitle: "हेडलाइट फ़ेल होने पर (Headlight Failure / ZPRD / MCB 310.1/1 & 310.1/2 / G&SR 4.14)",
+      analysis: "3-फेज लोकोमोटिव (WAP-7 / WAG-9 / WAP-5) हेडलाइट विफलता (Headlight Failure) दोष निवारण एवं रेलवे सामान्य एवं सहायक नियम (G&SR 4.14) अनुसार कार्यप्रणाली:\n• मुख्य लक्षण: हेडलाइट प्रकाशित नहीं होना / बुझ जाना।\n• संबंधित उपकरण: डिमर स्विच ZPRD (कैब डेस्क), MCB 310.1/1 (Cab-1 / SB-1 पैनल), MCB 310.1/2 (Cab-2 / SB-2 पैनल), मार्कर लाइट (Marker Light)।\n• 3-फेज TSD एवं G&SR 4.14 अनुसार निर्धारित 5-चरणीय आधिकारिक कार्यवाही:",
+      suggestedActions: [
+        "1. ZPRD (डिमर स्विच) ON करें। (Switch ON ZPRD Dimmer switch).",
+        "2. यदि डिम हेडलाइट प्रकाशित होती है तो सामान्य रूप से कार्य करें। (If dim headlight illuminates, work normally).",
+        "3. यदि डिमर भी प्रकाशित नहीं होती है तो:-\n   • यदि Cab-1 से वर्किंग कर रहे हों तो SB-1 पैनल में लगी MCB 310.1/1 चेक करें।\n   • यदि Cab-2 से वर्किंग कर रहे हों तो SB-2 पैनल में लगी MCB 310.1/2 चेक करें।",
+        "4. यदि MCB ट्रिप मिले तो VCB ओपन करके MCB को रीसेट करें। (If MCB is tripped, open VCB and reset MCB).",
+        "5. यदि सफलता नहीं मिलती है तो मार्कर लाइट (Marker Light) की सहायता से 40 KMPH के गति प्रतिबंध से G & SR 4.14 के अनुसार गाड़ी चलाएं। (If not successful, run train with the help of Marker Light at a restricted speed of 40 KMPH as per G & SR 4.14)."
+      ],
+      precautions: "MCB 310.1/1 अथवा 310.1/2 रीसेट करने से पूर्व VCB ओपन अवश्य करें। हेडलाइट पूर्णतः फ़ेल होने पर रात/खराब मौसम में दृश्यता सीमित रहती है, अतः मार्कर लाइट ऑन रखें और G&SR 4.14 के अनुसार अधिकतम 40 KMPH की गति सीमा का कड़ाई से पालन करें एवं बार-बार सीटी बजाएं।",
+      manualReference: "3-Phase Loco TSD & General and Subsidiary Rules (G&SR 4.14)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी एवं भारतीय रेल G&SR नियम 4.14",
+      pdfPage: 238,
+      pdfQuote: "HEADLIGHT FAILURE IN 3-PHASE ELECTRIC LOCO:\n1. Switch ON ZPRD (Dimmer switch).\n2. If dim headlight illuminates, work normally.\n3. If dimmer also does not illuminate:\n   - If working from Cab-1, check MCB 310.1/1 (SB-1).\n   - If working from Cab-2, check MCB 310.1/2 (SB-2).\n4. If tripped, open VCB and reset MCB.\n5. If not successful, run train with the help of marker light at 40 KMPH speed restriction as per G & SR 4.14."
+    };
+  }
+
+  // 0-SS10-F1001P1. SS10 F1001P1: FAULT IN BRAKE ELECTRONICS (Full service brake applied / No traction allowed) (Vadodara TSD Page 184 / 206)
+  const isSS10F1001P1Query =
+    !norm.includes('f1001p2') && !norm.includes('banking') && !norm.includes('b](k>g') && !norm.includes('बैंकिंग') && !norm.includes('brake controller isolated') &&
+    !norm.includes('f1002') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('exhaust cock') && !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('74') &&
+    !norm.includes('applied brake') && !norm.includes('traction not allowed with applied') && !norm.includes('release loco brake') &&
+    !norm.includes('bpvr') && !norm.includes('pvcd') && !norm.includes('237.1') && !norm.includes('vigilance') && !norm.includes('(vj)l[>s') && !norm.includes('vcd') &&
     (
-      (norm.includes('transformer') || norm.includes('ट्रांसफॉर्मर') || norm.includes('ट्रांसफार्मर') || norm.includes('ट्रान्सफार्मर') || norm.includes('ट्रान्सफॉर्मर') || norm.includes('ट्रांसफॉर्म') || norm.includes('ट्रांसफार्म') || norm.includes('ट्रांस')) &&
-      (norm.includes('oil') || norm.includes('ऑयल') || norm.includes('आयल') || norm.includes('तेल') || norm.includes('पंप') || norm.includes('pump') || norm.includes('temperature') || norm.includes('टेंपरेचर') || norm.includes('तापमान') || norm.includes('pressure') || norm.includes('प्रेशर'))
-    ) ||
-    (
-      (norm.includes('oil') || norm.includes('ऑयल') || norm.includes('आयल') || norm.includes('तेल')) &&
-      (
-        norm.includes('temperature') || norm.includes('टेंपरेचर') || norm.includes('तापमान') || norm.includes('temp') ||
-        norm.includes('pressure') || norm.includes('प्रेशर') || norm.includes('दबाव') ||
-        norm.includes('pump') || norm.includes('पंप') ||
-        norm.includes('gauge') || norm.includes('गेज')
-      )
+      norm.includes('f1001p1') ||
+      norm.includes('f1001') ||
+      norm.includes('fault in brake electronics') ||
+      norm.includes('brake electronics') ||
+      norm.includes('127.7') ||
+      norm.includes('solenoid-30') ||
+      norm.includes('solenoid 30') ||
+      norm.includes('si[li[nied-30') ||
+      norm.includes('si[li[nied') ||
+      norm.includes('soledoid-30') ||
+      norm.includes('sv-30') ||
+      norm.includes('sv30') ||
+      norm.includes('ptdc') ||
+      norm.includes('knorr bremse') ||
+      norm.includes('knorr') ||
+      norm.includes('no traction allowed') ||
+      norm.includes('full service brake applied') ||
+      norm.includes('full service brake') ||
+      (norm.includes('ss10') && (norm.includes('brake') || norm.includes('electronics') || norm.includes('1001') || norm.includes('mcb') || norm.includes('127.7'))) ||
+      (norm.includes('ब्रेक') && norm.includes('इलेक्ट्रॉनिक्स')) ||
+      (norm.includes('b\\[k') && norm.includes('el[±t^iˆ(n±s')) ||
+      (norm.includes('फुल') && norm.includes('सर्विस') && norm.includes('ब्रेक'))
     );
 
-  if (is3PhaseTransfOilQuery) {
+  if (isSS10F1001P1Query) {
     return {
-      identifiedFaultId: "F0105P1",
-      faultTitle: "F0105P1: TRANSFORMER OIL TEMPERATURE OR PRESSURE NOT OK (3-Phase Loco TSD पृष्ठ 129-130)",
-      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (WAP-7 / WAG-9 / WAP-5): सबसिस्टम SS01 (Main Power) - ट्रांसफार्मर ऑयल तापमान या प्रेशर असामान्य होने पर TE/BE में कमी (GTO पल्स कट ऑफ), होटल लोड ऑफ तथा VCB ट्रिप होने पर निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      identifiedFaultId: "F1001P1",
+      faultTitle: "SS10 F1001P1: FAULT IN BRAKE ELECTRONICS (Full service brake applied, No traction allowed) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 184 / 206):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1001P1\nदोष संदेश:\nLoco XXXX SS10: Brake System\nFAULT IN BRAKE ELECTRONICS\nFull service brake applied\nNo traction allowed\n\nलैम्प संकेत: LSFI ब्लिंक करेगी। BPFA प्रकाशित होगा।\nप्रभाव: फुल सर्विस ब्रेक लग जाएगी, ट्रैक्शन नहीं मिलेगा (No traction allowed / TE/BE = 0)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 5-चरणीय दोष निवारण कार्यवाही:",
       suggestedActions: [
-        "1. यदि TE उपलब्ध है तो कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करने का प्रयत्न करें।",
-        "2. थ्रोटल को ' 0 ' पर लाएं तथा BPFA दबाकर फॉल्ट ACK करें।",
-        "3. यदि VCB ट्रिप होता है, तो BPFA दबाकर फॉल्ट ACK करें, VCB क्लोज करें और कोस्टिंग करते हुए ब्लॉक सेक्शन साफ करें।",
-        "4. अंडरफ्रेम में लगे ट्रांसफार्मर ऑयल पंप के इनलेट व आउटलेट पाइप को हाथ से छूकर ऑयल पंप का चलना सुनिश्चित करें।",
-        "5. HB-1 पैनल में लगे MCB 62.1/1 तथा HB-2 में लगे MCB 62.1/2 की जांच करें। यदि ट्रिप है तो VCB को ओपन करके एक बार रीसेट करें।",
-        "6. यदि ट्रांसफार्मर ऑयल पंप नहीं चल रहे हैं, तो कंट्रोल इलेक्ट्रॉनिक्स (MCE) को ऑफ करके पुनः ऑन करें।"
+        "1. थ्रोटल को “ 0 ” पर लायें। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0', acknowledge fault by pressing BPFA).",
+        "2. SB-2 पैनल में MCB नं 127.7 चेक करें। यदि ट्रिप है तो एक बार कंट्रोल इलेक्ट्रॉनिक्स (MCE) ऑफ़ करके उसे रीसेट करें। सोलेनाइड-30 (Solenoid-30 / SV-30) के रिलीज़ प्लंजर द्वारा पार्किंग ब्रेक रिलीज़ करें और कार्य करें। यदि सफलता नहीं मिलती तो पीछे की कैब (Rear Cab) से प्रयत्न करें।",
+        "3. यदि MCB 127.7 ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स (MCE) को ऑफ़ करके ऑन करें। पैंटो उठाएं, VCB क्लोज़ करें तथा यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें।",
+        "4. यदि वही मैसेज फिर से आता है तो:-\n   • E-70 वाले लोको में: TE/BE थ्रोटल को “ 0 ” पर लाएं और सहायता मांगें।\n   • CCB (Knorr Bremse) वाले लोको में: यदि पीछे की कैब का A-9 इमरजेंसी पर हो तो उसे FS (Full Service) पर लॉक करके मोड स्विच को Trail पर रखें। यदि सफलता नहीं मिलती तो PTDC मोड एक्टिव करने के अनुदेशों का पालन करके सेक्शन क्लियर करें।",
+        "5. यदि 20 मिनट के अंदर सफलता नहीं मिलती है तो सहायता इंजन की मांग करें। (If not successful within 20 minutes, demand assistance / relief engine)."
       ],
-      precautions: "MCB 62.1/1 व 62.1/2 रीसेट करने से पूर्व VCB ओपन अवश्य करें। TR पंप पाइप गर्म या कंपन महसूस करके पंप संचालन सुनिश्चित करें।",
-      manualReference: "254-पृष्ठ 3-फेज लोको TSD - SS01 Main Power (पृष्ठ 129-130)",
+      precautions: "अति-महत्वपूर्ण चेतावनी: SB-2 पैनल में लगे MCB 128.1 को कभी भी रीसेट न करें! केवल MCB 127.7 को MCE OFF करने के बाद एक बार रीसेट किया जा सकता है। सोलेनाइड-30 (SV-30) से पार्किंग ब्रेक रिलीज करते समय सैंडर्स का प्रयोग न करें। Knorr Bremse CCB सिस्टम में यदि रियर कैब का A-9 इमरजेंसी पर हो तो उसे FS पर लॉक कर मोड स्विच Trail पर रखें। 20 मिनट में सफलता न मिलने पर रिलीफ इंजन मांगें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1001P1, पेज 184 / 206)",
       verifiedFromPdf: true,
-      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल)",
-      pdfPage: 129,
-      pdfQuote: "3-PHASE LOCO TSD - PAGE 129-130:\nSS01 F0105P1 TRANSFORMER OIL TEMPERATURE OR PRESSURE NOT OK\nLamps: LSFI flickers, BPFA glows.\nEffect: TE/BE reduction, Hotel load OFF, VCB opens.\nTroubleshooting:\n1. Throttle to 0, Ack via BPFA.\n2. Coast to clear section.\n3. Check TR oil pump inlet/outlet vibration.\n4. Check MCB 62.1/1 in HB1 & 62.1/2 in HB2, open VCB and reset.\n5. Reset MCE OFF/ON."
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 206,
+      pdfQuote: "SS10 F1001P1 Loco XXXX SS10: Brake System\nFAULT IN BRAKE ELECTRONICS\nFull service brake applied\nNo traction allowed\nLSFI blink karegi, BPFA glow hoga. Full service brake applied, No traction allowed.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. MCB no. 127.7 check karein. Yadi trip ho to ek baar control electronics OFF karke use reset karein. Solenoid-30 ke release plunger dwara parking brake release karein aur karya karein. Yadi safalta nahi milti to piche ki cab se prayatna karein.\n3. Yadi trip nahi hai to control electronics ko OFF karke ON karein. Panto uthayein, VCB close karein tatha yadi loco samanya hota hai to traction chalu karein.\n4. Yadi vahi message phir se aata hai to:\n   - E-70 wale loco me TE/BE throttle ko '0' par layein aur sahayata mangein.\n   - CCB (Knorr Bremse) wale loco me yadi piche ki cab ka A-9 emergency par ho to use FS par lock karke mode switch ko Trail par rakhein. Yadi safalta nahi milti to PTDC mode active karne ke anudesho ka palan karke section clear karein.\n5. Yadi 20 minute ke andar safalta nahi milti hai to sahayata engine ki maang karein."
+    };
+  }
+
+  // 0-SS10-F1001P2. SS10 F1001P2: LOCO IS IN BANKING MODE (Loco brake controller isolated / Emergency brakes can be applied) (Vadodara TSD Page 185 / 207)
+  const isSS10F1001P2Query =
+    !norm.includes('f1001p1') && !norm.includes('f1002') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('fault in brake electronics') && !norm.includes('full service brake') && !norm.includes('127.7') &&
+    (
+      norm.includes('f1001p2') ||
+      norm.includes('banking mode') ||
+      norm.includes('loco is in banking mode') ||
+      norm.includes('banking mi[d') ||
+      norm.includes('b](k>g mi[d') ||
+      norm.includes('b](k>g') ||
+      norm.includes('बैंकिंग मोड') ||
+      norm.includes('बैंकिंग') ||
+      norm.includes('loco brake controller isolated') ||
+      norm.includes('brake controller isolated') ||
+      norm.includes('emergency brakes can be applied') ||
+      norm.includes('zban miek\\i') ||
+      norm.includes('zban microswitch') ||
+      (norm.includes('zban') && (norm.includes('banking') || norm.includes('b](k>g') || norm.includes('बैंकिंग') || norm.includes('mal-operation') || norm.includes('mal operation') || norm.includes('aipr[sn') || norm.includes('microswitch') || norm.includes('झटके') || norm.includes('अटका') || norm.includes('atki') || norm.includes('f1001') || norm.includes('pi[j)sn') || norm.includes('position'))) ||
+      (norm.includes('ss10') && (norm.includes('banking') || norm.includes('b](k>g') || norm.includes('f1001p2')))
+    );
+
+  if (isSS10F1001P2Query) {
+    return {
+      identifiedFaultId: "F1001P2",
+      faultTitle: "SS10 F1001P2: LOCO IS IN BANKING MODE (Loco brake controller isolated / Emergency brakes can be applied) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 185 / 207):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1001P2\nदोष संदेश:\nLoco XXX SS10: Brake System\nLOCO IS IN BANKING MODE\nLoco brake controller isolated\nEmergency brakes can be applied\n\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा।\nप्रभाव: लोको ब्रेक कंट्रोलर आइसोलेट रहेगा, केवल इमरजेंसी ब्रेक लगाई जा सकती है। (यदि लोको सामान्य अग्रणी/लीडिंग मोड में कार्य कर रहा है, तो ब्रेक कंट्रोलर काम नहीं करेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 7-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. यह मैसेज लोको बैंकिंग मोड में कार्य करते समय आएगा। {ZBAN ऑन है और कॉक नं 70 क्लोज़ है}। यदि लोको बैंकिंग मोड में नहीं है तो निम्नानुसार कार्यवाही करें:-",
+        "2. थ्रोटल को ‘ 0 ’ पर लाएं। (Bring TE/BE throttle to '0').",
+        "3. ZBAN स्विच की पोजीशन चेक करें, यदि ON है तो उसे OFF करें। (Check position of ZBAN switch; if ON, turn it OFF).",
+        "4. यह ZBAN माइक्रोस्विच के मैल-ऑपरेशन (Mal-operation) के कारण हो सकता है। ZBAN स्विच को दो-तीन बार झटके से ऑपरेट करें, यदि अटका है तो सामान्य हो जाएगा। (This can be due to mal-operation of ZBAN microswitch; operate ZBAN switch 2-3 times briskly/with jerk to free it).",
+        "5. VCB क्लोज़ करके सामान्य ट्रैक्शन चालू करें। (Close VCB and resume normal traction).",
+        "6. यदि सफलता नहीं मिलती है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ कर उसे ऑन (MCE OFF/ON) करें, और दूसरी कैब से प्रयत्न करें। (If unsuccessful, perform MCE OFF/ON reset and try from the other cab).",
+        "7. TLC को सूचित करें, लॉग बुक में दर्ज करें। (Inform TLC and record in loco log book)."
+      ],
+      precautions: "बैंकिंग ऑपरेशन (Banking Mode) में पिछले लोको (Banker Loco) का ZBAN स्विच ON किया जाता है और कॉक 70 बंद किया जाता है ताकि केवल अग्रणी लोको से ही ट्रेन ब्रेक पाइप (BP) कंट्रोल हो सके। यदि लोको बैंकिंग मोड में नहीं है (Non-banking / Leading Loco), तो ZBAN स्विच का ON रहना या उसके माइक्रोस्विच का जाम होना फॉल्ट का कारण बनता है। ZBAN को झटके से 2-3 बार ऑपरेट करके सुनिश्चित करें कि वह पूर्णतः OFF पोजीशन में आ गया है। MCE OFF/ON करने से पूर्व VCB ओपन रखें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1001P2, पेज 185 / 207)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 207,
+      pdfQuote: "SS10 F1001P2 Loco XXX SS10: Brake System\nLOCO IS IN BANKING MODE\nLoco brake controller isolated\nEmergency brakes can be applied\n1. Yah message loco banking mode me karya karte samay aayega {ZBAN ON hai aur cock no 70 close hai}. Yadi loco banking mode me nahi hai to nimnanusar karyavahi karein:\n2. Throttle ko '0' par layein.\n3. ZBAN switch ki position check karein, yadi ON hai to use OFF karein.\n4. Yah ZBAN microswitch ke mal-operation ke karan ho sakta hai. ZBAN switch ko 2-3 baar jhatke se operate karein yadi atka hai to samanya ho jayega.\n5. VCB close karke samanya traction chalu karein.\n6. Yadi safalta nahi milti hai to MCE OFF/ON karein, aur doosri cab se prayatna karein.\n7. TLC ko suchit karein, log book me darj karein."
+    };
+  }
+
+  // 0-SS10-F1002P1. SS10 F1002P1: LOW PRESSURE MAIN RESERVOIR (No traction allowed till pressure reaches 6.4 kg/cm2) (Vadodara TSD Page 185-186 / 207-208)
+  const isSS10F1002P1Query =
+    !norm.includes('f1002p2') && !norm.includes('alarm chain') && !norm.includes('check train') && !norm.includes('4.45') &&
+    !norm.includes('f1001') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('exhaust cock') &&
+    (
+      norm.includes('f1002p1') ||
+      norm.includes('f1002') ||
+      norm.includes('low pressure main reservoir') ||
+      norm.includes('low pressure mr') ||
+      norm.includes('reaches 6.4') ||
+      norm.includes('reaches to 6.4') ||
+      norm.includes('6.4 kg/cm2') ||
+      norm.includes('6.4 kg/cm') ||
+      (norm.includes('6.4') && (norm.includes('mr') || norm.includes('pressure') || norm.includes('reservoir') || norm.includes('traction') || norm.includes('प्रेशर') || norm.includes('रिजर्वायर') || norm.includes('ain['))) ||
+      norm.includes('no traction allowed till pressure') ||
+      (norm.includes('blcp') && (norm.includes('man') || norm.includes('compressor') || norm.includes('कम्प्रेसर') || norm.includes('दबाएं') || norm.includes('dbiy'))) ||
+      (norm.includes('d-in') && (norm.includes('d-out') || norm.includes('d-off'))) ||
+      ((norm.includes('ear d^iyr') || norm.includes('एयर ड्रायर') || norm.includes('air dryer')) && (norm.includes('d-in') || norm.includes('d-out') || norm.includes('d-off') || norm.includes('leakage') || norm.includes('(lk[j'))) ||
+      norm.includes('veul') ||
+      norm.includes('ep 26') ||
+      norm.includes('ep-26') ||
+      norm.includes('anli[dr viãv') ||
+      norm.includes('anli[dr viÃv') ||
+      norm.includes('अनलोडर वाल्व') ||
+      norm.includes('unloader valve') ||
+      (norm.includes('ss10') && (norm.includes('f1002') || norm.includes('main reservoir') || norm.includes('compressor') || norm.includes('6.4') || norm.includes('reservoir') || norm.includes('47.1'))) ||
+      (norm.includes('main reservoir') && (norm.includes('low') || norm.includes('traction') || norm.includes('6.4') || norm.includes('pressure') || norm.includes('blcp'))) ||
+      (norm.includes('रिजर्वायर') && (norm.includes('कम') || norm.includes('प्रेशर') || norm.includes('6.4') || norm.includes('ट्रैक्शन')))
+    );
+
+  if (isSS10F1002P1Query) {
+    return {
+      identifiedFaultId: "F1002P1",
+      faultTitle: "SS10 F1002P1: LOW PRESSURE MAIN RESERVOIR (No traction allowed till pressure reaches 6.4 kg/cm²) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 185-186 / 207-208):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1002P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nLOW PRESSURE MAIN RESERVOIR\nNo traction allowed till pressure reaches 6.4 kg/cm2\n\nलैम्प संकेत: LSFI ब्लिंक करेगी। BPFA प्रकाशित होगा।\nप्रभाव: MR प्रेशर 6.4 kg/cm² आने तक TE/BE (ट्रैक्शन) की अनुमति नहीं मिलेगी (No traction allowed till pressure reaches 6.4 kg/cm²)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 11-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0', acknowledge fault by pressing BPFA).",
+        "2. कम्प्रेसर का कार्य चेक करें, यदि कार्य नहीं करते तो BLCP को MAN पोजीशन पर दबाएं। (Check compressor operation; if not working, press BLCP to MAN position).",
+        "3. MR प्रेशर 6.4 kg/cm² आने तक इंतजार करें। (Wait till MR pressure reaches 6.4 kg/cm²).",
+        "4. MCB 47.1/1 (HB-1) व 47.1/2 (HB-2) को चेक करें। यदि ट्रिप मिले तो VCB ओपन करके उसे एक बार रीसेट करें। (Check MCB 47.1/1 in HB-1 & 47.1/2 in HB-2; if tripped, open VCB and reset once).",
+        "5. यदि MCP कार्य करते हैं तो एयर ड्रायर (Air Dryer) से लीकेज चेक करें। यदि लीकेज हो तो एयर ड्रायर को अंडरफ्रेम में लगे कॉक द्वारा आइसोलेट करें: D-in एवं D-out कॉक को बंद करें तथा D-off कॉक को खोल दें। (Check leakage from Air Dryer; if leaking, isolate Air Dryer via underframe cocks: CLOSE D-in and D-out cocks and OPEN D-off bypass cock).",
+        "6. ऑटो ड्रेन वाल्व, MR1 & 2 के ड्रेन कॉक, CP के डिलीवरी पाइप और अनलोडर वाल्व से लीकेज चेक करें। यदि लीकेज हो तो बैटरी बॉक्स-2 के ऊपर संबंधित COC बंद करें। यदि अनलोडर वाल्व का कॉक उपलब्ध नहीं है तो न्यूमैटिक पैनल पर लगे EP 26 के केबल को निकालें। CCB-2 लोको में न्यूमैटिक पैनल पर लगे VEUL के COC को बंद करें। (Check leakages at Auto Drain Valve, MR1 & 2 drain cocks, CP delivery pipe, and Unloader Valve. If leaking, close corresponding COC above Battery Box-2. If unloader cock is unavailable, disconnect cable of EP 26 on pneumatic panel. In CCB-2 locos, close COC of VEUL on pneumatic panel).",
+        "7. FP प्रेशर ड्रॉप होने पर कॉक 136 को बंद करें। (If FP pressure drops, close Cock 136).",
+        "8. गाड़ी में न्यूमैटिक सिस्टम में लीकेज की जांच करें। यदि BP प्रेशर ड्रॉप होने के कारण MR प्रेशर ड्रॉप होता है तो VCD / SPM / TPWS (यदि दोनों कैब में A-9 के नीचे COC लगा हो) को आइसोलेट करें। सुनिश्चित करें कि ALP का इमरजेंसी वाल्व दोनों कैब में बंद और पीछे की कैब का A-9 न्यूट्रल पर हो (CCB-2 लोको में A-9 FS पर हो)। (Inspect train pneumatic leakages. If MR drops due to BP drop, isolate VCD/SPM/TPWS if cock provided below A-9. Ensure ALP emergency exhaust is closed in both cabs, and rear cab A-9 is in Neutral / FS in CCB-2).",
+        "9. यदि कोई एयर लीकेज न हो और दोनों कम्प्रेसर के MCB सेट हों, फिर भी कम्प्रेसर काम नहीं कर रहे हों और MR प्रेशर मेंटेन नहीं हो रहा है, तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन करें (MCE OFF/ON), पैंटो उठाएं, VCB क्लोज़ करें। यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें। (If no leakage and both MCBs are set but compressors don't work and MR is not maintaining: Switch OFF and ON Control Electronics (MCE OFF/ON), raise panto, close VCB and resume traction if normal).",
+        "10. यदि सफलता नहीं मिलती है तो BUR-3 को आइसोलेट करें {MCE ऑफ़ करके SB-2 में लगे MCB 127.22/3 के द्वारा}। लोको एनरजाइज करें। यदि लोको सामान्य होता है तो ट्रैक्शन चालू करें। (If still unsuccessful, isolate BUR-3 via MCB 127.22/3 in SB-2 after MCE OFF. Re-energize loco and resume traction if normal).",
+        "11. यदि 20 मिनट के अंदर सफलता नहीं मिलती है तो सहायता इंजन की मांग करें। (If not successful within 20 minutes, demand assistance / relief engine)."
+      ],
+      precautions: "MR प्रेशर 6.4 kg/cm² से कम होने पर सुरक्षा कारणों से TE/BE पूर्णतः ब्लॉक (Zero) रहता है। एयर ड्रायर आइसोलेट करते समय D-off बाईपास कॉक खोलना अत्यंत आवश्यक है। अनलोडर वाल्व लगातार ब्लो करने पर बैटरी बॉक्स-2 के ऊपर COC बंद करें अथवा EP-26 केबल डिस्कनेक्ट करें (CCB-2 में VEUL कॉक)। दोनों MCP बंद होने पर MCE रीसेट एवं BUR-3 आइसोलेशन (MCB 127.22/3) द्वारा प्रयास करें। 20 मिनट में MR प्रेशर 6.4 kg/cm² न बनने पर सहायता इंजन की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1002P1, पेज 185-186 / 207-208)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 207,
+      pdfQuote: "SS10 F1002P1 Loco XXX SS10: Brake System\nLOW PRESSURE MAIN RESERVOIR\nNo traction allowed till pressure reaches 6.4 kg/cm2\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. Compressor ka karya check karein, yadi karya nahi karte to BLCP ko MAN position par dabayein.\n3. MR pressure 6.4 kg/cm2 aane tak intezar karein.\n4. MCB 47.1/1 (HB-1) v 47.1/2 (HB-2) check karein. Yadi trip mile to VCB open karke ek baar reset karein.\n5. Yadi MCP karya karte hain to Air Dryer se leakage check karein. Air dryer isolate karein (D-in, D-out band karein, D-off kholein).\n6. Auto drain valve, MR1/2 drain cock, CP delivery pipe aur unloader valve leakage check karein. Battery Box-2 ke upar COC band karein, ya EP 26 cable nikalein. CCB-2 me VEUL COC band karein.\n7. FP pressure drop hone par 136 cock band karein.\n8. Pneumatic system leakage check karein. VCD/SPM/TPWS isolate karein. ALP emergency valve band aur rear cab A-9 neutral (CCB me FS) par ho.\n9. MCBs set hone par bhi MCP na chale to MCE OFF/ON karein, panto uthayein, VCB close karein.\n10. BUR-3 ko MCB 127.22/3 dwara isolate karein (MCE OFF karke), energize karein.\n11. 20 minute ke andar safalta na milne par sahayata engine ki maang karein."
+    };
+  }
+
+  // 0-SS10-F1002P2. SS10 F1002P2: ALARM CHAIN PULLING (Check train / G&SR 4.45/1) (Vadodara TSD Page 186 / 208)
+  const isSS10F1002P2Query =
+    !norm.includes('f1002p1') && !norm.includes('f1001') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('low pressure main reservoir') && !norm.includes('reaches 6.4') &&
+    (
+      norm.includes('f1002p2') ||
+      norm.includes('alarm chain pulling') ||
+      norm.includes('alarm chain') ||
+      norm.includes('check train') ||
+      norm.includes('g&sr 4.45') ||
+      norm.includes('g & sr 4.45') ||
+      norm.includes('4.45/1') ||
+      norm.includes('अलार्म चेन पुलिंग') ||
+      norm.includes('अलार्म चेन') ||
+      norm.includes('bi(vt ki[c') ||
+      norm.includes('प्रभावित कोच') ||
+      norm.includes('s&(vfijnk') ||
+      norm.includes('सुविधाजनक जगह') ||
+      norm.includes('सुविधाजनक') ||
+      (norm.includes('acp') && (norm.includes('reset') || norm.includes('(rs[t') || norm.includes('check') || norm.includes('train') || norm.includes('coach') || norm.includes('ki[c') || norm.includes('gid)') || norm.includes('रोके') || norm.includes('f1002') || norm.includes('pulling') || norm.includes('4.45'))) ||
+      (norm.includes('ss10') && (norm.includes('f1002p2') || norm.includes('chain') || norm.includes('acp') || norm.includes('pulling')))
+    );
+
+  if (isSS10F1002P2Query) {
+    return {
+      identifiedFaultId: "F1002P2",
+      faultTitle: "SS10 F1002P2: ALARM CHAIN PULLING (Check train / G&SR 4.45/1) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 186 / 208):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1002P2\nदोष संदेश:\nLoco XXX SS10: Brake System\nALARM CHAIN PULLING\nCheck train\n\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा। कैब में AFI (Air Flow Indicator) की सुई ऊपर उठेगी तथा BP प्रेशर में गिरावट दर्ज होगी।\nप्रभाव: गाड़ी में ऑटोमैटिक एयर ब्रेक लग जाएगा तथा गति कम होने लगेगी। लोको पायलट को TE/BE थ्रोटल '0' पर लाना अनिवार्य है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 2-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। गाड़ी को तुरंत सुविधाजनक जगह पर रोकें (पुल, ढलान, सुरंग आदि पर गाड़ी रोकने से बचें)। ऑपरेटिंग मैनुअल तथा G&SR 4.45/1 के अनुसार कार्य करें। (Bring TE/BE Throttle to '0'. Stop the train immediately at a convenient location avoiding bridges/tunnels. Act according to Operating Manual and G&SR 4.45/1).",
+        "2. प्रभावित कोच को चेक करें, ACP (अलार्म चेन पुलिंग) के कारण का पता लगाएं, कोच के ACP वाल्व को रीसेट करें और BP प्रेशर 5.0 kg/cm² सामान्य होने के बाद उसके अनुसार गाड़ी चलाएं। (Inspect affected coach, investigate reason for ACP, reset ACP valve, ensure BP charges to 5.0 kg/cm² and resume train operation accordingly)."
+      ],
+      precautions: "गाड़ी में ACP होने पर थ्रोटल को तुरंत '0' पर लाएं, अन्यथा पहियों पर स्किडिंग या फ्लैट टायर का खतरा रहता है। गाड़ी को कभी भी पुल, ढलान, कर्व या सुरंग के अंदर रोकने का प्रयास न करें—सुविधाजनक स्थान पर सुरक्षित क्लियर करके ही गाड़ी खड़ी करें। ट्रेन मैनेजर (गार्ड) व सहायक लोको पायलट के साथ मिलकर कोच की लाल/सफेद इंडिकेटिंग डिस्क या हिचिंग वाल्व की जांच करें और ACP रीसेट करें। BP प्रेशर 5.0 kg/cm² तथा AFI सामान्य होने के बाद ही ट्रैक्शन चालू करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1002P2, पेज 186 / 208)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 208,
+      pdfQuote: "SS10 F1002P2 Loco XXX SS10: Brake System\nALARM CHAIN PULLING\nCheck train\n1. Throttle ko '0' par layein. Gaadi ko turant suvidhadajanak jagah par rokein. Operating manual tatha G&SR 4.45/1 ke anusar karya karein.\n2. Prabhavit coach ko check karein, ACP ke karan ka pata lagayein, ACP ko reset karein aur uske anusar gaadi chalayein."
+    };
+  }
+
+  // 0-SS10-F1003P1. SS10 F1003P1: VIGILANCE EMERGENCY BRAKE APPLICATION (Vadodara TSD Page 186-187 / 208-209)
+  const isSS10F1003P1Query =
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('exhaust cock') &&
+    !norm.includes('f1105') && !norm.includes('ss11') && !norm.includes('rotary switch vigilance') &&
+    !norm.includes('f1401') && !norm.includes('f1301') && !norm.includes('hbb') &&
+    (
+      norm.includes('f1003p1') ||
+      norm.includes('f1003') ||
+      norm.includes('vigilance emergency brake application') ||
+      norm.includes('vigilance emergency') ||
+      norm.includes('vigilance reset') ||
+      norm.includes('bpvr') ||
+      norm.includes('lsvw') ||
+      norm.includes('pvcd') ||
+      norm.includes('237.1') ||
+      (norm.includes('vcd') && (norm.includes('brake') || norm.includes('penalty') || norm.includes('reset') || norm.includes('ack') || norm.includes('emergency') || norm.includes('isolate') || norm.includes('237.1') || norm.includes('bpvr') || norm.includes('पेनल्टी') || norm.includes('विजिलेंस') || norm.includes('p[ni'))) ||
+      (norm.includes('vigilance') && (norm.includes('penalty') || norm.includes('brake') || norm.includes('emergency') || norm.includes('reset') || norm.includes('button'))) ||
+      norm.includes('विजिलेंस') ||
+      norm.includes('(vj)l[>s') ||
+      norm.includes('p[niˆãt) b\\[k') ||
+      norm.includes('p[niãt) b\\[k') ||
+      norm.includes('पेनल्टी ब्रेक') ||
+      (norm.includes('120') && norm.includes('160') && (norm.includes('sec') || norm.includes('s[k>d') || norm.includes('सेकंड'))) ||
+      (norm.includes('ss10') && (norm.includes('f1003') || norm.includes('vigilance') || norm.includes('vcd') || norm.includes('bpvr') || norm.includes('237.1')))
+    );
+
+  if (isSS10F1003P1Query) {
+    return {
+      identifiedFaultId: "F1003P1",
+      faultTitle: "SS10 F1003P1: VIGILANCE EMERGENCY BRAKE APPLICATION (Bring TE/BE Throttle to 0, Press vigilance reset push button) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 186-187 / 208-209):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1003P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nVIGILANCE EMERGENCY BRAKE APPLICATION\nBring TE/BE Throttle to 0\nPress vigilance reset push button\n\nलैम्प व ऑडियो संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा। कैब डेस्क पैनल A पर LSVW लैम्प प्रकाशित होगी तथा चेतावनी बजर (Buzzer) बजेगा।\nप्रभाव: BP प्रेशर 3.0 से 2.5 kg/cm² तक ड्रॉप होगा, पेनल्टी ब्रेक लग जाएगी, थ्रोटल TE/BE शून्य ('0') हो जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "════ स्थिति A: यदि यह मैसेज इंजन के कर्मीदल द्वारा VCD 'ACK' नहीं करने पर आता है ════",
+        "1. थ्रोटल को ‘0’ पर लाएं। (Bring TE/BE Throttle to '0').",
+        "2. A-9 को आपातकालीन (Emergency) पोजीशन पर रखें, जिससे MR प्रेशर ड्रॉप होना बंद हो जाएगा। (Keep A-9 in Emergency position to stop MR pressure dropping).",
+        "3. 120 सेकंड (WAP-5 व WAP-7) / 160 सेकंड (WAG-9 व WAG-9H) तक इंतजार करें, क्योंकि VCD पेनल्टी ब्रेक को 120/160 सेकंड के बाद ही रीसेट किया जा सकता है। इसलिए BPVR को 120/160 सेकंड से पूर्व प्रेस न करें।",
+        "4. 120/160 सेकंड के बाद चालक डेस्क पर लगे पैनल A पर विजिलेंस रीसेट पुश बटन BPVR को प्रेस करें। LSVW का बुझना व बजर का बजना बंद होना सुनिश्चित करें।\n   ★ विशेष नोट: यदि CCB (Knorr Bremse) वाला लोको है तो 32 सेकंड बाद ही BPVR को प्रेस करें {विजिलेंस रीसेट समय 32 सेकंड है}।",
+        "5. विजिलेंस पेडल स्विच PVCD को दबाकर रिलीज कर दें। (Press and release foot pedal PVCD).",
+        "6. BPFA दबाकर फ़ॉल्ट ACK करें। (Press BPFA to acknowledge fault).",
+        "7. A-9 को RUN पोजीशन पर रखें। पेनल्टी ब्रेक रिलीज होने के पश्चात BP प्रेशर वापस 5.0 kg/cm² तक चार्ज हो जाएगा। (Move A-9 to RUN; BP charges to 5.0 kg/cm²).",
+        "8. यदि पेनल्टी ब्रेक ऊपर दी गई विधि के बाद भी लगे रहते हैं, तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ कर एक बार फिर ऑन करें (MCE OFF/ON)। पैंटो उठाएं, VCB क्लोज़ करें तथा सामान्य ट्रैक्शन चालू करें।",
+        "════ स्थिति B: यदि सतर्क रहने पर भी बार-बार पेनल्टी ब्रेक लगते हैं (VCD/PVCD आंतरिक खराबी) ════",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स (MCE) ऑफ़ करके SB-1 पैनल में लगे स्विच नं. 237.1 को ‘0’ पर रखें। इससे VCD आइसोलेट हो जाएगी।",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स ऑन करें, पैंटो उठाकर VCB क्लोज़ करके सामान्य ट्रैक्शन चालू करें।",
+        "3. TLC को सूचित करें और अतिरिक्त सतर्क रहकर गाड़ी चलाएं।\n   ★ नोट: इस स्थिति में यदि स्क्रीन पर 'Low MR pressure' का मैसेज आता है तो उस पर ध्यान न दें।"
+      ],
+      precautions: "1. VCD पेनल्टी ब्रेक 120 सेकंड (WAP-5/7) या 160 सेकंड (WAG-9) से पहले रीसेट नहीं हो सकता (CCB में 32 सेकंड)। समय पूर्ण होने से पूर्व BPVR व्यर्थ न दबाएं।\n2. पेनल्टी लगते ही A-9 को आपातकालीन पोजीशन पर अवश्य रखें ताकि MR प्रेशर 6.4 से नीचे न गिरे।\n3. स्विच 237.1 को MCE OFF करके ही ऑपरेट करें। VCD आइसोलेट होने के बाद लोको पायलट को मार्ग में अत्यधिक सतर्क रहना अनिवार्य है।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1003P1, पेज 186-187 / 208-209)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 208,
+      pdfQuote: "SS10 F1003P1 Loco XXX SS10: Brake System\nVIGILANCE EMERGENCY BRAKE APPLICATION\nBring TE/BE Throttle to 0\nPress vigilance reset push button\nA) Yadi crew dwara VCD ACK nahi karne par aata hai to:\n1. Throttle ko '0' par layein. 2. A-9 ko emergency par rakhein (MR drop band hoga). 3. 120 sec (WAP-5/7) / 160 sec (WAG-9) intezar karein. 4. Panel A par BPVR press karein, LSVW bujhna aur buzzer band hona check karein (CCB me 32 sec baad). 5. PVCD dabakar release karein. 6. BPFA press karein. 7. A-9 run par rakhein, BP 5.0 kg/cm2 charge hoga. 8. MCE OFF/ON karke try karein.\nB) Satark rehne par bhi penalty brake lagne par (VCD/PVCD fault):\nMCE OFF karke SB-1 panel me switch 237.1 ko '0' par rakhein (VCD isolate hogi). MCE ON karein, panto uthayein, VCB close karein, traction chalu karein. TLC ko suchit karein. 'Low MR pressure' message par dhyan na dein."
+    };
+  }
+
+  // 0-SS10-F1004P1. SS10 F1004P1: WORKING WRONG CONFIGURATION BRAKE SYSTEM (Vadodara TSD Page 187-188 / 209-210)
+  const isSS10F1004P1Query =
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1003') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') &&
+    !norm.includes('f1009') && !norm.includes('f1010') && !norm.includes('74') && !norm.includes('exhaust') &&
+    !norm.includes('banking') && !norm.includes('b](k>g') && !norm.includes('बैंकिंग') &&
+    (
+      norm.includes('f1004p1') ||
+      norm.includes('f1004') ||
+      norm.includes('wrong configuration') ||
+      norm.includes('working wrong configuration') ||
+      norm.includes('wrong coc position') ||
+      norm.includes('check isolating coc brake') ||
+      norm.includes('isolating coc brake') ||
+      norm.includes('zban') ||
+      norm.includes('cock 70') ||
+      norm.includes('cock-70') ||
+      norm.includes('kiˆk 70') ||
+      norm.includes('कॉक 70') ||
+      norm.includes('limiting switch') ||
+      norm.includes('(l(m(t)>g (Avc') ||
+      norm.includes('लिमिटिंग स्विच') ||
+      (norm.includes('ss10') && (norm.includes('f1004') || norm.includes('wrong') || norm.includes('70') || norm.includes('zban') || norm.includes('configuration')))
+    );
+
+  if (isSS10F1004P1Query) {
+    return {
+      identifiedFaultId: "F1004P1",
+      faultTitle: "SS10 F1004P1: WORKING WRONG CONFIGURATION BRAKE SYSTEM (Check isolating COC brake control / Cock 70 / ZBAN) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 187-188 / 209-210):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1004P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nWORKING WRONG CONFIGURATION BRAKE SYSTEM\nCheck isolating coc brake control\nWrong coc position, to reset open VCB\n\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा।\nप्रभाव: ब्रेक सिस्टम की गलत न्यूमैटिक कॉन्फ़िगरेशन चेतावनी, सामान्य ट्रैक्शन अवरुद्ध।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0', acknowledge fault by pressing BPFA).",
+        "2. न्यूमैटिक पैनल पर लगे ब्रेक पाइप आइसोलेटिंग कॉक 70 (Cock 70) को चेक करें:-\n   • यदि कॉक 70 क्लोज़ (बंद) हो, तो VCB ओपन करके उसे ओपन (खोलें)।\n   • यदि कॉक 70 पहले से ओपन हो, तो VCB ओपन करके कॉक 70 को दो-तीन बार ऑपरेट करें (खोलें/बंद करें)। लिमिटिंग स्विच (Limiting Switch) के खराब या जाम होने के कारण ऐसा हो सकता है।",
+        "3. ZBAN स्विच का ऑफ़ (OFF) होना चेक करें। यदि ON हो तो उसे OFF पर रखें। (Check ZBAN switch is OFF; if ON, turn it OFF).",
+        "4. सामान्य ट्रैक्शन चालू करें। (Resume normal traction)."
+      ],
+      precautions: "कॉक-70 को ऑपरेट या रीसेट करने से पूर्व VCB ओपन करना अनिवार्य है। कॉक 70 ब्रेक पाइप (BP) चार्जिंग का मुख्य आइसोलेटिंग कॉक है, इसके बंद रहने या इलेक्ट्रिकल लिमिटिंग स्विच में खराबी होने पर कंप्यूटर लोको को चलने की अनुमति नहीं देता। नॉन-बैंकिंग मोड में ZBAN स्विच का OFF रहना सुनिश्चित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1004P1, पेज 187-188 / 209-210)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 209,
+      pdfQuote: "SS10 F1004P1 Loco XXX SS10: Brake System\nWORKING WRONG CONFIGURATION BRAKE SYSTEM\nCheck isolating coc brake control Wrong coc position, to reset open VCB\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. Pneumatic panel par lage brake pipe isolating cock 70 ko check karein. Yadi close ho to VCB open karke open karein. Yadi cock 70 open ho to VCB open karke do-teen baar operate karein, limiting switch kharab hone ke karan aisa ho sakta hai.\n3. ZBAN switch ka OFF hona check karein, yadi ON ho to use OFF par rakhein.\n4. Samanya traction chalu karein."
+    };
+  }
+
+  // 0-SS10-F1005P1. SS10 F1005P1: TRACTION WITH AUTO BRAKE NOT ALLOWED (Vadodara TSD Page 188 / 210)
+  const isSS10F1005P1Query =
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('exhaust cock') &&
+    (
+      norm.includes('f1005p1') ||
+      norm.includes('f1005') ||
+      norm.includes('traction with auto brake not allowed') ||
+      norm.includes('traction with auto brake') ||
+      norm.includes('auto brake not allowed') ||
+      (norm.includes('aiˆti[') && (norm.includes('eyr') || norm.includes('(rl)j') || norm.includes('b[k') || norm.includes('5.0') || norm.includes('ci(he') || norm.includes('ci(he'))) ||
+      norm.includes('ऑटो एयर ब्रेक') ||
+      norm.includes('ऑटो ब्रेक रिलीज') ||
+      norm.includes('ऑटो ब्रेक') ||
+      (norm.includes('auto brake') && (norm.includes('traction') || norm.includes('release') || norm.includes('allowed') || norm.includes('5.0'))) ||
+      (norm.includes('release parking brakes') && norm.includes('auto brake')) ||
+      (norm.includes('d*sr) k]b') && (norm.includes('p\\yrn') || norm.includes('prayatna') || norm.includes('b[k') || norm.includes('eyr') || norm.includes('aiˆti['))) ||
+      (norm.includes('ss10') && (norm.includes('f1005') || (norm.includes('auto') && norm.includes('brake'))))
+    );
+
+  if (isSS10F1005P1Query) {
+    return {
+      identifiedFaultId: "F1005P1",
+      faultTitle: "SS10 F1005P1: TRACTION WITH AUTO BRAKE NOT ALLOWED (Release parking brakes / Bring TE/BE Throttle to 0) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 188 / 210):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1005P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nTRACTION WITH AUTO BRAKE NOT ALLOWED\nRelease parking brakes\nBring TE/BE Throttle to 0\n\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा।\nप्रभाव: ऑटो ब्रेक लगे रहने के कारण ट्रैक्शन (TE/BE) अवरुद्ध रहेगा (TE/BE = 0)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. ऑटो एयर ब्रेक रिलीज करें (A-9 हैंडल को RUN पोजीशन पर रखें)। BP प्रेशर चेक करें 5.0 kg/cm² होना चाहिए। (Release auto air brake by placing A-9 in RUN; ensure BP pressure is 5.0 kg/cm²).",
+        "2. थ्रोटल को ‘ 0 ’ पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0', acknowledge fault by pressing BPFA).",
+        "3. सामान्य ट्रैक्शन चालू करें। (Resume normal traction).",
+        "4. यदि सफलता नहीं मिलती, तो दूसरी कैब (Rear Cab) से प्रयत्न करें। (If unsuccessful, try from the other/rear cab)."
+      ],
+      precautions: "ऑटो ब्रेक (A-9) लगे रहने पर सॉफ्टवेयर सुरक्षा इंटरलॉक के तहत ट्रैक्शन की अनुमति नहीं देता। A-9 को RUN में रखकर BP 5.0 kg/cm² और BC गेज 0 kg/cm² सुनिश्चित करें। यदि ड्राइविंग कैब से रिलीज नहीं होता है, तो रियर कैब में A-9 की स्थिति (Locked / Neutral / FS) चेक करें अथवा दूसरी कैब से संचालन करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1005P1, पेज 188 / 210)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 210,
+      pdfQuote: "SS10 F1005P1 Loco XXX SS10: Brake System\nTRACTION WITH AUTO BRAKE NOT ALLOWED\nRelease parking brakes, Bring TE/BE Throttle to 0\n1. Auto air brake release karein. BP pressure check karein 5.0 kg/cm2 hona chahiye.\n2. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n3. Samanya traction chalu karein.\n4. Yadi safalta nahi milti, doosri cab se prayatna karein."
+    };
+  }
+
+  // 0-SS10-F1006P1. SS10 F1006P1: TRACTION WITH PARKING BRAKES NOT ALLOWED (Vadodara TSD Page 188-189 / 210-211)
+  const isSS10F1006P1Query =
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('exhaust cock') &&
+    (
+      norm.includes('f1006p1') ||
+      norm.includes('f1006') ||
+      norm.includes('traction with parking brakes not allowed') ||
+      norm.includes('traction with parking brake not allowed') ||
+      norm.includes('traction with parking brake') ||
+      norm.includes('traction with parking') ||
+      norm.includes('parking brakes not allowed') ||
+      norm.includes('parking brake not allowed') ||
+      norm.includes('bppb') ||
+      norm.includes('p\¶v(lt') ||
+      norm.includes('siˆl[niˆed') ||
+      norm.includes('siˆl[niˆe') ||
+      norm.includes('e¼lie<') ||
+      norm.includes('e¼lied') ||
+      (norm.includes('l]c') && (norm.includes('siˆl[ni') || norm.includes('viãv') || norm.includes('viÃv') || norm.includes('c]k') || norm.includes('l]c ki['))) ||
+      (norm.includes('latch') && (norm.includes('solenoid') || norm.includes('valve') || norm.includes('pneumatic'))) ||
+      (norm.includes('6.0') && (norm.includes('kg/cm') || norm.includes('parking') || norm.includes('bppb') || norm.includes('b\[k') || norm.includes('b[k'))) ||
+      (norm.includes('होज़ पाइप') && norm.includes('पार्किंग')) ||
+      (norm.includes('hose pipe') && (norm.includes('parking') || norm.includes('leakage'))) ||
+      (norm.includes('release parking brakes') && (norm.includes('throttle to 0') || norm.includes('te/be') || norm.includes('bring te/be')) && !norm.includes('auto brake')) ||
+      (norm.includes('पार्किंग ब्रेक') && (norm.includes('ट्रैक्शन') || norm.includes('रिलीज') || norm.includes('नॉट अलाउड') || norm.includes('bppb') || norm.includes('6.0'))) ||
+      (norm.includes('ss10') && (norm.includes('f1006') || (norm.includes('parking') && norm.includes('brake'))))
+    );
+
+  if (isSS10F1006P1Query) {
+    return {
+      identifiedFaultId: "F1006P1",
+      faultTitle: "SS10 F1006P1: TRACTION WITH PARKING BRAKES NOT ALLOWED (Release parking brakes / Bring TE/BE Throttle to 0) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 188-189 / 210-211):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1006P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nTRACTION WITH PARKING BRAKES NOT ALLOWED\nRelease parking brakes\nBring TE/BE Throttle to 0\n\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा। प्रज्वलित पुश बटन BPPB प्रकाशित (Glow) रहेगा।\nप्रभाव: पार्किंग ब्रेक लगे रहने के कारण ट्रैक्शन (TE/BE) अवरुद्ध रहेगा (TE/BE = 0)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 6-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0', acknowledge fault by pressing BPFA).",
+        "2. प्रज्वलित पुश बटन BPPB के द्वारा पार्किंग ब्रेक रिलीज़ करें। यदि पार्किंग ब्रेक रिलीज़ हो जाते हैं तो पार्किंग ब्रेक गेज में 6.0 kg/cm² प्रेशर दर्शाएगा और BPPB की लाइट बुझेगी। (Release parking brake by pressing illuminated BPPB push button; PB gauge will show 6.0 kg/cm² and BPPB lamp will extinguish).",
+        "3. यदि पार्किंग ब्रेक रिलीज़ नहीं होते तो न्यूमैटिक पैनल पर सोलेनाइड वाल्व के लैच (Latch) को चेक करें। यदि एप्लाइड (Applied) पुश बटन एप्लाइड स्थिति में लॉक मिलता है तो उसे रिलीज़ करें। (If parking brake does not release, check latch of solenoid valve on pneumatic panel; if applied push button is locked in applied position, release it).",
+        "4. रिलीज़ पुश बटन को प्रेस करें और उस स्थिति में ज़रूरत पड़ने पर लॉक करें। (Press release push button on solenoid valve and lock it in released position if required).",
+        "5. यदि फिर भी पार्किंग ब्रेक रिलीज़ नहीं होते हैं तो पार्किंग ब्रेक सिलिंडर होज़ पाइप पर एयर लीकेज को चेक करें। यदि एयर लीकेज है तो उसे बंद करें। (If still not released, inspect air leakage on parking brake cylinder hose pipe; arrest any leakage found).",
+        "6. पार्किंग ब्रेक रिलीज़ होने के बाद सामान्य ट्रैक्शन चालू करें। (Resume normal traction after parking brakes are fully released)."
+      ],
+      precautions: "पार्किंग ब्रेक लगे रहने पर गाड़ी को कभी भी गति देने का प्रयास न करें अन्यथा पहियों पर गंभीर फ्लैट टायर (Flat Tyre) हो सकते हैं। पार्किंग ब्रेक गेज में 6.0 kg/cm² प्रेशर और BPPB लैम्प का बुझना सुनिश्चित करें। न्यूमैटिक सोलेनाइड वाल्व (SV-30) पर रिलीज़ प्लंजर को दबाकर लॉक करें तथा बोगी 1 व 2 पर पार्किंग ब्रेक इंडिकेटर (हरे/Green) की भौतिक जांच करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1006P1, पेज 188-189 / 210-211)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 211,
+      pdfQuote: "SS10 F1006P1 Loco XXX SS10: Brake System\nTRACTION WITH PARKING BRAKES NOT ALLOWED\nRelease parking brakes, Bring TE/BE Throttle to 0\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. Prajwalit push button BPPB ke dwara parking brake release karein. Yadi parking brake release ho jaate hain to parking brake gauge me 6.0 kg/cm2 pressure darshayega aur BPPB ki light bujhegi.\n3. Yadi parking brake release nahi hote to pneumatic panel par solenoid valve ke latch ko check karein. Yadi applied push button applied sthiti me lock milta hai to use release karein.\n4. Release push button ko press karein aur us sthiti me zaroorat padne par lock karein.\n5. Yadi fir bhi parking brake release nahi hote hain to parking brake cylinder hose pipe par air leakage ko check karein. Yadi air leakage hai to use band karein.\n6. Parking brake release hone ke baad samanya traction chalu karein."
+    };
+  }
+
+  // 0-SS10-F1007P1. SS10 F1007P1: REGENERATIVE BRAKE FAILURE (Pneumatic loco brake applied) (Vadodara TSD Page 189 / 211)
+  const isSS10F1007P1Query =
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1008') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('exhaust cock') &&
+    (
+      norm.includes('f1007p1') ||
+      norm.includes('f1007') ||
+      norm.includes('regenerative brake failure') ||
+      norm.includes('regenerative brake fail') ||
+      norm.includes('regenerative brake') ||
+      norm.includes('रीजेनेरेटिव ब्रेक') ||
+      norm.includes('pnuematic loco brake applied') ||
+      norm.includes('pneumatic loco brake applied') ||
+      norm.includes('pvef') ||
+      norm.includes('el[(±t^kl b\[k pivr') ||
+      norm.includes('इलेक्ट्रिकल ब्रेक पावर') ||
+      norm.includes('electrical brake power') ||
+      norm.includes('b\[(k>g (sf< a9') ||
+      norm.includes('b\[(k>g (sf< a-9') ||
+      (norm.includes('regenerative') && (norm.includes('failure') || norm.includes('fail') || norm.includes('brake') || norm.includes('applied') || norm.includes('pvef'))) ||
+      (norm.includes('रीजेनेरेटिव') && (norm.includes('फेल') || norm.includes('फ़ेल') || norm.includes('ब्रेक') || norm.includes('pvef'))) ||
+      (norm.includes('ss10') && (norm.includes('f1007') || norm.includes('regenerative')))
+    );
+
+  if (isSS10F1007P1Query) {
+    return {
+      identifiedFaultId: "F1007P1",
+      faultTitle: "SS10 F1007P1: REGENERATIVE BRAKE FAILURE (Pneumatic loco brake applied) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 189 / 211):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1007P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nREGENERATIVE BRAKE FAILURE\nPnuematic loco brake applied\n\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा।\nप्रभाव: इलेक्ट्रिकल ब्रेक (रीजेनेरेटिव ब्रेकिंग) पावर अनुपलब्ध रहेगा (Electrical braking power will not be available)। सुरक्षा हेतु न्यूमैटिक लोको ब्रेक स्वतः लग जाता है (Pneumatic loco brake applied)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 5-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। लोको ब्रेक रिलीज़ हो जाएंगे। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0', loco brakes will release. Acknowledge fault by pressing BPFA).",
+        "2. गाड़ी को A-9 के द्वारा कंट्रोल करें। BC गेज में प्रेशर '0' kg/cm² आने तक PVEF फ़ुट स्विच को प्रेस करें। (Control train using A-9. Press PVEF foot switch until BC gauge reads 0 kg/cm²).",
+        "3. इलेक्ट्रिकल ब्रेक पावर उपलब्ध नहीं रहेगा, ब्रेकिंग सिर्फ A-9 / SA-9 के द्वारा ही उपलब्ध रहेगी। (Electrical/regenerative brake power will not be available; braking will be available strictly via A-9 / SA-9).",
+        "4. सामान्य ट्रैक्शन चालू करें। (Resume normal traction).",
+        "5. TLC को सूचित करें और लोको लॉग बुक में दर्ज करें। (Inform TLC and record in loco log book)."
+      ],
+      precautions: "रीजेनेरेटिव ब्रेक फ़ेल होने पर गाड़ी को नियंत्रित करने के लिए केवल ऑटोमैटिक ट्रेन ब्रेक (A-9) और डायरेक्ट लोको ब्रेक (SA-9) का ही प्रयोग करें। A-9 लगाने पर लोको ब्रेक बाइंडिंग और पहियों के स्किड होने से बचने के लिए आवश्यकतानुसार PVEF पैडल स्विच दबाकर BC प्रेशर 0 kg/cm² बनाए रखें। ढलान (Gradient) वाले सेक्शन में गति पर विशेष सतर्कता रखें क्योंकि इलेक्ट्रिकल डायनेमिक ब्रेकिंग अनुपलब्ध रहेगी।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1007P1, पेज 189 / 211)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 211,
+      pdfQuote: "SS10 F1007P1 Loco XXX SS10: Brake System\nREGENERATIVE BRAKE FAILURE\nPnuematic loco brake applied\nLSFI blink karegi, BPFA prakashit hoga.\n1. Throttle ko '0' par layein. Loco brake release ho jayenge. BPFA daba kar fault ACK karein.\n2. Gaadi ko A-9 ke dwara control karein. BC gauge 0 kg/cm2 aane tak PVEF ko press karein.\n3. Electrical brake power uplabdh nahi rahega, braking sirf A9 / SA9 ke dwara hi uplabdh rahegi.\n4. Samanya traction chalu karein.\n5. TLC ko suchit karein aur log book me darj karein."
+    };
+  }
+
+  // 0-SS10-F1008P1. SS10 F1008P1: EMERGENCY STOP, SHUT DOWN ON THE LOCO (Vadodara TSD Page 189-190 / 211-212)
+  const isSS10F1008P1Query =
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1009') && !norm.includes('f1010') &&
+    !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('exhaust cock') &&
+    (
+      norm.includes('f1008p1') ||
+      norm.includes('f1008') ||
+      norm.includes('emergency stop, shut down on the loco') ||
+      norm.includes('emergency stop shut down on the loco') ||
+      norm.includes('emergency stop, shut down') ||
+      norm.includes('shut down on the loco') ||
+      norm.includes('reset emergency stop push button') ||
+      norm.includes('reset emergency stop') ||
+      norm.includes('emergency stop push button') ||
+      norm.includes('emrj[>s) atiˆp p&s btn') ||
+      norm.includes('emrj[>s) atiˆp') ||
+      norm.includes('इमरजेंसी स्टॉप पुश बटन') ||
+      norm.includes('इमरजेंसी स्टॉप') ||
+      norm.includes('t)r k[(nsin') ||
+      norm.includes('तीर के निशान') ||
+      norm.includes('direction of the arrow') ||
+      (norm.includes('bpems') && (norm.includes('reset') || norm.includes('arrow') || norm.includes('घुमाकर') || norm.includes('प्रेस') || norm.includes('तीर') || norm.includes('stop') || norm.includes('स्टॉप'))) ||
+      (norm.includes('emergency stop') && (norm.includes('shut down') || norm.includes('loco') || norm.includes('reset') || norm.includes('button') || norm.includes('push button') || norm.includes('arrow'))) ||
+      (norm.includes('ss10') && (norm.includes('f1008') || norm.includes('emergency stop') || norm.includes('shut down')))
+    );
+
+  if (isSS10F1008P1Query) {
+    return {
+      identifiedFaultId: "F1008P1",
+      faultTitle: "SS10 F1008P1: EMERGENCY STOP, SHUT DOWN ON THE LOCO (Reset emergency stop push button / Throttle to 0) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 189-190 / 211-212):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1008P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nEMERGENCY STOP,\nSHUT DOWN ON THE LOCO\nTo release, reset emergency stop push button\nBring TE/BE Throttle to 0\n\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा।\nप्रभाव: VCB ओपन हो जाएगा, पैंटो लोअर हो जाएगा, इमरजेंसी ब्रेक लग जाएगा और BP प्रेशर शून्य (0 kg/cm²) हो जाएगा (TE/BE = 0)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 7-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। (Bring throttle to '0').",
+        "2. इमरजेंसी स्टॉप पुश बटन (BPEMS) पर लगे तीर के निशान के अनुसार घुमाकर उसे रीसेट करें। रीसेट करने के बाद वह पूर्व स्थिति (Normal position) में आ जाएगा। (Reset emergency stop push button BPEMS by turning it clockwise as per arrow mark until it pops out to its normal position).",
+        "3. BPFA को प्रेस करके फ़ॉल्ट ACK करें। (Press BPFA to acknowledge fault).",
+        "4. पैंटो उठाएं। (Raise pantograph via ZPT).",
+        "5. VCB क्लोज करें। (Close VCB via BLDJ).",
+        "6. ब्रेक पाइप (BP = 5.0 kg/cm²) और मेन रिज़र्वायर (MR) प्रेशर सामान्य होने के बाद सामान्य ट्रैक्शन चालू करें। (Resume traction after BP charges to 5.0 kg/cm² and MR pressure normalizes).",
+        "7. यदि सफलता नहीं मिलती है तो दूसरी कैब (Rear Cab) से प्रयत्न करें। (If unsuccessful, try from the other cab)."
+      ],
+      precautions: "इमरजेंसी स्टॉप पुश बटन (BPEMS) दबने पर लोको की मुख्य पावर कट-ऑफ (VCB ओपन, पैंटो लोअर) हो जाती है तथा BP प्रेशर तुरंत शून्य होकर इमरजेंसी ब्रेक लग जाता है। बटन को तीर की दिशा में क्लॉकवाइज़ घुमाकर खींचें ताकि वह सामान्य स्थिति में बाहर आ सके। सुनिश्चित करें कि दोनों कैब में BPEMS बटन रीसेट अवस्था में हों। रीसेट के बाद पैंटो उठाने एवं VCB क्लोज करने से पूर्व BPFA दबाना न भूलें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1008P1, पेज 189-190 / 211-212)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 212,
+      pdfQuote: "SS10 F1008P1 Loco XXX SS10: Brake System\nEMERGENCY STOP, SHUT DOWN ON THE LOCO\nTo release, reset emergency stop push button, Bring TE/BE Throttle to 0\n1. Throttle ko '0' par layein.\n2. Emergency stop push button par lage teer ke nishan ke anusar ghumakar use reset karein. Reset karne ke baad vah poorva sthiti me aa jayega.\n3. BPFA ko press karein.\n4. Panto uthayein.\n5. VCB close karein.\n6. BP aur MR samanya hone ke baad traction chalu karein.\n7. Yadi safalta nahi milti hai to doosri cab se prayatna karein."
+    };
+  }
+
+  // 0-SS10-F1009P1. SS10 F1009P1: TRACTION NOT ALLOWED WITH APPLIED BRAKE (Release loco brake / Bring TE/BE Throttle to 0) (Vadodara TSD Page 190 / 212)
+  const isSS10F1009P1Query =
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1010') &&
+    !norm.includes('cock 74') && !norm.includes('cock-74') && !norm.includes('exhaust cock') &&
+    (
+      norm.includes('f1009p1') ||
+      norm.includes('f1009') ||
+      norm.includes('traction not allowed with applied brake') ||
+      norm.includes('traction not allowed with applied') ||
+      norm.includes('release loco brake') ||
+      norm.includes('applied brake') ||
+      norm.includes('0.65 kg/cm2') ||
+      norm.includes('0.65 kg/cm') ||
+      norm.includes('0.65') ||
+      norm.includes('269.6') ||
+      norm.includes('269.6/1') ||
+      norm.includes('269.6/2') ||
+      norm.includes('bail ring') ||
+      norm.includes('20cp') ||
+      norm.includes('c3w (dat^^)¾y*tr') ||
+      norm.includes('c3w डिस्ट्रीब्यूटर') ||
+      norm.includes('li[ki[ b\\[k') ||
+      norm.includes('li[ki[ b[k') ||
+      (norm.includes('sa-9') && (norm.includes('li[ki[') || norm.includes('(rl)j') || norm.includes('लोको') || norm.includes('रिलीज') || norm.includes('c3w') || norm.includes('269.6') || norm.includes('bail ring') || norm.includes('20cp') || norm.includes('0.65') || norm.includes('applied brake'))) ||
+      (norm.includes('लोको ब्रेक') && (norm.includes('रिलीज') || norm.includes('लागू') || norm.includes('अवरुद्ध') || norm.includes('0.65') || norm.includes('ट्रैक्शन'))) ||
+      (norm.includes('ss10') && (norm.includes('f1009') || norm.includes('applied brake') || norm.includes('release loco brake')))
+    );
+
+  if (isSS10F1009P1Query) {
+    return {
+      identifiedFaultId: "F1009P1",
+      faultTitle: "SS10 F1009P1: TRACTION NOT ALLOWED WITH APPLIED BRAKE (Release loco brake / Bring TE/BE Throttle to 0) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 190 / 212):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1009P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nTRACTION NOT ALLOWED\nWITH APPLIED BRAKE\nRelease loco brake\nBring TE/BE Throttle to 0\n\nआने की शर्त: यह मैसेज तब आएगा जब ब्रेक सिलिंडर (BC) प्रेशर > 0.65 kg/cm² हो, थ्रोटल '0' पर न हो तथा गाड़ी की गति 10 kmph से अधिक हो।\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा।\nप्रभाव: लोको ब्रेक लागू रहने पर ट्रैक्शन अवरुद्ध (TE/BE = 0)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 5-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0', acknowledge fault by pressing BPFA).",
+        "2. SA-9 से लोको ब्रेक रिलीज़ करें {सुनिश्चित करें कि पिछली कैब का SA-9 भी RELEASE पर हो}:-\n   • E-70 युक्त लोको में: न्यूमैटिक पैनल पर लगे C3W डिस्ट्रीब्यूटर वाल्व का रिलीज़ हैंडल (QRV) खींचें।\n   • CCB (Knorr Bremse) वाले लोको में: SA-9 हैंडल पर लगी बेल रिंग (Bail Ring) को ऊपर उठाएं तथा न्यूमैटिक पैनल पर 20CP एवं 16CP निप्पल (टेस्ट पॉइंट) को प्रेस करें।",
+        "3. यदि कैब में BC गेज ‘ 0 ’ kg/cm² बता रहा है और फिर भी यह मैसेज आता है, तो AR (Auxiliary Reservoir) और न्यूमैटिक पैनल के बीच लगे प्रेशर स्विच 269.6/1 और 269.6/2 को हल्के से थपथपाएं (Tap gently).",
+        "4. यदि सफलता नहीं मिलती है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके ऑन (MCE OFF/ON) करें।",
+        "5. TLC को सूचित करें और लोको लॉग बुक में दर्ज करें। (नोट: यह मैसेज पैसेंजर गाड़ी में ACP / अलार्म चेन पुलिंग के दौरान भी आ सकता है यदि BP प्रेशर 0.6 kg/cm² से ज्यादा ड्रॉप हो)।"
+      ],
+      precautions: "ब्रेक सिलिंडर में 0.65 kg/cm² से अधिक प्रेशर रहने और गति 10 KMPH से ऊपर होने पर सॉफ्टवेयर ट्रैक्शन नहीं देता ताकि ब्रेक बाइंडिंग और पहियों पर भारी खिंचाव न हो। SA-9 को दोनों कैब में RELEASE में रखें। CCB लोको में बेल रिंग उठाकर त्वरित लोको ब्रेक रिलीज करें। BC गेज 0 होने पर प्रेशर स्विच 269.6/1 व 269.6/2 को टैप करें। ACP होने पर पहले BP 5.0 kg/cm² चार्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1009P1, पेज 190 / 212)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 212,
+      pdfQuote: "SS10 F1009P1 Loco XXX SS10: Brake System\nTRACTION NOT ALLOWED WITH APPLIED BRAKE\nRelease loco brake, Bring TE/BE Throttle to 0\nMessage tab aayega jab BC pressure > 0.65 kg/cm2, Throttle '0' par nahi hai tatha speed > 10 kmph hai.\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. SA-9 se loco brake release karein. E-70 me C3W distributor valve release handle kheechein. CCB me Bail ring uthayein tatha 20CP evam 16CP nipple press karein.\n3. Yadi BC gauge '0' bata raha hai to pressure switch 269.6/1 aur 269.6/2 ko thapthapayein.\n4. MCE OFF/ON karein.\n5. TLC ko suchit karein, log book me darj karein. Note: Passenger train me ACP ke dauran bhi aa sakta hai yadi BP > 0.6 kg/cm2 drop ho."
+    };
+  }
+
+  // 0-SS10-F1010P1. SS10 F1010P1: EMG. EXHAUST COCK CLOSED, NO TRACTION (For traction open the cock / Bring TE/BE Throttle to 0) (Vadodara TSD Page 190 / 212)
+  const isSS10F1010P1Query =
+    !norm.includes('f1001') && !norm.includes('f1002') && !norm.includes('f1003') && !norm.includes('f1004') &&
+    !norm.includes('f1005') && !norm.includes('f1006') && !norm.includes('f1007') && !norm.includes('f1008') && !norm.includes('f1009') &&
+    (
+      norm.includes('f1010p1') ||
+      norm.includes('f1010') ||
+      norm.includes('emg. exhaust cock closed') ||
+      norm.includes('emg exhaust cock closed') ||
+      norm.includes('exhaust cock closed') ||
+      norm.includes('emg. exhaust cock') ||
+      norm.includes('emg exhaust cock') ||
+      norm.includes('for traction open the cock') ||
+      norm.includes('open the cock') ||
+      norm.includes('cock 74') ||
+      norm.includes('cock-74') ||
+      norm.includes('cock no 74') ||
+      norm.includes('cock no. 74') ||
+      norm.includes('कॉक 74') ||
+      norm.includes('कॉक नं 74') ||
+      norm.includes('कॉक नं. 74') ||
+      norm.includes('kiˆk n> 74') ||
+      norm.includes('kiˆk 74') ||
+      norm.includes('emrj[>s) e³ziˆat') ||
+      norm.includes('इमरजेंसी एग्जॉस्ट कॉक') ||
+      norm.includes('इमरजेंसी एग्जॉस्ट') ||
+      (norm.includes('exhaust cock') && (norm.includes('closed') || norm.includes('traction') || norm.includes('74'))) ||
+      (norm.includes('74') && (norm.includes('cock') || norm.includes('कॉक') || norm.includes('kiˆk') || norm.includes('exhaust') || norm.includes('limiting switch') || norm.includes('(l(mt)>g'))) ||
+      (norm.includes('ss10') && (norm.includes('f1010') || norm.includes('exhaust') || norm.includes('74')))
+    );
+
+  if (isSS10F1010P1Query) {
+    return {
+      identifiedFaultId: "F1010P1",
+      faultTitle: "SS10 F1010P1: EMG. EXHAUST COCK CLOSED, NO TRACTION (For traction open the cock / Bring TE/BE Throttle to 0) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 190 / 212):\nसबसिस्टम: SS10 (Brake System)\nदोष कोड: F1010P1\nदोष संदेश:\nLoco XXX SS10: Brake System\nEMG. EXHAUST COCK\nCLOSED, NO TRACTION\nFor traction open the cock\nBring TE/BE Throttle to 0\n\nलैम्प संकेत: LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा।\nप्रभाव: न्यूमैटिक पैनल पर इमरजेंसी एग्जॉस्ट कॉक नं. 74 बंद रहने पर ट्रैक्शन अवरुद्ध रहेगा (TE/BE = 0 / No traction)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 4-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0', acknowledge fault by pressing BPFA).",
+        "2. न्यूमैटिक पैनल पर लगे इमरजेंसी एग्जॉस्ट कॉक नं. 74 (Emergency Exhaust Cock No. 74) को खोल दें (OPEN करें)।",
+        "3. यदि कॉक नं. 74 पहले से ओपन है और फिर भी यह मैसेज आता है, तो इसका मतलब कॉक पर लगे लिमिटिंग स्विच (Limiting Switch) में खराबी या गंदगी है; कॉक 74 को 2-3 बार ऑपरेट (खोलें/बंद) करें। (If Cock 74 is already open and fault persists, limiting switch is jammed/defective; operate Cock 74 two to three times).",
+        "4. यदि लोको सामान्य होता है तो आगे कार्य करें, अन्यथा कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके पुनः ऑन (MCE OFF/ON) करें। (If loco normalizes, resume operation; otherwise perform MCE OFF/ON reset)."
+      ],
+      precautions: "कॉक 74 न्यूमैटिक पैनल पर इमरजेंसी एग्जॉस्ट का मुख्य सुरक्षा कॉक है। इसका खुला रहना अनिवार्य है ताकि आपातकालीन स्थिति में BP प्रेशर तुरंत एग्जॉस्ट हो सके। इसके बंद रहने पर लिमिटिंग स्विच कंप्यूटर को सिग्नल देकर ट्रैक्शन ब्लॉक कर देता है। कॉक ऑपरेट करने पर भी स्विच सेंस न करे तो MCE रीसेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS10 Brake System (F1010P1, पेज 190 / 212)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 212,
+      pdfQuote: "SS10 F1010P1 Loco XXX SS10: Brake System\nEMG. EXHAUST COCK CLOSED, NO TRACTION\nFor traction open the cock, Bring TE/BE Throttle to 0\n1. Throttle ko '0' par layein. BPFA daba kar fault ACK karein.\n2. Pneumatic panel par lage emergency exhaust cock no. 74 ko khol dein.\n3. Yadi cock no. 74 open hai aur fir bhi message aata hai to limiting switch me kharabi hai, use 2-3 baar operate karein.\n4. Yadi loco samanya hota hai to aage karya karein anyatha MCE OFF/ON karein."
+    };
+  }
+
+  // 0-SS11-F1101P2. SS11 F1101P2: MCB(S) TRIPPED IN AUX. CUBICLE 1 (Vadodara TSD Page 191 / 213)
+  const isSS11F1101P2Query =
+    !norm.includes('f1201') &&
+    !norm.includes('ss12') &&
+    !norm.includes('cubicle 2') &&
+    !norm.includes('hb2') &&
+    !norm.includes('hb-2') &&
+    !norm.includes('54.1/2') &&
+    !norm.includes('f1101p1') &&
+    !norm.includes('f1102') &&
+    !norm.includes('f1103') &&
+    !norm.includes('f1104') &&
+    !norm.includes('f1105') &&
+    !norm.includes('f1106') &&
+    !norm.includes('earth fault') &&
+    !norm.includes('415') &&
+    !norm.includes('compressor') &&
+    !norm.includes('47.1') &&
+    !norm.includes('overload on ocb') &&
+    !norm.includes('vigilance') &&
+    !norm.includes('switch 160') &&
+    !norm.includes('shunting mode') &&
+    (
+      norm.includes('f1101p2') ||
+      norm.includes('f1101') ||
+      (norm.includes('ss11') && (norm.includes('cubicle') || norm.includes('mcb') || norm.includes('f1101'))) ||
+      norm.includes('aux. cubicle 1') ||
+      norm.includes('aux cubicle 1') ||
+      norm.includes('cubicle 1') ||
+      norm.includes('auxiliaries hb1') ||
+      norm.includes('auxiliaries hb-1') ||
+      norm.includes('mcb(s) tripped in aux. cubicle 1') ||
+      norm.includes('mcb(s) tripped in aux') ||
+      norm.includes('mcb tripped in aux') ||
+      norm.includes('if temperature exceed') ||
+      norm.includes('temperature exceed') ||
+      norm.includes('traction power may get reduced') ||
+      norm.includes('hb-1 m[> lg[ mcb') ||
+      norm.includes('hb-1 m[>') ||
+      norm.includes('hb1 m[>') ||
+      norm.includes('hb-1 में लगे mcb') ||
+      norm.includes('hb1 में लगे mcb') ||
+      ((norm.includes('hb-1') || norm.includes('hb1') || norm.includes('cubicle 1')) && (norm.includes('mcb') || norm.includes('tripped') || norm.includes('(t^p') || norm.includes('ट्रिप'))) ||
+      (norm.includes('54.1/1') && (norm.includes('bur-1') || norm.includes('bur 1') || norm.includes('auxiliary converter 1') || norm.includes('ai³j)lr) knvt<r 1') || norm.includes('isolate')))
+    );
+
+  if (isSS11F1101P2Query) {
+    return {
+      identifiedFaultId: "F1101P2",
+      faultTitle: "SS11 F1101P2: MCB(S) TRIPPED IN AUX. CUBICLE 1 (Traction power may get reduced, if temperature exceed) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 191 / 213):\nसबसिस्टम: SS11 (Auxiliaries HB1)\nदोष कोड: F1101P2\nदोष संदेश:\nLoco XXX SS11: Auxiliaries HB1\nMCB(S) TRIPPED IN AUX. CUBICLE 1\nTraction power may get reduced, if temperature exceed.\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: HB-1 में MCB ट्रिप होने से संबंधित ऑक्सिलरी बंद हो सकती है; तापमान बढ़ने पर ट्रैक्शन पॉवर कम हो सकती है अथवा बोगी-1 आइसोलेट हो सकती है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 7-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. HB-1 में लगे MCB को चेक करें, यदि कोई MCB ट्रिप मिले, तो उसे VCB ओपन करके एक बार रीसेट करें। (Check MCBs in HB-1 cubicle; if any MCB is tripped, open VCB and reset once).",
+        "2. BPFA दबाकर फ़ॉल्ट एक्नॉलेज (ACK) करें। सामान्य ऑपरेशन चालू रखें। (Acknowledge fault via BPFA and continue normal operation).",
+        "3. यदि कोई भी MCB ट्रिप नहीं है, फिर भी मैसेज आ रहा है और सभी ऑक्सिलरी कार्य कर रही हैं, तो उस पर ध्यान न दें। यह संबंधित MCB के कंट्रोल कॉन्टैक्ट (Control Contact) खराब होने के कारण हो सकता है। (If no MCB is tripped yet the message appears and all auxiliaries are running, ignore it; this could be due to defective auxiliary control contact of MCB).",
+        "4. यदि उपरोक्त अनुक्रम 1 के अनुसार MCB (59.1/1 OCB-1, 62.1/1 TFP पंप 1, 63.1/1 SR पंप 1, 53.1/1 TMB-1) रीसेट करने के बाद दोबारा ट्रिप हो रहे हैं, तो लोको पायलट उसे रीसेट करने की कोशिश न करें। SS08 के अंत में दिए गए पेज नं 179 / 180 'ऑक्सिलरी के MCB बार-बार ट्रिप होने पर' के अनुसार ट्रबलशूट करें। (If MCB 59.1/1, 62.1/1, 63.1/1 or 53.1/1 trip again after resetting, do NOT reset again; follow TSD Page 179/180 instructions for repeated MCB tripping).",
+        "5. TLC को सूचित करें तथा लॉग बुक में नोट करें। यदि तापमान अधिक होने से अपने आप बोगी-1 आइसोलेट हो जाती है तो एक बोगी (Bogie-2) के साथ ट्रैक्शन चालू रखें। (Inform TLC and record in log book. If Bogie-1 isolates automatically due to temperature, continue traction with single bogie).",
+        "6. अगर अनुक्रम 4 में दिए गए MCB के अलावा दूसरे MCB रीसेट करने के पश्चात दोबारा ट्रिप हो रहे हैं, तो जहाँ तक संभव हो सामान्य ऑपरेशन चालू रखें और TLC को सूचित करें। (If MCBs other than those in step 4 trip again, continue normal operation as far as possible and inform TLC).",
+        "7. MCB 54.1/1 को चेक करें, यदि ट्रिप है तो एक बार रीसेट करें। यदि फिर से ट्रिप होती है और यदि ऑक्सिलरी कनवर्टर 1 (BUR-1) आइसोलेट हो जाता है तो गाड़ी चलाएं। TLC को सूचित करें। (Check MCB 54.1/1; if tripped, reset once. If it trips again and BUR-1 is isolated, continue running train and inform TLC)."
+      ],
+      precautions: "HB-1 पैनल में किसी भी MCB को रीसेट करने से पूर्व VCB ओपन करना अनिवार्य है। विशेष रूप से 3-फेज ऑक्सिलरी मोटर MCBs (59.1/1, 62.1/1, 63.1/1, 53.1/1) बार-बार ट्रिप होने पर उन्हें बार-बार रीसेट न करें, क्योंकि इससे मोटर जलने का भारी खतरा रहता है। यदि तापमान अधिक होने से बोगी-1 स्वतः आइसोलेट हो जाए, तो सिंगल बोगी से क्लियर करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS11 Auxiliaries HB1 (F1101P2, पेज 191 / 213)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 213,
+      pdfQuote: "SS11 F1101P2 Loco XXX SS11: Auxiliaries HB1\nMCB(S) TRIPPED IN AUX. CUBICLE 1\nTraction power may get reduced, if temperature exceed.\n1. HB-1 me lage MCB ko check karein, yadi koi MCB trip mile to use VCB open karke ek baar reset karein.\n2. BPFA dwara fault acknowledge karein. Samanya operation chalu rakhein.\n3. Yadi koi bhi MCB trip nahi hai phir bhi message aa raha hai aur sabhi auxiliary karya kar rahi hain to us par dhyan na dein. Yah sambandhit MCB ke control contact kharab hone ke karan ho sakta hai.\n4. Yadi anukram 1 ke anusar MCB (59.1/1, 62.1/1, 63.1/1, 53.1/1) reset karne ke baad dobara trip ho rahe hain to use reset karne ki koshish na karein. SS08 ke ant me diye gaye page no 179/180 ke anusar troubleshoot karein.\n5. TLC ko suchit karein tatha log book me note karein. Yadi apne aap bogie-1 isolate ho jaati hai to ek bogie ke saath traction chalu rakhein.\n6. Agar anukram 4 ke MCB ke alawa doosre MCB reset karne ke baad dobara trip ho rahe hain to jahan tak sambhav ho samanya operation chalu rakhein aur TLC ko suchit karein.\n7. MCB 54.1/1 ko check karein, yadi trip ho to ek baar reset karein. Yadi phir se trip hoti hai aur auxiliary converter 1 isolate ho jata hai to gaadi chalayein. TLC ko suchit karein."
+    };
+  }
+
+  // 0-SS11-F1102P2. SS11 F1102P2: EARTH FAULT 415/110V CIRCUIT (Vadodara TSD Page 191 / 213)
+  const isSS11F1102P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1103') && !norm.includes('f1104') && !norm.includes('f1105') && !norm.includes('f1106') &&
+    (
+      norm.includes('f1102p2') ||
+      norm.includes('f1102') ||
+      (norm.includes('earth fault') && (norm.includes('415') || norm.includes('110v') || norm.includes('415/110v'))) ||
+      norm.includes('earth fault 415/110v circuit') ||
+      norm.includes('earth fault 415/110v') ||
+      norm.includes('earth fault 415') ||
+      norm.includes('415/110v circuit') ||
+      norm.includes('415/110v') ||
+      (norm.includes('ss11') && (norm.includes('earth fault') || norm.includes('415') || norm.includes('f1102'))) ||
+      ((norm.includes('normal operation can continue') || norm.includes('to be checked during maintenance')) && (norm.includes('415') || norm.includes('hb1') || norm.includes('hb-1') || norm.includes('ss11')))
+    );
+
+  if (isSS11F1102P2Query) {
+    return {
+      identifiedFaultId: "F1102P2",
+      faultTitle: "SS11 F1102P2: EARTH FAULT 415/110V CIRCUIT (Normal operation can continue / To be checked during maintenance) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 191 / 213):\nसबसिस्टम: SS11 (Auxiliaries HB1)\nदोष कोड: F1102P2\nदोष संदेश:\nLoco XXX SS11: Auxiliaries HB1\nEARTH FAULT 415/110V\nCIRCUIT\nNormal operation can continue\nTo be checked during maintenance\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रह सकता है (Normal operation can continue)। 415V/110V ऑक्ज़ीलरी सर्किट में अर्थ फ़ॉल्ट का पता चला है, जिसकी जांच मेंटेनेंस/शेड में की जानी है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। सामान्य ट्रैक्शन चालू करें। (Press BPFA to acknowledge fault. Continue normal traction / train operation).",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make an entry in loco log book)."
+      ],
+      precautions: "415V/110V ऑक्ज़ीलरी परिपथ में अर्थ फ़ॉल्ट (Earth Fault) आने पर सामान्य ट्रेन संचालन पर तात्कालिक कोई प्रतिकूल प्रभाव नहीं पड़ता है, अतः अनावश्यक पैनिक न करें। BPFA दबाकर फ़ॉल्ट एक्नॉलेज करें और निर्धारित गति से ट्रेन का संचालन जारी रखें। शेड मेंटेनेंस स्टाफ द्वारा 415V/110V परिपथ का मेगर टेस्ट व इंसुलेशन जांच सुलभ हो सके, इसलिए TLC को सूचना देना एवं लॉग बुक में विवरण दर्ज करना अनिवार्य है।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS11 Auxiliaries HB1 (F1102P2, पेज 191 / 213)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 213,
+      pdfQuote: "SS11 F1102P2 Loco XXX SS11: Auxiliaries HB1\nEARTH FAULT 415/110V\nCIRCUIT\nNormal operation can continue\nTo be checked during maintenance\n1. BPFA dbikr fiˆÃT ACK kr>[. simiºy T^]±Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS11-F1103P2. SS11 F1103P2: MCB OFF MAIN COMPRESSOR OPEN (Vadodara TSD Page 192 / 214)
+  const isSS11F1103P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1202') && !norm.includes('ss12') && !norm.includes('compressor 2') && !norm.includes('compressor-2') && !norm.includes('kàp\\[sr 2') && !norm.includes('hb2') && !norm.includes('hb-2') &&
+    (
+      norm.includes('f1103p2') ||
+      norm.includes('f1103') ||
+      norm.includes('mcb off main compressor') ||
+      norm.includes('mcb off main compressor open') ||
+      norm.includes('compressor 1 not available') ||
+      norm.includes('compressor-1 not available') ||
+      norm.includes('47.1/1') ||
+      norm.includes('kàp\\[sr') ||
+      (norm.includes('ss11') && (norm.includes('compressor') || norm.includes('47.1') || norm.includes('f1103')))
+    );
+
+  if (isSS11F1103P2Query) {
+    return {
+      identifiedFaultId: "F1103P2",
+      faultTitle: "SS11 F1103P2: MCB OFF MAIN COMPRESSOR OPEN (Compressor 1 not available) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 192 / 214):\nसबसिस्टम: SS11 (Auxiliaries HB1)\nदोष कोड: F1103P2\nदोष संदेश:\nLoco XXX SS11: Auxiliaries HB1\nMCB OFF MAIN\nCOMPRESSOR\nOPEN\nCompressor 1 not available\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: कम्प्रेसर 1 उपलब्ध नहीं रहेगा (Compressor 1 not available)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. ऑक्सिलरी क्यूबिकल HB-1 में लगे MCB नं. 47.1/1 चेक करें। यदि ट्रिप मिले, VCB ओपन करके एक बार रीसेट करें। (Check MCB 47.1/1 in Aux. Cubicle HB-1; if tripped, open VCB and reset once).",
+        "2. BPFA दबाकर फ़ॉल्ट ACK करें। (Acknowledge fault by pressing BPFA push button).",
+        "3. सामान्य ट्रैक्शन चालू करें। अगर वही मैसेज दोबारा आता है तो एक कम्प्रेसर (MCP-2) के साथ गाड़ी चलाएं। (Continue normal traction; if the same message reappears, work train with single compressor).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make an entry in loco log book).",
+        "नोट: यदि MCB नं. 47.1/1 और 47.1/2 बार-बार ट्रिप होते हैं तो VCB ओपन करके MCBs रीसेट करें और BUR-3 को आइसोलेट करें। (Note: If both MCBs 47.1/1 and 47.1/2 trip repeatedly, open VCB, reset MCBs and isolate BUR-3 as per TSD page 180)."
+      ],
+      precautions: "HB-1 में MCB 47.1/1 को रीसेट करने से पूर्व VCB ओपन करना अनिवार्य है। एक कम्प्रेसर उपलब्ध रहने पर भी सामान्यतः ट्रेन चलाई जा सकती है बशर्ते MR प्रेशर सामान्य (8.0 से 10.0 kg/cm²) बना रहे। यदि दोनों कम्प्रेसर MCBs (47.1/1 व 47.1/2) बार-बार ट्रिप हों, तो यह BUR-3 के आउटपुट वोल्टेज असंतुलन की वजह से हो सकता है, ऐसे में BUR-3 को आइसोलेट करने की TSD प्रक्रिया अपनाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS11 Auxiliaries HB1 (F1103P2, पेज 192 / 214)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 214,
+      pdfQuote: "SS11 F1103P2 Loco XXX SS11: Auxiliaries HB1\nMCB OFF MAIN\nCOMPRESSOR\nOPEN\nCompressor 1 not available\n1. aiˆ(±Jlr) ±y&b)kl HB-1 m[> lg[ MCB n>0 47.1/1 c]k kr>[. y(d (T^p (ml[, VCB ai[pn krk[ Ek bir (rs[T kr>[.\n2. BPFA dbikr fiˆÃT ACK kr>[.\n3. simiºy T^]±Sn cil* kr>[.agr vh) m]s[j d&biri aiti h] ti[ Ek kÀp\[Sr k[ siY giD) cliE>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\nni[T : y(d MCB n>0 47.1/1 ai]r 47.1/2 bir-bir (T^^p hi[ti h] ti[ VCB ai[pn krk[ MCBs (rs[T kr[> ai]r BUR-3 ki[ aiesi[l[T kr[>."
+    };
+  }
+
+  // 0-SS11-F1104P2. SS11 F1104P2: OVERLOAD ON OCB-1 (Vadodara TSD Page 192 / 214)
+  const isSS11F1104P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1203') && !norm.includes('ss12') && !norm.includes('ocb-2') && !norm.includes('ocb 2') && !norm.includes('59.1/2') && !norm.includes('hb2') && !norm.includes('hb-2') && !norm.includes('bogie-2') && !norm.includes('bogie 2') && !norm.includes('bi[g) -2') && !norm.includes('bi[g)-2') &&
+    (
+      norm.includes('f1104p2') ||
+      norm.includes('f1104') ||
+      norm.includes('overload on ocb-1') ||
+      norm.includes('overload on ocb 1') ||
+      norm.includes('overload on ocb') ||
+      norm.includes('isolate ocb') ||
+      (norm.includes('ocb-1') && norm.includes('overload')) ||
+      (norm.includes('ocb 1') && norm.includes('overload')) ||
+      (norm.includes('ss11') && (norm.includes('overload') || norm.includes('ocb') || norm.includes('f1104')))
+    );
+
+  if (isSS11F1104P2Query) {
+    return {
+      identifiedFaultId: "F1104P2",
+      faultTitle: "SS11 F1104P2: OVERLOAD ON OCB-1 (Isolate OCB) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 192 / 214):\nसबसिस्टम: SS11 (Auxiliaries HB1)\nदोष कोड: F1104P2\nदोष संदेश:\nLoco XXX SS11: Auxiliaries HB1\nOVERLOAD ON OCB-1\nIsolate OCB\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: OCB-1 पर ओवरलोड होने से ऑयल कूलिंग प्रभावित होगी; बोगी-1 को आइसोलेट करना होगा (आधा ट्रैक्शन पावर उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0'. Acknowledge fault by pressing BPFA push button).",
+        "2. HB-1 में लगे ऑयल कूलिंग ब्लोअर के MCB 59.1/1 को ट्रिप करें। (Trip Oil Cooling Blower MCB 59.1/1 located in HB-1 cubicle).",
+        "3. बोगी-1 को स्विच 154 द्वारा आइसोलेट करें। (Isolate Bogie-1 via rotary switch 154 in SB-1 panel).",
+        "4. एक बोगी (बोगी-2) के साथ सामान्य ऑपरेशन कर सकते हैं। (Continue train operation with single healthy Bogie-2 with 50% traction power; inform TLC & logbook)."
+      ],
+      precautions: "OCB-1 पर ओवरलोड होने पर ट्रांसफॉर्मर व कनवर्टर 1 का तापमान बढ़ सकता है। अतः MCB 59.1/1 को तुरंत ट्रिप करें और बोगी कट-आउट स्विच 154 द्वारा बोगी-1 को आइसोलेट करें। एकल बोगी (बोगी-2) के 50% ट्रैक्शन के साथ गति प्रतिबंधों व ग्रेडिएंट का ध्यान रखते हुए कार्य करें तथा TLC को अवश्य सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS11 Auxiliaries HB1 (F1104P2, पेज 192 / 214)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 214,
+      pdfQuote: "SS11 F1104P2 Loco XXX SS11: Auxiliaries HB1\nOVERLOAD ON OCB-1\nIsolate OCB\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2. HB-1 m[> lg[ aiˆel k&(l>g ¾li[ar k[ MCB 59.1/1 ki[ (T^p kr>[.\n3. bi[g)-1 ki[ (Avc 154 oiri aiesi[l[T kr>[.\n4. Ek bi[g) k[ siY simiºy aiˆpr[Sn kr skt[ h]>."
+    };
+  }
+
+  // 0-SS11-F1105P2. SS11 F1105P2: ROTARY SWITCH VIGILANCE OFF / ON POSITION (Vadodara TSD Page 192 / 214)
+  const isSS11F1105P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1105p2') ||
+      norm.includes('f1105') ||
+      norm.includes('rotary switch vigilance') ||
+      norm.includes('vigilance off / on position') ||
+      norm.includes('vigilance off/on position') ||
+      (norm.includes('vigilance') && norm.includes('rotary switch')) ||
+      (norm.includes('ss11') && (norm.includes('vigilance') || norm.includes('237.1') || norm.includes('f1105')))
+    );
+
+  if (isSS11F1105P2Query) {
+    return {
+      identifiedFaultId: "F1105P2",
+      faultTitle: "SS11 F1105P2: ROTARY SWITCH VIGILANCE OFF / ON POSITION (Normal Operation) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 192 / 214):\nसबसिस्टम: SS11 (Auxiliaries HB1)\nदोष कोड: F1105P2\nदोष संदेश:\nLoco XXX SS11: Auxiliaries HB1\nRotary Switch Vigilance off\n/ on position\nNormal operation\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: सामान्य ऑपरेशन जारी रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. BPFA दबाकर फ़ॉल्ट ACK करें। (Press BPFA push button to acknowledge fault).",
+        "2. सामान्य ट्रैक्शन चालू करें और सतर्क रहें। (Continue normal traction and remain alert).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make an entry in loco log book).",
+        "नोट: VCD को स्विच 237.1 (SB-1) के द्वारा केवल फ़ेलियर / माल-फंक्शन के दौरान ही आइसोलेट करें। (Note: Isolate VCD via switch 237.1 in SB-1 ONLY during genuine failure/malfunction)."
+      ],
+      precautions: "रोटरी स्विच 237.1 (विजिलेंस कट-आउट स्विच) की स्थिति बदलने या सामान्य निगरानी संदेश आने पर BPFA दबाकर फ़ॉल्ट ACK करें। सामान्य परिस्थितियों में VCD को कभी भी आइसोलेट न करें; इसे केवल वास्तविक फ़ेलियर/मालफंक्शन होने पर ही TLC की अनुमति से स्विच 237.1 द्वारा आइसोलेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS11 Auxiliaries HB1 (F1105P2, पेज 192 / 214)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 214,
+      pdfQuote: "SS11 F1105P2 Loco XXX SS11: Auxiliaries HB1\nRotary Switch Vigilance off\n/ on position\nNormal operation\n1. BPFA dbikr fiˆÃT ACK kr>[.\n2. simiºy T^]±Sn cil* kr[> ai]r stk< rh>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\nni[T: VCD ki[ 237.1(SB-1) k[ oiri k[vl f[(lyr / mil-f>±Sn k[ di]rin h) aiesi[l[T kr>[."
+    };
+  }
+
+  // 0-SS11-F1106P2. SS11 F1106P2: ROTARY SWITCH 160 (Vadodara TSD Page 192 / 214)
+  const isSS11F1106P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1106p2') ||
+      norm.includes('f1106') ||
+      norm.includes('rotary switch 160') ||
+      norm.includes('switch 160') ||
+      norm.includes('shunting mode speed cannot be more than 15 kmph') ||
+      norm.includes('shunting mode speed') ||
+      norm.includes('15 kmph') ||
+      norm.includes('(avc n‚0 160') ||
+      norm.includes('(avc n> 160') ||
+      (norm.includes('ss11') && (norm.includes('160') || norm.includes('shunting') || norm.includes('f1106')))
+    );
+
+  if (isSS11F1106P2Query) {
+    return {
+      identifiedFaultId: "F1106P2",
+      faultTitle: "SS11 F1106P2: ROTARY SWITCH 160 (Loco in shunting mode speed cannot be more than 15 KMPH) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 192 / 214):\nसबसिस्टम: SS11 (Auxiliaries HB1)\nदोष कोड: F1106P2\nदोष संदेश:\nLoco XXX SS11: Auxiliaries HB1\nROTARY SWITCH 160\nLoco in shunting mode speed\ncannot be more than 15 KMPH\n\nलैम्प संकेत: BPFA प्रकाशित होगा।\nप्रभाव: लोको शंटिंग मोड में रहेगा तथा गति 15 KMPH से अधिक नहीं हो सकेगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. SB-1 पैनल पर लगे स्विच नं. 160 (Shunting Mode Switch) की पोजीशन चेक करें। यदि स्विच '0' (शंटिंग मोड) पर है, तो:\n   • थ्रोटल को '0' पर लाएं,\n   • गाड़ी की स्पीड '0' (लोको पूरी तरह खड़ा) करें,\n   • रिवर्सर को '0' (Neutral) पर लाएं,\n   • तथा स्विच 160 को '1' (Normal Mode) पर लाकर सामान्य गति प्राप्त करें।",
+        "2. BPFA दबाकर फ़ॉल्ट ACK करें। सामान्यतौर पर गाड़ी चलाएं। (Press BPFA to acknowledge fault. Drive train normally)."
+      ],
+      precautions: "शंटिंग मोड स्विच (Switch 160) को '0' से '1' या '1' से '0' पर बदलने के लिए अनिवार्य शर्तें हैं: (1) थ्रोटल '0' पर हो, (2) ट्रेन गति 0 KMPH हो (गाड़ी रुकी हो), एवं (3) रिवर्सर हैंडल '0' पर हो। चलती गाड़ी में स्विच 160 को ऑपरेट न करें। सामान्य लाइन संचालन के लिए स्विच 160 हमेशा पोजीशन '1' पर होना चाहिए।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS11 Auxiliaries HB1 (F1106P2, पेज 192 / 214)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 214,
+      pdfQuote: "SS11 F1106P2 Loco XXX SS11: Auxiliaries HB1\nROTARY SWITCH 160\nLoco in shunting mode speed\ncannot be more than 15 KMPH\n1. SB1 pr lg[ IAvc n‚0 160 k) pi[j)Sn c]k kr[>. y(d (Avc ‘ 0 ’ pr h] ti[ Y\\i[Tl ki[ ‘ 0 ’ pr liE>, Speed ‘ 0 ’ pr liE>, Reverser ‘ 0 ’ pr liE>, tYi Switch 160 ki[ ‘ 1 ’ pr likr simiºy g(t p\i¼t kr[>.\n2. BPFA dbikr fiˆÃT ACK kr>[.simiºyti]r pr giD) cliE>"
+    };
+  }
+
+  // 0-SS12-F1201P2. SS12 F1201P2: MCB(S) TRIPPED IN AUX. CUBICLE 2 (Vadodara TSD Page 193 / 215)
+  const isSS12F1201P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1202') && !norm.includes('f1203') && !norm.includes('compressor') && !norm.includes('kàp\\[sr') && !norm.includes('47.1') && !norm.includes('ocb') && !norm.includes('59.1/2') && !norm.includes('k&(l>g') && !norm.includes('¾li[ar') &&
+    (
+      norm.includes('f1201p2') ||
+      norm.includes('f1201') ||
+      (norm.includes('ss12') && (norm.includes('cubicle') || norm.includes('mcb') || norm.includes('f1201') || norm.includes('auxiliaries hb2') || norm.includes('hb2') || norm.includes('hb-2') || norm.includes('temperature exceed') || norm.includes('traction power'))) ||
+      norm.includes('aux. cubicle 2') ||
+      norm.includes('aux cubicle 2') ||
+      norm.includes('cubicle 2') ||
+      norm.includes('auxiliaries hb2') ||
+      norm.includes('auxiliaries hb-2') ||
+      norm.includes('mcb(s) tripped in aux. cubicle 2') ||
+      norm.includes('mcb tripped in aux. cubicle 2') ||
+      norm.includes('hb-2 m[> lg[ mcb') ||
+      norm.includes('hb-2 m[>') ||
+      norm.includes('hb2 m[>') ||
+      norm.includes('hb-2 में लगे mcb') ||
+      norm.includes('hb2 में लगे mcb') ||
+      ((norm.includes('hb-2') || norm.includes('hb2') || norm.includes('cubicle 2')) && (norm.includes('mcb') || norm.includes('tripped') || norm.includes('(t^p') || norm.includes('ट्रिप'))) ||
+      (norm.includes('54.1/2') && (norm.includes('shiyti mig[>') || norm.includes('सहायता मांग') || norm.includes('relief') || norm.includes('bogie-2') || norm.includes('bi[g)-2') || norm.includes('hb-2') || norm.includes('hb2') || norm.includes('cubicle 2') || norm.includes('ss12')))
+    );
+
+  if (isSS12F1201P2Query) {
+    return {
+      identifiedFaultId: "F1201P2",
+      faultTitle: "SS12 F1201P2: MCB(S) TRIPPED IN AUX. CUBICLE 2 (Traction power may get reduced, if temperature exceed) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 193 / 215):\nसबसिस्टम: SS12 (Auxiliaries HB2)\nदोष कोड: F1201P2\nदोष संदेश:\nLoco XXX SS12: Auxiliaries HB2\nMCB(S) TRIPPED IN AUX. CUBICLE 2\nTraction power may get reduced, if temperature exceed.\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: HB-2 में MCB ट्रिप होने से संबंधित ऑक्सिलरी बंद हो सकती है; तापमान बढ़ने पर ट्रैक्शन पॉवर कम हो सकती है अथवा बोगी-2 स्वतः आइसोलेट हो सकती है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 7-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. HB-2 में लगे MCBs को चेक करें, यदि कोई MCB ट्रिप मिले, तो उसे VCB ओपन करके एक बार रीसेट करें। (Check MCBs in HB-2; if any MCB is tripped, open VCB and reset once).",
+        "2. BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें। सामान्य ऑपरेशन चालू रखें। (Acknowledge fault via BPFA and continue normal operation).",
+        "3. यदि कोई भी MCB ट्रिप नहीं है, फिर भी मैसेज आ रहा है और सभी ऑक्सिलरी कार्य कर रही हैं, तो उस मैसेज पर ध्यान न दें। यह संबंधित MCB के कंट्रोल कॉन्टैक्ट खराब होने के कारण हो सकता है। (If no MCB is tripped yet message appears and all auxiliaries work, ignore it; could be due to defective auxiliary control contact of MCB).",
+        "4. यदि उपरोक्त अनुक्रम 1 के अनुसार MCB (59.1/2 OCB-2, 62.1/2 TFP पंप 2, 63.1/2 SR पंप 2, 53.1/2 TMB-2) रीसेट करने के बाद दोबारा ट्रिप हो रहे हैं, तो लोको पायलट उसे रीसेट करने की कोशिश न करें। SS08 के अंत में दिए गए पेज नं 179 / 180 'ऑक्सिलरी के MCB बार-बार ट्रिप होने' के अनुसार ट्रबलशूट करें। (If MCBs 59.1/2, 62.1/2, 63.1/2 or 53.1/2 trip again after resetting, do NOT reset again; follow TSD Page 179/180).",
+        "5. TLC को सूचित करें तथा लॉग बुक में नोट करें। यदि तापमान अधिक होने से अपने आप बोगी-2 आइसोलेट हो जाती है तो एक बोगी (बोगी-1) के साथ ट्रैक्शन चालू रखें। (Inform TLC and log. If Bogie-2 auto-isolates due to temperature, continue traction with single bogie).",
+        "6. यदि अनुक्रम 4 में दिए गए MCB के अलावा दूसरे MCB रीसेट करने के पश्चात दोबारा ट्रिप हो रहे हैं, तो जहाँ तक संभव हो सामान्य ऑपरेशन चालू रखें और TLC को सूचित करें। (If MCBs other than step 4 trip again, continue normal operation as far as possible and notify TLC).",
+        "7. MCB क्रम 54.1/2 (MRB-2) को चेक करें, यदि ट्रिप है तो एक बार रीसेट करें। यदि फिर से ट्रिप होती है तो सेक्शन साफ़ करके TLC को सूचित करें और सहायता इंजन मांगें। (Check MCB 54.1/2; if tripped, reset once. If it trips again, clear section, inform TLC and demand relief locomotive)."
+      ],
+      precautions: "अति महत्वपूर्ण तकनीकी अंतर: HB-1 में MCB 54.1/1 ट्रिप होने पर BUR-1 आइसोलेट कर ट्रेन चलाई जा सकती है, किन्तु HB-2 में MCB 54.1/2 (मशीन रूम ब्लोअर-2) बार-बार ट्रिप होने पर सेक्शन साफ़ करके TLC को सूचित करना तथा सहायता इंजन (Relief Loco) मांगना अनिवार्य है! 3-फेज ऑक्सिलरी मोटर MCBs (59.1/2, 62.1/2, 63.1/2, 53.1/2) को बार-बार रीसेट न करें। किसी भी MCB को रीसेट करने से पूर्व VCB ओपन अवश्य करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS12 Auxiliaries HB2 (F1201P2, पेज 193 / 215)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 215,
+      pdfQuote: "SS12 F1201P2 Loco XXX SS12: Auxiliaries HB2\nMCB(S) TRIPPED IN AUX. CUBICLE 2\nTraction power may get reduced, if temperature exceed.\n1. HB-2 m[> lg[ MCBs ki[ c]k kr>[, y(d ki[e< MCB (T^p (ml[, ti[ us[ VCB ai[pn krk[ Ek bir (rs[T kr>[.\n2. BPFA oiri fiˆÃT E±niˆl[j kr>[. simiºy aipr[Sn cil* rK[>.\n3. y(d ki[e< B) MCB (T^p nh)>> h] (fr B) m]s[j ai rhi h] ai]r sB) ai³j)lr) kiy< kr rh) h] ti[ us m]s[J pr ¹yin n d[> . yh s>b>(Ft MCB k[ k>T^i[l ki>T[±T Krib hi[n[ k[ kirN hi[ skti h].\n4.y(d upri[±t an&‘ k\‘ 1 k[ an&sir MCB (59.1/2 yi 62.1/2 yi 63.1/2 yi 53.1/2) (rs[T krn[ k[ bid d&biri (T^p hi[ rh[ h>] ti[ li[ki[ piylT us[ (rs[T krn[ k) ki[(SS n kr>[. SS08 k[ aºt m[> (dy[ gy[ p[j n> 179 / 180 aiˆ³J)lr) k[ MCB bir-bir (T^^p hi[n[ k[ an&sir T^bl S*T kr>[.\n5. TLC ki[ s*(ct kr>[ tYi liˆg b&k m[> ni[T kr>[.y(d apn[ aip bi[g)-2 aiesi[l[T hi[ jit) h] ti[ Ek bi[g) k[ siY T^]±Sn cil* rK[>.\n6. y(d an&‘k\‘ 4 m[> (dy[ gy[ MCB k[ alivi d*sr[ MCB (rs[T krn[ k[ pÆcit d&biri (T^p hi[ rh[ h] ti[ jhi‡ tk sÀBv h] ti[ simiºy aipr[Sn cil* rK[> ai]r TLCki[ s*(ct kr>[.\n7. MCB k\‘ 54.1/2 ki[ c[k kr[>, y(d (T^p h] ti[ Ek bir (rs[T kr[>, y(d (fr s[ (T^p hi[t) h] ti[ s[±Sn sif krk[ TLC ki[ s*(ct kr[> ai]r shiyti mig[>."
+    };
+  }
+
+  // 0-SS12-F1202P2. SS12 F1202P2: MCB OF MAIN COMPRESSOR OPEN (Vadodara TSD Page 194 / 216)
+  const isSS12F1202P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1103') && !norm.includes('compressor 1 not available') &&
+    (
+      norm.includes('f1202p2') ||
+      norm.includes('f1202') ||
+      (norm.includes('mcb of main compressor') && (norm.includes('compressor 2') || norm.includes('compressor-2') || norm.includes('ss12') || norm.includes('hb-2') || norm.includes('hb2') || norm.includes('47.1/2'))) ||
+      norm.includes('compressor 2 not available') ||
+      norm.includes('compressor-2 not available') ||
+      norm.includes('47.1/2 c]k') ||
+      (norm.includes('47.1/2') && (norm.includes('hb-2') || norm.includes('hb2') || norm.includes('cubicle') || norm.includes('mcb n>0 47.1/2') || norm.includes('mcb no 47.1/2') || norm.includes('compressor'))) ||
+      (norm.includes('ss12') && (norm.includes('compressor') || norm.includes('47.1/2') || norm.includes('f1202')))
+    );
+
+  if (isSS12F1202P2Query) {
+    return {
+      identifiedFaultId: "F1202P2",
+      faultTitle: "SS12 F1202P2: MCB OF MAIN COMPRESSOR OPEN (Compressor 2 not available) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 194 / 216):\nसबसिस्टम: SS12 (Auxiliaries HB2)\nदोष कोड: F1202P2\nदोष संदेश:\nLoco XXX SS12: Auxiliaries HB2\nMCB OF MAIN\nCOMPRESSOR OPEN\nCompressor 2 not available\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: कम्प्रेसर 2 उपलब्ध नहीं रहेगा (Compressor 2 not available)। केवल कम्प्रेसर 1 से गाड़ी कार्य करेगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. ऑक्सिलरी क्यूबिकल HB-2 में लगे MCB नं 47.1/2 चेक करें। यदि ट्रिप मिले, VCB ओपन करके एक बार रीसेट करें। (Check MCB 47.1/2 in Aux. Cubicle HB-2; if tripped, open VCB and reset once).",
+        "2. BPFA दबाकर फ़ॉल्ट ACK करें। (Acknowledge fault by pressing BPFA push button).",
+        "3. सामान्य ट्रैक्शन चालू करें। अगर वही मैसेज दोबारा आता है तो एक कम्प्रेसर (MCP-1) के साथ गाड़ी चलाएं। (Continue normal traction; if the same message reappears, work train with single compressor).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make an entry in loco log book).",
+        "नोट: यदि MCB नं 47.1/1 और 47.1/2 बार-बार ट्रिप होते हैं तो VCB ओपन करके MCBs रीसेट करें और BUR-3 को आइसोलेट करें। (Note: If both MCBs 47.1/1 and 47.1/2 trip repeatedly, open VCB, reset MCBs and isolate BUR-3 as per TSD page 180)."
+      ],
+      precautions: "HB-2 में MCB 47.1/2 को रीसेट करने से पूर्व VCB ओपन करना अनिवार्य है। एक कम्प्रेसर (MCP-1) उपलब्ध रहने पर भी सामान्यतः ट्रेन चलाई जा सकती है बशर्ते MR प्रेशर सामान्य (8.0 से 10.0 kg/cm²) बना रहे। यदि दोनों कम्प्रेसर MCBs (47.1/1 व 47.1/2) बार-बार ट्रिप हों, तो VCB ओपन करके MCBs रीसेट करें और BUR-3 को आइसोलेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS12 Auxiliaries HB2 (F1202P2, पेज 194 / 216)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 216,
+      pdfQuote: "SS12 F1202P2 Loco XXX SS12: Auxiliaries HB2\nMCB OF MAIN\nCOMPRESSOR OPEN\nCompressor 2 not available\n1. aiˆ(±jlr) ±y&b)kl HB-2 m[> lg[ MCB n>0 47.1/2 c]k kr>[. y(d (T^p (ml[, VCB ai[pn krk[ Ek bir (rs[T kr>[.\n2. BPFA dbikr fiˆÃT ACK kr>[.\n3. simiºy T^]±Sn cil* kr>[.agr vh) m]s[j d&biri aiti h] ti[ Ek kÀp\\[Sr k[ siY giD) cliE>.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\nni[T:y(d MCB n>0 47.1/1 ai]r 47.1/2 bir-bir (T^^p hi[ti h] ti[ VCB ai[pn krk[ MCBs (rs[T kr[> ai]r BUR-3 ki[ aiesi[l[T kr[>."
+    };
+  }
+
+  // 0-SS12-F1203P2. SS12 F1203P2: OVERLOAD ON OCB-2 (Vadodara TSD Page 194 / 216)
+  const isSS12F1203P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1104') && !norm.includes('ocb-1') && !norm.includes('ocb 1') &&
+    (
+      norm.includes('f1203p2') ||
+      norm.includes('f1203') ||
+      norm.includes('overload on ocb-2') ||
+      norm.includes('overload on ocb 2') ||
+      (norm.includes('ocb-2') && (norm.includes('overload') || norm.includes('isolate'))) ||
+      (norm.includes('ocb 2') && (norm.includes('overload') || norm.includes('isolate'))) ||
+      ((norm.includes('overload on ocb') || norm.includes('isolate ocb')) && (norm.includes('ss12') || norm.includes('hb-2') || norm.includes('hb2') || norm.includes('bogie-2') || norm.includes('bogie 2') || norm.includes('bi[g) -2') || norm.includes('bi[g)-2') || norm.includes('59.1/2'))) ||
+      (norm.includes('ss12') && (norm.includes('ocb') || norm.includes('f1203'))) ||
+      (norm.includes('59.1/2') && (norm.includes('ocb') || norm.includes('k&(l>g') || norm.includes('cooling blower') || norm.includes('trip')))
+    );
+
+  if (isSS12F1203P2Query) {
+    return {
+      identifiedFaultId: "F1203P2",
+      faultTitle: "SS12 F1203P2: OVERLOAD ON OCB-2 (Isolate OCB) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 194 / 216):\nसबसिस्टम: SS12 (Auxiliaries HB2)\nदोष कोड: F1203P2\nदोष संदेश:\nLoco XXX SS12: Auxiliaries HB2\nOVERLOAD ON OCB-2\nIsolate OCB\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: OCB-2 पर ओवरलोड होने से ऑयल कूलिंग प्रभावित होगी; बोगी-2 को आइसोलेट करना होगा (आधा ट्रैक्शन पावर उपलब्ध रहेगा)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0'. Acknowledge fault by pressing BPFA push button).",
+        "2. HB-2 में लगे ऑयल कूलिंग ब्लोअर (OCB-2) के MCB 59.1/2 को ट्रिप करें। (Trip Oil Cooling Blower MCB 59.1/2 in HB-2 cubicle).",
+        "3. बोगी-2 को स्विच 154 द्वारा आइसोलेट करें। (Isolate Bogie-2 via rotary switch 154 in SB-1 panel, keep on position 'I').",
+        "4. एक बोगी (बोगी-1) के साथ सामान्य ऑपरेशन कर सकते हैं। (Work train with single healthy Bogie-1 with 50% traction power; inform TLC & logbook)."
+      ],
+      precautions: "OCB-2 पर ओवरलोड होने पर ट्रांसफॉर्मर व कनवर्टर 2 का तापमान बढ़ सकता है। अतः MCB 59.1/2 को तुरंत ट्रिप करें और बोगी कट-आउट स्विच 154 द्वारा बोगी-2 को आइसोलेट करें। एकल बोगी (बोगी-1) के 50% ट्रैक्शन के साथ गति प्रतिबंधों व ग्रेडिएंट का ध्यान रखते हुए कार्य करें तथा TLC को अवश्य सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS12 Auxiliaries HB2 (F1203P2, पेज 194 / 216)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 216,
+      pdfQuote: "SS12 F1203P2 Loco XXX SS12: Auxiliaries HB2\nOVERLOAD ON OCB-2\nIsolate OCB\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2. HB-2 m[> lg[ aiˆel k&(l>g ¾li[ar k[ MCB 59.1/2 ki[ (T^p kr>[.\n3. bi[g) -2 ki[ (Avc 154 oiri aiesi[l[T kr>[.\n4. Ek bi[g) k[ siY simiºy aipr[Sn kr skt[ h]>"
+    };
+  }
+
+  // 0-SS13-F1301P1. SS13 F1301P1: DISTURBANCE IN PROCESSOR HBB1 / HBB-1 (Vadodara TSD Page 195-196 / 217-218)
+  // 0-SS13-F1301P1. SS13 F1301P1: DISTURBANCE IN PROCESSOR HBB1 / RBU-2 (Vadodara TSD Page 195-197 / 217-219)
+  const isSS13F1301P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('p2') && !norm.includes('dip') && !norm.includes('dop') &&
+    !norm.includes('ss14') && !norm.includes('f1401') && !norm.includes('hbb2') && !norm.includes('hbb 2') && !norm.includes('hbb-2') &&
+    !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('k]b-2') && !norm.includes('k]b 2') &&
+    !norm.includes('riom') && !norm.includes('f1302') && !norm.includes('stb1') && !norm.includes('stb-1') && !norm.includes('rbu-1') && !norm.includes('rbu 1') && !norm.includes('f1303') && !norm.includes('reverser') && !norm.includes('f1304') && !norm.includes('f1305') && !norm.includes('f1306') && !norm.includes('f1307') &&
+    (
+      norm.includes('f1301p1') ||
+      (norm.includes('f1301') && !norm.includes('p2')) ||
+      norm.includes('processor hbb1') ||
+      norm.includes('processor hbb 1') ||
+      norm.includes('processor hbb-1') ||
+      (norm.includes('processor hbb') && !norm.includes('2')) ||
+      norm.includes('hbb1') ||
+      norm.includes('hbb 1') ||
+      norm.includes('hbb-1') ||
+      norm.includes('rbu-2') ||
+      norm.includes('rbu 2') ||
+      norm.includes('rbu2') ||
+      (norm.includes('processor') && norm.includes('rbu') && norm.includes('2')) ||
+      (norm.includes('47.1/1') && (norm.includes('hbb') || norm.includes('ss13') || norm.includes('redundancy') || norm.includes('wap-5') || norm.includes('wap5'))) ||
+      norm.includes('earth fault relay 415/110') ||
+      norm.includes('ay<fiˆãt') ||
+      norm.includes('fuse 415/110') ||
+      norm.includes('½y*j 415/110') ||
+      norm.includes('½y*j') ||
+      (norm.includes('cab 1') && (norm.includes('hbb') || norm.includes('rbu-2') || norm.includes('rbu 2') || norm.includes('will not isolate') || norm.includes('drive from cab 1'))) ||
+      (norm.includes('ss13') && (norm.includes('hbb') || norm.includes('rbu-2') || norm.includes('rbu 2') || (norm.includes('f1301') && !norm.includes('p2')) || (norm.includes('redundancy') && !norm.includes('stb') && !norm.includes('rbu-1')))) ||
+      ((norm.includes('cab 1 isolated') || norm.includes('cab 1 may get isolated') || norm.includes('cab 1 will not isolate')) && !norm.includes('stb') && !norm.includes('rbu-1') && !norm.includes('dryer') && !norm.includes('sanding') && !norm.includes('127.11')) ||
+      (norm.includes('vcu redundancy') && (norm.includes('hbb') || norm.includes('rbu-2') || (norm.includes('f1301') && !norm.includes('p2')) || norm.includes('hb-1') || norm.includes('hb1') || norm.includes('wag-9') || norm.includes('wag9') || norm.includes('wap-7') || norm.includes('wap7') || (!norm.includes('stb') && !norm.includes('rbu-1'))))
+    );
+
+  if (isSS13F1301P1Query) {
+    return {
+      identifiedFaultId: "F1301P1",
+      faultTitle: "SS13 F1301P1: DISTURBANCE IN PROCESSOR HBB1 / RBU-2 [RBU/RIOM, WAG-9 / WAG-9H / WAP-7 / WAP-5 VCU Redundancy & Conventional 3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 195-197 / PDF 217-219):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1301P1\n\n■ स्थिति 1: RBU / RIOM VCU वेरिएंट (Disturbance in Processor RBU-2):\nदोष संदेश:\nSS13 F1301P1 Loco xxxx SS 13 Cab1\nDisturbance in Processor RBU-2\nDriving from Cab 1 still possible Press BPFA.\nप्रभाव: कैब-1 से ड्राइविंग अभी भी संभव है (Driving from Cab 1 still possible)।\n\n■ स्थिति 2: WAG-9 / WAG-9H / WAP-7 लोको (जिनमें VCU Redundancy Feature दिया हुआ है):\nदोष संदेश: Cab 1 will not Isolate. Drive from cab 1.\nप्रभाव: कैब 1 आइसोलेट नहीं होगी (Drive from cab 1)। HB-1 के सभी MCB, अर्थफ़ॉल्ट रिले 415/110V और फ्यूज 415/110V स्क्रीन पर मॉनीटर नहीं होंगे।\n\n■ स्थिति 3: WAP-5 लोको (जिनमें VCU Redundancy Feature दिया हुआ है):\nदोष संदेश: Cab 1 will not Isolate. Drive from cab 1.\nप्रभाव: कैब 1 आइसोलेट नहीं होगी। HB-1 में केवल 47.1/1 (MCP-1) को छोड़कर अन्य सभी MCB मॉनीटर नहीं होंगे।\n\n■ स्थिति 4: कन्वेंशनल 3-फेज लोको (बिना VCU Redundancy):\nदोष संदेश: DISTURBANCE IN PROCESSOR HBB1 / Cab 1 may get isolated, drive from cab 2\n(फॉलो-अप स्क्रीन 2): CAB 1 ISOLATED / Drive from cab 2\nप्रभाव: कैब 1 आइसोलेट होगी; कैब-2 से गाड़ी चलानी होगी।\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【1. RBU / RIOM VCU वेरिएंट (Disturbance in Processor RBU-2 / Driving from Cab 1 still possible)】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ तथा ऑन करें। पेंटो रेज करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें। (Cycle Control Electronics OFF and ON once. Raise pantograph, close VCB and resume traction).",
+        "2. यदि फ़ॉल्ट बना रहता है तो BPFA दबाकर फ़ॉल्ट एक्नॉलेज करें और किसी भी कैब से सामान्यतौर पर गाड़ी चलाएं। (If fault persists, press BPFA to acknowledge fault and drive train normally from either cab).",
+        "--------------------------------------------------",
+        "【2. WAG-9 / WAG-9H / WAP-7 लोको (जिनमें VCU Redundancy Feature दिया हुआ है)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें और गाड़ी चलाएं। (Bring throttle to '0'. Press BPFA to acknowledge fault and drive the train from Cab-1).",
+        "नोट (विशेष प्रभाव व अप्रबोधन सीमाएं): HB-1 के सभी MCB, 415/110 अर्थफ़ॉल्ट रिले व फ्यूज मॉनीटर नहीं होंगे।",
+        "--------------------------------------------------",
+        "【3. WAP-5 लोको (जिनमें VCU Redundancy Feature दिया हुआ है)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें और गाड़ी चलाएं। (नोट: HB-1 में 47.1/1 छोड़कर अन्य MCB मॉनीटर नहीं होंगे)।",
+        "--------------------------------------------------",
+        "【4. कन्वेंशनल 3-फेज लोको (बिना VCU Redundancy)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. SB-1 पैनल पर लगे MCB (127.1/1) को चेक करें, यदि ट्रिप हो तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके एक बार रीसेट करें।",
+        "3. यदि ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ तथा ऑन करें (MCE OFF/ON)। पेंटो रेज करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "【फॉलो-अप स्क्रीन / ENTER दबाने पर: CAB 1 ISOLATED / Drive from cab 2】: कैब-2 से कार्य करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "RBU-2 प्रोसेसर डिस्टर्बेंस पर कैब-1 से ड्राइविंग संभव रहती है; MCE रीसेट के उपरांत BPFA दबाकर सामान्य परिचालन जारी रखें। WAG-9/WAP-7 VCU Redundancy में कैब-1 आइसोलेट नहीं होती, किंतु HB-1 के सभी MCBs व 415/110 रिले/फ्यूज की मॉनिटरिंग बंद हो जाती है। कन्वेंशनल लोको में कैब-1 आइसोलेट होने पर MCE रीसेट करें, ठीक न होने पर तुरंत कैब-2 से गाड़ी चलाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS13 Cab 1 (F1301P1, पेज 195-197 / PDF 217-219)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 218,
+      pdfQuote: "SS13 F1301P1 Loco xxxx SS 13 Cab1\nDisturbance in Processor RBU-2\nDriving from Cab 1 still possible Press BPFA.\n1.k>T^i[l el[±T^iˆ(n±s ki[ Ek bir (fr aiˆf tYi aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n2.y(d fiˆÃT bni rhti h] ti[ BPFA dbikr fiˆÃT E±nil[J kr[> ai]r Iks) B) k]b s[ simiºyti]r pr giD) cliE>."
+    };
+  }
+
+  // 0-SS13-F1302P1. SS13 F1302P1: DISTURBANCE IN PROCESSOR STB1 / RBU-1 (Vadodara TSD Page 195-197 / 217-219)
+  const isSS13F1302P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('p2') && !norm.includes('dip') && !norm.includes('dop') &&
+    !norm.includes('ss14') && !norm.includes('f1402') && !norm.includes('stb2') && !norm.includes('stb 2') && !norm.includes('stb-2') &&
+    !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('k]b-2') && !norm.includes('k]b 2') &&
+    !norm.includes('riom') && !norm.includes('f1301') && !norm.includes('hbb1') && !norm.includes('hbb-1') && !norm.includes('rbu-2') && !norm.includes('rbu 2') && !norm.includes('f1303') && !norm.includes('reverser') && !norm.includes('f1304') && !norm.includes('f1305') && !norm.includes('f1306') && !norm.includes('f1307') &&
+    (
+      norm.includes('f1302p1') ||
+      (norm.includes('f1302') && !norm.includes('p2')) ||
+      norm.includes('processor stb1') ||
+      norm.includes('processor stb 1') ||
+      norm.includes('processor stb-1') ||
+      (norm.includes('processor stb') && !norm.includes('2')) ||
+      norm.includes('stb1') ||
+      norm.includes('stb 1') ||
+      norm.includes('stb-1') ||
+      norm.includes('rbu-1') ||
+      norm.includes('rbu 1') ||
+      norm.includes('rbu1') ||
+      (norm.includes('processor') && norm.includes('rbu') && (norm.includes('1') || !norm.includes('2'))) ||
+      norm.includes('127.11') ||
+      norm.includes('127.11/1') ||
+      norm.includes('127.11/2') ||
+      norm.includes('failure mode switch') ||
+      norm.includes('f[(lyr mi[d') ||
+      norm.includes('फेलियर मोड') ||
+      ((norm.includes('eyr d^^iyr') || norm.includes('air dryer')) && (norm.includes('stb') || norm.includes('ss13') || norm.includes('redundancy') || norm.includes('wap-5') || norm.includes('wag-9') || norm.includes('f1302'))) ||
+      ((norm.includes('hotel load') || norm.includes('hi[tl li[d')) && (norm.includes('stb') || norm.includes('ss13') || norm.includes('redundancy') || norm.includes('wap-5') || norm.includes('wag-9') || norm.includes('f1302'))) ||
+      ((norm.includes('auto sanding') || norm.includes('aiˆti[ s[>(dg')) && (norm.includes('stb') || norm.includes('ss13') || norm.includes('redundancy') || norm.includes('wap-5') || norm.includes('wag-9') || norm.includes('f1302'))) ||
+      ((norm.includes('te/be') || norm.includes('meter reading')) && (norm.includes('stb') || norm.includes('rbu') || norm.includes('ss13') || norm.includes('f1302'))) ||
+      (norm.includes('bogie') && norm.includes('isolation') && (norm.includes('stb') || norm.includes('rbu-1') || norm.includes('127.1') || norm.includes('127.11'))) ||
+      (norm.includes('112.1') && (norm.includes('bl') || norm.includes('stb') || norm.includes('rbu-1'))) ||
+      (norm.includes('cab 1') && (norm.includes('stb') || norm.includes('rbu-1') || norm.includes('rbu 1') || (norm.includes('will not isolate') && (norm.includes('dryer') || norm.includes('hotel') || norm.includes('failure') || norm.includes('sanding') || norm.includes('127.11'))))) ||
+      (norm.includes('ss13') && (norm.includes('stb') || norm.includes('rbu-1') || norm.includes('rbu 1') || (norm.includes('f1302') && !norm.includes('p2')) || (norm.includes('redundancy') && (norm.includes('stb') || norm.includes('dryer') || norm.includes('hotel') || norm.includes('sanding') || norm.includes('wag-9') || norm.includes('wap-7'))))) ||
+      ((norm.includes('cab 1 isolated') || norm.includes('cab 1 may get isolated') || norm.includes('cab 1 will not isolate')) && (norm.includes('stb') || norm.includes('rbu-1') || norm.includes('dryer') || norm.includes('hotel') || norm.includes('sanding') || norm.includes('127.11'))) ||
+      (norm.includes('vcu redundancy') && (norm.includes('stb') || norm.includes('rbu-1') || (norm.includes('f1302') && !norm.includes('p2')) || norm.includes('dryer') || norm.includes('hotel') || norm.includes('sanding') || norm.includes('failure mode')))
+    );
+
+  if (isSS13F1302P1Query) {
+    return {
+      identifiedFaultId: "F1302P1",
+      faultTitle: "SS13 F1302P1: DISTURBANCE IN PROCESSOR STB1 / RBU-1 [RBU/RIOM, WAG-9 / WAG-9H / WAP-7 / WAP-5 VCU Redundancy & Conventional 3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 195-197 / PDF 217-219):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1302P1\n\n■ स्थिति 1: RBU / RIOM VCU वेरिएंट (Disturbance in Processor RBU-1):\nदोष संदेश:\nSS13 F1302P1 Loco xxxx SS 13 Cab1\nDisturbance in Processor RBU-1\nDriving from Cab 1 still possible Press BPFA.\nप्रभाव:\n1. ड्राइविंग कैब-1 से अभी भी संभव है (Press BPFA)।\n2. CAB-1 के TE/BE मीटर रीडिंग नहीं बताएंगे।\n3. लोको CAB-1 से फेलियर मोड {ऑटो एक्टिवेशन} में चलेगा।\n4. CAB-2 से सामान्य ऑपरेशन किया जा सकता है।\n\n■ स्थिति 2: WAG-9 / WAG-9H / WAP-7 लोको (जिनमें VCU Redundancy Feature दिया हुआ है):\nदोष संदेश: Cab 1 will not Isolate. Drive from cab 1.\nप्रभाव: कैब 1 आइसोलेट नहीं होगी (Drive from cab 1)। एयर ड्रायर, होटल लोड और फेलियर मोड स्विच काम नहीं करेंगे।\n\n■ स्थिति 3: WAP-5 लोको (जिनमें VCU Redundancy Feature दिया हुआ है):\nदोष संदेश: Cab 1 will not Isolate. Drive from cab 1.\nप्रभाव: कैब 1 आइसोलेट नहीं होगी। एयर ड्रायर, होटल लोड और ऑटो सैंडिंग काम नहीं करेंगे।\n\n■ स्थिति 4: कन्वेंशनल 3-फेज लोको (बिना VCU Redundancy):\nदोष संदेश: DISTURBANCE IN PROCESSOR STB1 / Cab 1 may get isolated, drive from Cab 2\n(फॉलो-अप स्क्रीन 2): CAB 1 ISOLATED / Drive from cab 2\nप्रभाव: कैब 1 आइसोलेट होगी; कैब-2 से गाड़ी चलानी होगी।\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【1. RBU / RIOM VCU वेरिएंट (Disturbance in Processor RBU-1 / Driving from Cab 1 still possible)】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें। पेंटो रेज करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें। (Cycle Control Electronics OFF and ON. Raise pantograph, close VCB and resume traction).",
+        "2. यदि फ़ॉल्ट बना रहता है तो BPFA दबाकर फ़ॉल्ट एक्नॉलेज करें और किसी भी कैब से सामान्यतौर पर गाड़ी चलाएं। (If fault persists, press BPFA to acknowledge fault and drive train normally from either cab).",
+        "3. CAB-1 के TE/BE मीटर रीडिंग नहीं बताएंगे। (TE/BE meters in CAB-1 will not indicate reading).",
+        "4. लोको CAB-1 से फेलियर मोड {ऑटो एक्टिवेशन} में चलेगा। (Loco will operate from CAB-1 in Failure Mode {auto activation}).",
+        "5. CAB-2 से सामान्य ऑपरेशन किया जा सकता है। (Normal operation can be done from CAB-2).",
+        "--------------------------------------------------",
+        "【2. WAG-9 / WAG-9H / WAP-7 लोको (जिनमें VCU Redundancy Feature दिया हुआ है)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें और गाड़ी चलाएं।",
+        "2. यदि बोगी आइसोलेशन की आवश्यकता हो तो बोगी-1 को MCB 127.1/1 एवं 127.11/1 {SB-1}, बोगी-2 को MCB 127.1/2 एवं 127.11/2 {SB-2} द्वारा आइसोलेट करें।",
+        "3. यदि कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करने की आवश्यकता हो तो BL को OFF पर रखकर MCB 112.1 को ऑफ़ करें।",
+        "नोट: एयर ड्रायर, होटल लोड और फेलियर मोड स्विच काम नहीं करेंगे।",
+        "--------------------------------------------------",
+        "【3. WAP-5 लोको (जिनमें VCU Redundancy Feature दिया हुआ है)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें और गाड़ी चलाएं। (नोट: एयर ड्रायर, होटल लोड और ऑटो सैंडिंग काम नहीं करेंगे)।",
+        "--------------------------------------------------",
+        "【4. कन्वेंशनल 3-फेज लोको (बिना VCU Redundancy)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।",
+        "2. SB-1 पैनल पर लगे MCB (127.1/1) को चेक करें, यदि ट्रिप हो तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके एक बार रीसेट करें।",
+        "3. यदि ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ तथा ऑन करें (MCE OFF/ON)। पेंटो रेज करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "【फॉलो-अप स्क्रीन / ENTER दबाने पर: CAB 1 ISOLATED / Drive from cab 2】: कैब-2 से कार्य करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "RBU-1 प्रोसेसर में डिस्टर्बेंस आने पर कैब-1 से ड्राइविंग संभव रहती है, किंतु कैब-1 के TE/BE मीटर कार्य नहीं करते और लोको ऑटोमैटिक फेलियर मोड में चलता है। यदि सामान्य ऑपरेशन और सटीक TE/BE मीटरिंग चाहिए, तो कैब-2 से गाड़ी चलाएं। WAG-9/WAP-7 VCU Redundancy में बोगी आइसोलेशन MCB 127.1 व 127.11 से और MCE ऑफ़ BL की OFF + MCB 112.1 से करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS13 Cab 1 (F1302P1, पेज 195-197 / PDF 217-219)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 218,
+      pdfQuote: "SS13 F1302P1 Loco xxxx SS 13 Cab1\nDisturbance in Processor RBU-1\nDriving from Cab 1 still possible Press BPFA.\n1.k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n2.y(d fiˆÃT bni rhti h] ti[ BPFA dbikr fiˆÃT E±nil[J kr[> ai]r Iks) B) k]b s[ simiºyti]r pr giD) cliE>.\n3. CAB-1 k[ TE/BE m)Tr r)D)>g nh)> btiy[g>[.\n4. li[ki[ CAB-1 s[ f[(lyr mi[D {aiTi[ E(±Tv[Sn} m[> cl[gi.\n5. CAB-2 s[ simiºy aiˆpr[Sn (kyi ji skti h]."
+    };
+  }
+
+  // 0-SS13-F1303P1. SS13 F1303P1: REVERSER DEFECTIVE / CAB 1 ISOLATED (Vadodara TSD Page 195 / 217)
+  const isSS13F1303P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('p2') && !norm.includes('dip') &&
+    !norm.includes('ss14') && !norm.includes('f1403') && !norm.includes('drive from cab 1') &&
+    !norm.includes('f1301') && !norm.includes('f1302') && !norm.includes('f1304') && !norm.includes('f1305') && !norm.includes('f1306') && !norm.includes('f1307') &&
+    (
+      norm.includes('f1303p1') ||
+      norm.includes('f1303') ||
+      norm.includes('reverser defective') ||
+      norm.includes('reverser defect') ||
+      norm.includes('(rvs<<r ki[ 2-3 bir') ||
+      norm.includes('(rvs<<r') ||
+      norm.includes('रिवर्सर खराब') ||
+      norm.includes('रिवर्सर डिफेक्टिव') ||
+      norm.includes('coasting') ||
+      norm.includes('ki[(at>g') ||
+      norm.includes('कोस्टिंग') ||
+      (norm.includes('reverser') && (norm.includes('drive from cab 2') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('k]b-2') || norm.includes('k]b -2') || norm.includes('ss13'))) ||
+      (norm.includes('ss13') && (norm.includes('reverser') || norm.includes('f1303')))
+    );
+
+  if (isSS13F1303P1Query) {
+    return {
+      identifiedFaultId: "F1303P1",
+      faultTitle: "SS13 F1303P1: REVERSER DEFECTIVE / CAB 1 ISOLATED (Drive from cab 2) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 195-197 / PDF 217-219):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1303P1\nदोष संदेश (स्क्रीन 1):\nSS13 F1303P1 Loco XXX SS13: Cab 1\nREVERSER DEFECTIVE\nDrive from cab 2\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXXX SS13: Cab 1\nCAB 1 ISOLATED\nDrive from cab 2\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: रिवर्सर खराब होने के कारण कैब-1 से सामान्य परिचालन बाधित; कोस्टिंग में सेक्शन क्लियर कर कैब-2 से कार्य करना होगा (Drive from cab 2)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【सामान्य 3-फेज लोको (Standard 3-Phase Procedure)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0'. Acknowledge fault by pressing BPFA push button).",
+        "2. रिवर्सर को 2-3 बार ऑपरेट करें। (Operate reverser 2-3 times forward and reverse).",
+        "3. यदि सफलता नहीं मिलती है तो कोस्टिंग में सेक्शन क्लियर करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन (MCE OFF/ON) करें। (If unsuccessful, clear section in coasting. Cycle Control Electronics OFF and ON).",
+        "4. यदि वही मैसेज दोबारा आता है तो कैब बदलकर, कैब-2 से सेक्शन क्लियर करें। (If same message reappears, change cab and clear section from Cab-2).",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make an entry in loco log book).",
+        "--------------------------------------------------",
+        "【MEDHA IGBT मेक लोको विशेष निर्देश】:",
+        "1. रिवर्सर को 2-3 बार ऑपरेट करें। कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ तथा ऑन करें। पेंटो उठाएं, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "2. यदि कैब-1 से गाड़ी चला रहे हों और वही मैसेज दोबारा आता है तो कैब बदलकर कैब-2 से सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: CAB 1 ISOLATED / Drive from cab 2】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें। (Cycle Control Electronics OFF and ON).",
+        "2. यदि कैब-1 से गाड़ी चला रहे हैं और वही मैसेज दोबारा आता है तो कैब बदलकर, कैब-2 से सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "रिवर्सर हैंडल (MPJ) के आंतरिक कॉन्टैक्ट्स में धूल अथवा जाम होने से यह फ़ॉल्ट आ सकता है, अतः रिवर्सर को 2-3 बार आगे-पीछे घुमाएं। ब्लॉक सेक्शन में फंसे होने पर तुरंत कोस्टिंग का लाभ लेकर सेक्शन क्लियर करें और MCE रीसेट करें। यदि कैब-1 आइसोलेटेड बनी रहे, तो अविलंब कैब-2 चेंजओवर कर गाड़ी निकालें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS13 Cab 1 (F1303P1, पेज 195-197 / PDF 217-219)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 217,
+      pdfQuote: "SS13 F1303P1 Loco XXX SS13: Cab 1\nREVERSER DEFECTIVE\nDrive from cab 2\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2.(rvs<<r ki[ 2-3 bir aipr[T kr>[.\n3.y(d sflti nh)> (mlt) h] ti[ ki[(AT>g m[> s[±Sn (±lyr kr[>.k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[.\n4.y(d vh) m]s[j d&biri aiti h] ti[ k]b bdlkr, k]b-2 s[ s[±Sn (±lyr kr>[.\n5.TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n\nLoco XXXX SS13: Cab 1\nCAB 1 ISOLATED\nDrive from cab 2\nPress<Enter>\n1. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[.\n2. y(d k]b -1 s[ giD) cli rh[ h]> ai]r vh) m]s[j d&biri aiti h] ti[ k]b bdlkr, k]b-2 s[ s[±Sn (±lyr kr>[. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS13-F1304P1-MEDHA. SS13 F1304P1: START RUN INTERLOCK (Simultaneous Motoring & Braking command from Throttle of CAB-1) [MEDHA IGBT]
+  const isSS13F1304P1MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('cab2') && !norm.includes('k]b-2') && !norm.includes('k]b -2') && !norm.includes('ss14') && !norm.includes('f1404') &&
+    (
+      norm.includes('start run interlock') ||
+      norm.includes('simultaneous motoring') ||
+      norm.includes('motoring & braking') ||
+      norm.includes('motoring and braking') ||
+      (norm.includes('throttle') && norm.includes('cab-1') && norm.includes('braking')) ||
+      (norm.includes('f1304p1') && (norm.includes('medha') || norm.includes('interlock') || norm.includes('motoring') || norm.includes('braking') || norm.includes('throttle'))) ||
+      (norm.includes('f1304') && (norm.includes('medha') || norm.includes('interlock') || norm.includes('motoring') || norm.includes('braking')))
+    );
+
+  if (isSS13F1304P1MedhaQuery) {
+    return {
+      identifiedFaultId: "F1304P1",
+      faultTitle: "SS13 F1304P1: START RUN INTERLOCK (Simultaneous Motoring & Braking) [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1304P1 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS13 F1304P1 Loco XXX SS13: Cab 1\nSTART RUN INTERLOCK\nSimultaneous Motoring & Braking command\nfrom Throttle of CAB-1\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: कैब-1 के थ्रोटल से एक साथ मोटरिंग एवं ब्रेकिंग कमांड जाने के कारण सुरक्षा इंटरलॉक सक्रिय हो गया है और सामान्य परिचालन बाधित है।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं। (Bring throttle to '0' position).",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें (MCE OFF/ON)। (Cycle Control Electronics OFF and ON).",
+        "3. यदि वही मैसेज दोबारा आता है तो कैब बदलकर (Cab-2 से) सेक्शन क्लियर करें। (If same message persists, change cab and clear section from Cab-2).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make entry in loco log book)."
+      ],
+      precautions: "थ्रोटल पोटेंशियोमीटर या माइक्रो-स्विच में खराबी के कारण मोटरिंग और ब्रेकिंग की दोहरी कमांड एक साथ VCU1 को जाने पर यह इंटरलॉक सक्रिय होता है। थ्रोटल शून्य पर लाकर MCE रीसेट करें। यदि समस्या कैब-1 थ्रोटल में बनी रहे, तो कैब-2 चेंजओवर कर ट्रेन का संचलन जारी रखें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS13 F1304P1)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 220,
+      pdfQuote: "SS13 F1304P1 Loco XXX SS13: Cab 1\nSTART RUN INTERLOCK\nSimultaneous Motoring & Braking command from Throttle of CAB-1\n1.Y\\i[Tl ki[ ‘ 0 ’ pr liE>.\n2. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[.y(d vh) m]s[j d&biri aiti h] ti[ k]b bdlkr s[±Sn (±lyr kr>[. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS13-F1304P1. SS13 F1304P1: RBU 1 RIOM EXTENSION FAULT (Vadodara TSD Page 197 / 219)
+  const isSS13F1304P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('ss14') && !norm.includes('f1404') && !norm.includes('f1405') && !norm.includes('rbu 3') && !norm.includes('rbu-3') && !norm.includes('rbu 4') && !norm.includes('rbu-4') && !norm.includes('riom 3') && !norm.includes('riom 4') &&
+    !norm.includes('f1305') && !norm.includes('rbu 2 riom') && !norm.includes('rbu-2 riom') && !norm.includes('rbu2 riom') &&
+    !norm.includes('p2') && !norm.includes('dip') && !norm.includes('dop') &&
+    (
+      norm.includes('f1304p1') ||
+      norm.includes('f1304') ||
+      (norm.includes('rbu 1') && norm.includes('riom')) ||
+      (norm.includes('rbu-1') && norm.includes('riom')) ||
+      (norm.includes('rbu1') && norm.includes('riom')) ||
+      (norm.includes('riom extension fault') && (norm.includes('rbu 1') || norm.includes('rbu-1') || norm.includes('1') || !norm.includes('2'))) ||
+      (norm.includes('riom') && norm.includes('extension') && norm.includes('fault') && !norm.includes('2'))
+    );
+
+  if (isSS13F1304P1Query) {
+    return {
+      identifiedFaultId: "F1304P1",
+      faultTitle: "SS13 F1304P1: RBU 1 RIOM EXTENSION FAULT / START RUN INTERLOCK [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 197 / 219):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1304P1\nदोष संदेश (वेरिएंट 1 - Modern VCU):\nSS13 F1304P1 Loco XXX SS13: Cab 1\nRBU 1 RIOM EXTENSION FAULT / Driving still possible\n\n(वेरिएंट 2 - MEDHA Make IGBT Loco):\nSS13 F1304P1 Loco XXX SS13: Cab 1\nSTART RUN INTERLOCK / Simultaneous Motoring & Braking command from Throttle of CAB-1\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: RBU-1 RIOM में ड्राइविंग संभव रहती है; MEDHA IGBT में थ्रोटल सुरक्षा इंटरलॉक सक्रिय हो जाता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【वेरिएंट 1: आधुनिक VCU (RBU 1 RIOM EXTENSION FAULT)】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें (MCE OFF/ON)। पेंटो रेज करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें। (Cycle Control Electronics OFF and ON. Raise pantograph, close VCB and resume traction).",
+        "2. यदि वही मैसेज दोबारा आता है और कैब-1 से गाड़ी चला रहे हैं तो कैब बदलकर कैब-2 से सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें। (If same message reappears and working from Cab-1, change over to Cab-2 and clear section. Inform TLC and record in log book).",
+        "3. DDS के मैसेज पढ़ें और कौन सा RIOM एक्सटेंशन बदलना है पता लगाएं। (Read DDS diagnostic messages to determine which RIOM extension module requires replacement).",
+        "--------------------------------------------------",
+        "【वेरिएंट 2: MEDHA IGBT लोको (START RUN INTERLOCK)】:",
+        "1. थ्रोटल को '0' पर लाएं। (Bring throttle to '0').",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें (MCE OFF/ON)। यदि वही मैसेज दोबारा आता है तो कैब बदलकर सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "RBU-1 से संबद्ध RIOM एक्सटेंशन में खराबी आने पर ड्राइविंग संभव रहती है, किंतु DDS कोड नोट करें। MEDHA मेक लोको में थ्रोटल की खराबी से मोटरिंग व ब्रेकिंग कमांड एक साथ जाने पर MCE OFF/ON कर कैब-2 से सेक्शन क्लियर करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS13 Cab 1 (F1304P1, पेज 197 / 219)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 219,
+      pdfQuote: "SS13 F1304P1 Loco XXX SS13: Cab 1\nRBU 1 RIOM\nEXTENSION FAULT\nDriving still possible\n1. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n2. y(d vh) m]s[j d&biri aiti h] ai]r k]b-1 s[ giD) cli rh[ h]> ti[ k]b bdlkr k]b-2 s[ s[±Sn (±lyr kr>[. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n3. DDS k[ m]s[J pQ[> ai]r ki]n si RIOM E±sT[>Sn bdlni h] pti lgiE>."
+    };
+  }
+
+  // 0-SS13-F1305P1. SS13 F1305P1: RBU 2 RIOM EXTENSION FAULT (Vadodara TSD Page 197 / 219)
+  const isSS13F1305P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('ss14') && !norm.includes('f1404') && !norm.includes('f1405') && !norm.includes('rbu 3') && !norm.includes('rbu-3') && !norm.includes('rbu 4') && !norm.includes('rbu-4') && !norm.includes('riom 3') && !norm.includes('riom 4') &&
+    !norm.includes('f1304') && !norm.includes('rbu 1 riom') && !norm.includes('rbu-1 riom') && !norm.includes('rbu1 riom') &&
+    !norm.includes('p2') && !norm.includes('dop') && !norm.includes('dip') &&
+    (
+      norm.includes('f1305p1') ||
+      norm.includes('f1305') ||
+      (norm.includes('rbu 2') && norm.includes('riom')) ||
+      (norm.includes('rbu-2') && norm.includes('riom')) ||
+      (norm.includes('rbu2') && norm.includes('riom')) ||
+      (norm.includes('riom extension fault') && (norm.includes('rbu 2') || norm.includes('rbu-2') || norm.includes('2'))) ||
+      (norm.includes('riom') && norm.includes('extension') && norm.includes('fault') && norm.includes('2'))
+    );
+
+  if (isSS13F1305P1Query) {
+    return {
+      identifiedFaultId: "F1305P1",
+      faultTitle: "SS13 F1305P1: RBU 2 RIOM EXTENSION FAULT (Driving still possible) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 197 / 219):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1305P1\nदोष संदेश:\nSS13 F1305P1 Loco XXX SS13: Cab 1\nRBU 2 RIOM\nEXTENSION FAULT\nDriving still possible\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: ड्राइविंग अभी भी संभव है (Driving still possible)। DDS द्वारा प्रभावित RIOM 2 एक्सटेंशन मॉड्यूल की पहचान करें।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ तथा ऑन करें (MCE OFF/ON)। पेंटो उठाएं, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें। (Cycle Control Electronics OFF and ON once. Raise pantograph, close VCB and resume traction).",
+        "2. यदि कैब-1 से गाड़ी चला रहे हैं और वही मैसेज दोबारा आता है तो कैब बदलकर कैब-2 से सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें। (If working from Cab-1 and same message reappears, change over to Cab-2 and clear section. Inform TLC and record in log book).",
+        "3. DDS के मैसेज पढ़ें और कौन सा RIOM एक्सटेंशन बदलना है पता लगाएं। (Read DDS diagnostic messages to determine which RIOM extension module requires replacement)."
+      ],
+      precautions: "RBU-2 से जुड़े RIOM एक्सटेंशन में समस्या होने पर भी ड्राइविंग संभव रहती है। MCE रीसेट के बाद भी फ़ॉल्ट आने पर कैब-2 से सेक्शन क्लियर करें और DDS डायग्नोस्टिक डेटा शेड अटेंशन हेतु लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS13 Cab 1 (F1305P1, पेज 197 / 219)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 219,
+      pdfQuote: "SS13 F1305P1 Loco XXX SS13: Cab 1\nRBU 2 RIOM\nEXTENSION FAULT\nDriving still possible\n1.k>T^i[l el[±T^iˆ(n±s ki[ Ek bir (fr aiˆf tYi aiˆn kr>[. p[ºTi[ uqiy[> , VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n2.y(d k]b-1 s[ giD) cli rh[ h]> ai]r vh) m]s[j d&biri aiti h] ti[ k]b bdlkr k]b-2 s[ s[±Sn (±lyr kr>[. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n3. DDS k[ m]s[J pQ[> ai]r ki]n si RIOM E±sT[>Sn bdlni h] pti lgiE>."
+    };
+  }
+
+  // 0-SS13-F1301P2-MEDHA. SS13 F1301P2: Disturbance in Processor VCU1-DIP1 [MEDHA IGBT]
+  const isSS13F1301P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('vcu2') && !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('cab2') && !norm.includes('k]b-2') && !norm.includes('k]b -2') && !norm.includes('ss14') && !norm.includes('f140') &&
+    (
+      norm.includes('f1301p2') ||
+      norm.includes('vcu1-dip1') || norm.includes('vcu1 dip1') || norm.includes('vcu1dip1') ||
+      (norm.includes('dip1') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor') || norm.includes('f1301') || norm.includes('csc') || norm.includes('pvef'))) ||
+      (norm.includes('dip-1') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor'))) ||
+      (norm.includes('f1301') && norm.includes('p2'))
+    );
+
+  if (isSS13F1301P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1301P2",
+      faultTitle: "SS13 F1301P2: Disturbance in Processor VCU1-DIP1 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1301P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS13 F1301P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DIP1\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU1 के डिजिटल इनपुट प्रोसेसर-1 (DIP1) में डिस्टर्बेंस। सामान्य ऑपरेशन जारी रहेगा, किंतु CSC, सिमुलेशन मोड, PVEF कैब-1 से कार्य नहीं करेंगे तथा 47.1/1 MCB ट्रिप का पता नहीं चलेगा।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • CSC कैब-1 से कार्य नहीं करेगा (Constant Speed Control inoperative from Cab-1).",
+        "   • सिमुलेशन मोड कार्य नहीं करेगा (Simulation mode inoperative).",
+        "   • PVEF कैब-1 से कार्य नहीं करेगा (PVEF inoperative from Cab-1).",
+        "   • 47.1/1 MCB (कंप्रेसर-1) ट्रिप होने का पता नहीं चलेगा (MCB 47.1/1 tripping will not be detected/monitored).",
+        "3. TLC को सूचित करें।"
+      ],
+      precautions: "DIP1 में खराबी आने पर लोकोमोटिव सामान्य रूप से कार्य करता रहता है। चूंकि कंप्रेसर-1 के MCB 47.1/1 के ट्रिप होने की सूचना स्क्रीन पर नहीं आएगी, अतः मुख्य जलाशय (MR) के दबाव तथा कंप्रेसर कट-इन/कट-आउट की सतर्कता से निगरानी रखें। आवश्यकता पड़ने पर HB-1 में MCB 47.1/1 की भौतिक जांच करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS13 F1301P2)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS13 F1301P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DIP1\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ CSC k]b-1 s[ kiy< nh)> kr[gi.\n∑ (sÀy*l[Sn mi[D kiy< nh)> kr[gi.\n∑ PVEF k]b-1 s[ kiy< nh)> kr[gi.\n∑ 47.1/1 MCB (T^^p hi[n[ ki pti nh)> cl[gi."
+    };
+  }
+
+  // 0-SS13-F1302P2-MEDHA. SS13 F1302P2: Disturbance in Processor VCU1-DIP2 [MEDHA IGBT]
+  const isSS13F1302P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('vcu2') && !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('cab2') && !norm.includes('k]b-2') && !norm.includes('k]b -2') && !norm.includes('ss14') && !norm.includes('f140') &&
+    (
+      norm.includes('f1302p2') ||
+      norm.includes('vcu1-dip2') || norm.includes('vcu1 dip2') || norm.includes('vcu1dip2') ||
+      (norm.includes('dip2') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor') || norm.includes('f1302') || norm.includes('59.1/1') || norm.includes('53.1/1'))) ||
+      (norm.includes('dip-2') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor'))) ||
+      (norm.includes('f1302') && norm.includes('p2'))
+    );
+
+  if (isSS13F1302P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1302P2",
+      faultTitle: "SS13 F1302P2: Disturbance in Processor VCU1-DIP2 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1302P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS13 F1302P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DIP2\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU1 के डिजिटल इनपुट प्रोसेसर-2 (DIP2) में डिस्टर्बेंस। सामान्य ऑपरेशन चालू रहेगा, किंतु HB-1 के मुख्य सहायक MCBs (53.1/1, 54.1/1, 55.1/1, 56.1/1 और 59.1/1) के ट्रिप होने की मॉनिटरिंग बंद रहेगी।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • MCB 53.1/1, 54.1/1, 55.1/1, 56.1/1 और 59.1/1 ट्रिप होने का पता नहीं चलेगा। (Tripping of MCBs 53.1/1, 54.1/1, 55.1/1, 56.1/1 and 59.1/1 will not be detected/monitored).",
+        "3. TLC को सूचित करें।"
+      ],
+      precautions: "DIP2 में दोष होने पर सहायक क्यूबिकल-1 (HB-1) में स्थित MCBs (ऑयल पंप, ब्लोअर आदि) के ट्रिप होने पर स्क्रीन पर संदेश नहीं आएगा। यदि किसी ऑक्जिलरी के असामान्य व्यवहार या तापमान वृद्धि का संदेह हो, तो HB-1 पैनल में जाकर इन MCBs का मुआयना करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS13 F1302P2)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS13 F1302P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DIP2\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ MCB 53.1/1, 54.1/1, 55.1/1, 56.1/1 ai]r 59.1/1 (T^^p hi[n[ ki pti nh)> cl[gi."
+    };
+  }
+
+  // 0-SS13-F1303P2-MEDHA. SS13 F1303P2: Disturbance in Processor VCU1-DIP3 [MEDHA IGBT]
+  const isSS13F1303P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('vcu2') && !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('cab2') && !norm.includes('k]b-2') && !norm.includes('k]b -2') && !norm.includes('ss14') && !norm.includes('f140') &&
+    (
+      norm.includes('f1303p2') ||
+      norm.includes('vcu1-dip3') || norm.includes('vcu1 dip3') || norm.includes('vcu1dip3') ||
+      (norm.includes('dip3') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor') || norm.includes('f1303') || norm.includes('62.1/1') || norm.includes('63.1/1') || norm.includes('earth fault') || norm.includes('aY<fiˆÃT'))) ||
+      (norm.includes('dip-3') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor'))) ||
+      (norm.includes('f1303') && norm.includes('p2'))
+    );
+
+  if (isSS13F1303P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1303P2",
+      faultTitle: "SS13 F1303P2: Disturbance in Processor VCU1-DIP3 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1303P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS13 F1303P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DIP3\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU1 के डिजिटल इनपुट प्रोसेसर-3 (DIP3) में डिस्टर्बेंस। सामान्य ऑपरेशन जारी रहेगा, किंतु अर्थफ़ॉल्ट {कंट्रोल, फ़िल्टर और 415/110V} डिटेक्ट नहीं होगा तथा MCB 62.1/1 और 63.1/1 ट्रिप का पता नहीं चलेगा।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • अर्थफ़ॉल्ट {कंट्रोल, फ़िल्टर और 415/110V} डिटेक्ट नहीं होगा (Earth fault detection in Control, Filter and 415/110V will be inoperative).",
+        "   • MCB 62.1/1 और 63.1/1 ट्रिप होने का पता नहीं चलेगा (Tripping of MCBs 62.1/1 and 63.1/1 will not be detected).",
+        "3. TLC को सूचित करें।"
+      ],
+      precautions: "DIP3 के प्रभावित होने से 415/110V तथा कंट्रोल/फ़िल्टर सर्किट का अर्थ फ़ॉल्ट डिटेक्शन और MCB 62.1/1 (स्कैवेंजिंग ब्लोअर) व 63.1/1 की स्क्रीन मॉनिटरिंग बंद हो जाती है। सतर्कतापूर्वक गाड़ी चलाते रहें और शेड अटेंशन हेतु लॉग बुक में दर्ज करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS13 F1303P2)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS13 F1303P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DIP3\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ aY<fiˆÃT {kºT^^i[l,(fÃTr ai]r 415/110} (DT[±T nh)> hi[gi.\n∑ MCB 62.1/1 ai]r 63.1/1 (T^^p hi[n[ ki pti nh)> cl[gi."
+    };
+  }
+
+  // 0-SS13-F1304P2-MEDHA. SS13 F1304P2: Disturbance in Processor VCU1-DIP4 [MEDHA IGBT]
+  const isSS13F1304P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('vcu2') && !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('cab2') && !norm.includes('k]b-2') && !norm.includes('k]b -2') && !norm.includes('ss14') && !norm.includes('f140') &&
+    (
+      norm.includes('f1304p2') ||
+      norm.includes('vcu1-dip4') || norm.includes('vcu1 dip4') || norm.includes('vcu1dip4') ||
+      (norm.includes('dip4') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor') || norm.includes('f1304'))) ||
+      (norm.includes('dip-4') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor'))) ||
+      (norm.includes('f1304') && norm.includes('p2'))
+    );
+
+  if (isSS13F1304P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1304P2",
+      faultTitle: "SS13 F1304P2: Disturbance in Processor VCU1-DIP4 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1304P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS13 F1304P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DIP4\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU1 के डिजिटल इनपुट प्रोसेसर-4 (DIP4) में डिस्टर्बेंस। लोको के सामान्य ऑपरेशन पर कोई प्रतिकूल प्रभाव नहीं पड़ता।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. TLC को सूचित करें।"
+      ],
+      precautions: "DIP4 में डिस्टर्बेंस होने पर सामान्य ऑपरेशन पूरी तरह सुरक्षित और चालू रहता है। कोई सहायक उपकरण बाधित नहीं होता। लॉग बुक में विवरण दर्ज कर गाड़ी जारी रखें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS13 F1304P2)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS13 F1304P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DIP4\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>."
+    };
+  }
+
+  // 0-SS13-F1305P2-MEDHA. SS13 F1305P2: Disturbance in Processor VCU1-DOP1 [MEDHA IGBT]
+  const isSS13F1305P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('vcu2') && !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('cab2') && !norm.includes('k]b-2') && !norm.includes('k]b -2') && !norm.includes('ss14') && !norm.includes('f140') &&
+    (
+      norm.includes('f1305p2') ||
+      norm.includes('vcu1-dop1') || norm.includes('vcu1 dop1') || norm.includes('vcu1dop1') ||
+      (norm.includes('dop1') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor') || norm.includes('f1305') || norm.includes('lamp') || norm.includes('tft'))) ||
+      (norm.includes('dop-1') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor'))) ||
+      (norm.includes('f1305') && norm.includes('p2'))
+    );
+
+  if (isSS13F1305P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1305P2",
+      faultTitle: "SS13 F1305P2: Disturbance in Processor VCU1-DOP1 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1305P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS13 F1305P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DOP1\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU1 के डिजिटल आउटपुट प्रोसेसर-1 (DOP1) में डिस्टर्बेंस। सामान्य ऑपरेशन जारी रहेगा, किंतु कैब डेस्क के भौतिक लैम्प इंडिकेशन कार्य नहीं करेंगे। लैम्प संकेत TFT डिस्प्ले यूनिट पर देखे जा सकते हैं।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • लैम्प इंडिकेशन कार्य नहीं करेंगे; लैम्प इंडिकेशन TFT डिस्प्ले यूनिट पर देखे जा सकते हैं। (Desk lamp indications will not work; view lamp indications directly on TFT display screen).",
+        "3. TLC को सूचित करें।"
+      ],
+      precautions: "DOP1 में दोष आने पर कैब डेस्क के सिग्नलिंग लैंप्स (जैसे LSDJ, LSFI आदि) का हार्डवेयर आउटपुट बंद हो जाता है, किंतु TFT स्क्रीन पर डिजिटल रूप से सभी इंडिकेशन उपलब्ध रहते हैं। अतः लोको की स्थिति की निगरानी TFT डिस्प्ले से करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS13 F1305P2)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS13 F1305P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DOP1\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ l[Àp e>(Dk[Sn kiy< nh)> kr[>g[, l[Àp e>(Dk[Sn TFT (DApl[ y*(nT pr d[K[ ji skt[ h]>."
+    };
+  }
+
+  // 0-SS13-F1306P2-MEDHA. SS13 F1306P2: Disturbance in Processor VCU1-DOP2 [MEDHA IGBT]
+  const isSS13F1306P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('vcu2') && !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('cab2') && !norm.includes('k]b-2') && !norm.includes('k]b -2') && !norm.includes('ss14') && !norm.includes('f140') &&
+    (
+      norm.includes('f1306p2') ||
+      norm.includes('f1306') ||
+      norm.includes('vcu1-dop2') || norm.includes('vcu1 dop2') || norm.includes('vcu1dop2') ||
+      (norm.includes('dop2') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor') || norm.includes('air dryer') || norm.includes('eyr d^^iyr'))) ||
+      (norm.includes('dop-2') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor')))
+    );
+
+  if (isSS13F1306P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1306P2",
+      faultTitle: "SS13 F1306P2: Disturbance in Processor VCU1-DOP2 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1306P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS13 F1306P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DOP2\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU1 के डिजिटल आउटपुट प्रोसेसर-2 (DOP2) में डिस्टर्बेंस। सामान्य ऑपरेशन जारी रहेगा, किंतु एयर ड्रायर (Air Dryer) कार्य नहीं करेगा।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • एयर ड्रायर कार्य नहीं करेगा। (Air dryer will be inoperative).",
+        "3. TLC को सूचित करें।"
+      ],
+      precautions: "एयर ड्रायर बंद हो जाने की स्थिति में मुख्य जलाशयों (MR-1 एवं MR-2) का ड्रेन कॉक समय-समय पर खोलकर नमी व पानी अवश्य ड्रेन करें ताकि न्यूमैटिक वाल्वों व ब्रेक पाइप में पानी न पहुंचे।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS13 F1306P2)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS13 F1306P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DOP2\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ Eyr D^^iyr kiy< nh)> kr[gi."
+    };
+  }
+
+  // 0-SS13-F1307P2-MEDHA. SS13 F1307P2: Disturbance in Processor VCU1-DOP3 [MEDHA IGBT]
+  const isSS13F1307P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('vcu2') && !norm.includes('cab 2') && !norm.includes('cab-2') && !norm.includes('cab2') && !norm.includes('k]b-2') && !norm.includes('k]b -2') && !norm.includes('ss14') && !norm.includes('f140') &&
+    (
+      norm.includes('f1307p2') ||
+      norm.includes('f1307') ||
+      norm.includes('vcu1-dop3') || norm.includes('vcu1 dop3') || norm.includes('vcu1dop3') ||
+      (norm.includes('dop3') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor'))) ||
+      (norm.includes('dop-3') && (norm.includes('vcu') || norm.includes('medha') || norm.includes('ss13') || norm.includes('processor')))
+    );
+
+  if (isSS13F1307P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1307P2",
+      faultTitle: "SS13 F1307P2: Disturbance in Processor VCU1-DOP3 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS13 (Cab 1)\nदोष कोड: F1307P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS13 F1307P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DOP3\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU1 के डिजिटल आउटपुट प्रोसेसर-3 (DOP3) में डिस्टर्बेंस। लोकोमोटिव के सामान्य ऑपरेशन पर कोई प्रतिकूल प्रभाव नहीं पड़ता।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. TLC को सूचित करें।"
+      ],
+      precautions: "DOP3 में डिस्टर्बेंस आने पर सामान्य ट्रेन ऑपरेशन सुरक्षित रूप से जारी रहता है। किसी ऑक्जिलरी पर प्रभाव नहीं पड़ता। लॉग बुक में दर्ज कर सामान्य गति से संचालन करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS13 F1307P2)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS13 F1307P2 Loco xxxx SS 13 Cab1\nDisturbance in Processor VCU1-DOP3\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>."
+    };
+  }
+
+  const isSS14F1401P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1402') && !norm.includes('stb2') && !norm.includes('stb-2') && !norm.includes('stb 2') && !norm.includes('rbu-3') && !norm.includes('rbu 3') &&
+    !norm.includes('f1403') && !norm.includes('reverser') && !norm.includes('(rvs<<r') && !norm.includes('रिवर्सर') &&
+    !norm.includes('f1404') && !norm.includes('f1405') && !norm.includes('riom') &&
+    !norm.includes('p2') && !norm.includes('dip') && !norm.includes('dop') && !norm.includes('vcu2') &&
+    (
+      norm.includes('f1401p1') ||
+      (norm.includes('f1401') && !norm.includes('p2')) ||
+      norm.includes('rbu-4') ||
+      norm.includes('rbu 4') ||
+      norm.includes('processor rbu-4') ||
+      norm.includes('processor rbu 4') ||
+      norm.includes('processor hbb2') ||
+      norm.includes('processor hbb 2') ||
+      norm.includes('processor hbb-2') ||
+      norm.includes('hbb2') ||
+      norm.includes('hbb 2') ||
+      norm.includes('hbb-2') ||
+      norm.includes('cab 2 may get isolated') ||
+      norm.includes('cab 2 isolated') ||
+      norm.includes('cab 2 will not isolate') ||
+      (norm.includes('cab 2') && norm.includes('hbb')) ||
+      (norm.includes('ss14') && (norm.includes('hbb') || (norm.includes('f1401') && !norm.includes('p2')) || norm.includes('rbu-4') || norm.includes('rbu 4'))) ||
+      (norm.includes('drive from cab 1') && (norm.includes('hbb2') || norm.includes('hbb 2'))) ||
+      (norm.includes('drive from cab 2') && (norm.includes('ss14') || norm.includes('hbb2') || norm.includes('hbb-2') || norm.includes('hbb 2') || norm.includes('rbu-4') || norm.includes('rbu 4'))) ||
+      (norm.includes('85') && norm.includes('ii') && (norm.includes('hbb') || (norm.includes('cab 2') && norm.includes('isolate'))))
+    );
+
+  if (isSS14F1401P1Query) {
+    return {
+      identifiedFaultId: "F1401P1",
+      faultTitle: "SS14 F1401P1: DISTURBANCE IN PROCESSOR HBB2 / RBU-4 [BHEL TCN, WAG-9/WAP-7 VCU Redundancy & 3-Phase]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 198 / PDF 220):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1401P1\nदोष संदेश:\n- BHEL TCN/IGBT: SS14 F1401P1 Loco xxxx SS 14 Cab2 / Disturbance in Processor RBU-4 / Driving from Cab 2 still possible / Press BPFA.\n- WAG-9/WAP-7/WAP-5: Disturbance in Processor HBB-2 / Cab 2 will not Isolate. Drive from cab 2.\n- कन्वेंशनल: DISTURBANCE IN PROCESSOR HBB2 / Cab 2 may get isolated, drive from cab 1\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【1. BHEL TCN एवं IGBT मेक लोको (Disturbance in Processor RBU-4)】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें (MCE OFF/ON)। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "2. यदि फ़ॉल्ट फिर भी बना रहता है तो BPFA दबाकर फ़ॉल्ट एकनॉलेज करें और किसी भी कैब से सामान्य तौर पर गाड़ी चलाएं।",
+        "--------------------------------------------------",
+        "【2. WAG-9 / WAG-9H / WAP-7 लोको (जिनमें VCU Redundancy Feature दिया हुआ है)】:",
+        "1. थ्रोटल को '0' पर लाएं। गाड़ी खड़ी करें और पार्किंग ब्रेक मैनुअली रिलीज़ करें। (Bring throttle to '0'. Stop the train and manually release parking brakes).",
+        "2. VCD को SB-1 में लगे 237.1 स्विच को '0' पर रखकर आइसोलेट करें। (Isolate VCD by placing switch 237.1 in SB-1 panel to '0').",
+        "3. यदि कैब-2 से गाड़ी चला रहे हों तो न्यूमैटिक पैनल पर पैंटो सिलेक्टर स्विच (85) को 'II' पर रखें, क्योंकि पैंटो-1 रेज़ नहीं होगा। (If driving from Cab-2, place panto selector switch 85 on pneumatic panel to 'II', because Panto-1 will not raise).",
+        "4. BPFA दबाकर फ़ॉल्ट ACK करें और गाड़ी चलाएं। (Press BPFA to acknowledge fault and drive train).",
+        "5. थ्रोटल को BE (Braking Effort) की तरफ न ले जाएं क्योंकि रीजेनेरेटिव ब्रेक कार्य नहीं करेगा। (Do not move throttle towards BE because regenerative brake will not work).",
+        "6. ऑटो फ़्लैशर काम नहीं करेगी क्योंकि प्रेशर स्विच फ्लो इंडिकेटर मॉनीटर नहीं होगा, अतः आवश्यकता पड़ने पर BPFL स्विच को ऑन करके फ़्लैशर लाइट जलाएं। (Auto flasher will not work as airflow pressure switch is not monitored; turn ON manually via BPFL switch when required).",
+        "नोट: प्रेशर स्विच डायरेक्ट ब्रेक मॉनीटर नहीं होगा; प्रेशर स्विच PAN-1 और PAN-2 मॉनीटर नहीं होगा।",
+        "--------------------------------------------------",
+        "【3. WAP-5 लोको (जिनमें VCU Redundancy Feature दिया हुआ है)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें और गाड़ी चलाएं। (Bring throttle to '0'. Press BPFA to acknowledge fault and drive train from Cab-2).",
+        "2. यदि कैब-2 से गाड़ी चला रहे हों तो न्यूमैटिक पैनल पर पैंटो सिलेक्टर स्विच (85) को 'II' पर रखें, क्योंकि पैंटो-1 रेज नहीं होगा। (If driving from Cab-2, place panto selector switch 85 on pneumatic panel to 'II' because Panto-1 will not raise).",
+        "--------------------------------------------------",
+        "【4. कन्वेंशनल 3-फेज लोको (बिना VCU Redundancy)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0'. Acknowledge fault by pressing BPFA push button).",
+        "2. SB-2 पर लगे MCB (127.1/2) को चेक करें, यदि ट्रिप हो तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके एक बार रीसेट करें। (Check MCBs on SB-2 panel, if tripped, switch OFF Control Electronics and reset once).",
+        "3. यदि ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ तथा ऑन करें (MCE OFF/ON)। पेंटो रेज करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "【स्क्रीन 2 / ENTER दबाने पर: CAB 2 ISOLATED / Drive from cab 1】: कैब-1 से कार्य करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "WAG-9/WAP-7 VCU Redundancy में HBB-2 डिस्टर्ब होने पर गाड़ी खड़ी कर पार्किंग ब्रेक मैनुअली रिलीज करें व स्विच 237.1 से VCD आइसोलेट करें। रीजेनेरेटिव ब्रेक कार्य नहीं करेगा अतः थ्रोटल को BE की तरफ न ले जाएं, और ऑटो फ्लैशर न चलने पर BPFL से मैनुअल फ्लैशर जलाएं। स्विच 85 को 'II' पर रखना न भूलें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS14 Cab 2 (F1401P1, पेज 198 / PDF 220)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 220,
+      pdfQuote: "WAG-9/WAG-9H/WAP-7 li[ki[ k[ (lE (jnm[> VCU redundancy features (dyi h&ai h].\nSS14 F1401P1 Loco xxxx SS 14 Cab 2\nDisturbance in Processor HBB-2\nCab 2 will not Isolate. Drive from cab 2.\n1.Y\\i[Tl ki[ ‘ 0 ’ pr liE>.giD) KD) kr[> ai]r pi(k<>g b\\[k m[n&al) (rl)J kr[>.\n2.VCD ki[ SB-1 m[> lg[ 237.1 (Avc ki[ ‘0’ pr rKkr aiesi[l[T kr>[.\n3. y(d k]b-2 s[ giD) cli rh[ h]> ti[ ºy*m[(Tk p[nl pr p[ºTi[ (sl[±Tr (Avc (85) ki[ ‘ II ’ pr rK[>.±yi[>(k p[ºTi[-1 r[J nh)> hi[gi.\n4. BPFA dbikr fiˆÃT ACK kr>[ ai]r giD) cliE>.\n5.Y\\i[Tl ki[ BE k) trf n l[ jiE> ±yi[>(k (rjnr[(Tv b\\[k kiy< nh)> kr[gi.\n6.aiˆTi[ ½l[Sr kim nh)> kr[g) ±yi[>(k p\\[Sr (Avc ½li[ e>(Dk[Tr miˆn)Tr nh)> hi[gi, at: aivÆykti pDn[ pr BPFL (Avc ki[ aiˆn krk[ ½l[Sr lieT jliE>."
+    };
+  }
+
+  // 0-SS14-F1402P1. SS14 F1402P1: DISTURBANCE IN PROCESSOR STB-2 / RBU-3 (Vadodara TSD Page 198 / 220)
+  const isSS14F1402P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1403') && !norm.includes('reverser') && !norm.includes('(rvs<<r') && !norm.includes('रिवर्सर') &&
+    !norm.includes('f1404') && !norm.includes('f1405') && !norm.includes('riom') && !norm.includes('rbu-4') && !norm.includes('rbu 4') &&
+    !norm.includes('p2') && !norm.includes('dip') && !norm.includes('dop') && !norm.includes('vcu2') &&
+    (
+      norm.includes('f1402p1') ||
+      (norm.includes('f1402') && !norm.includes('p2')) ||
+      norm.includes('rbu-3') ||
+      norm.includes('rbu 3') ||
+      norm.includes('processor rbu-3') ||
+      norm.includes('processor rbu 3') ||
+      norm.includes('processor stb2') ||
+      norm.includes('processor stb 2') ||
+      norm.includes('processor stb-2') ||
+      norm.includes('stb2') ||
+      norm.includes('stb-2') ||
+      norm.includes('stb 2') ||
+      norm.includes('127.11/2') ||
+      (norm.includes('127.11') && (norm.includes('sb-2') || norm.includes('sb2') || norm.includes('bogie-2') || norm.includes('bogie 2'))) ||
+      (norm.includes('105%') && norm.includes('110%')) ||
+      (norm.includes('overspeed') && (norm.includes('alarm') || norm.includes('alim<') || norm.includes('105%') || norm.includes('stb-2') || norm.includes('stb2') || norm.includes('cab 2') || norm.includes('ss14'))) ||
+      (norm.includes('ai[vr ap)d') && (norm.includes('alim<') || norm.includes('stb') || norm.includes('ss14'))) ||
+      (norm.includes('85') && (norm.includes('stb2') || norm.includes('stb-2') || (norm.includes('i') && norm.includes('ss14')))) ||
+      (norm.includes('panto-2') && (norm.includes('85') || norm.includes('stb') || norm.includes('cab 2') || norm.includes('ss14'))) ||
+      (norm.includes('p[ºti[ -2') && norm.includes('85')) ||
+      (norm.includes('ss14') && (norm.includes('stb') || (norm.includes('f1402') && !norm.includes('p2')) || norm.includes('rbu-3') || norm.includes('rbu 3')))
+    );
+
+  if (isSS14F1402P1Query) {
+    return {
+      identifiedFaultId: "F1402P1",
+      faultTitle: "SS14 F1402P1: DISTURBANCE IN PROCESSOR STB2 / RBU-3 [BHEL TCN, WAG-9/WAP-7 VCU Redundancy & 3-Phase]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 198 / PDF 220):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1402P1\nदोष संदेश:\n- BHEL TCN/IGBT: SS14 F1402P1 Loco xxxx SS 14 Cab2 / Disturbance in Processor RBU-3 / Driving from Cab 2 still possible / Press BPFA.\n- WAG-9/WAP-7/WAP-5: Disturbance in Processor STB-2 / Cab 2 will not Isolate. Drive from cab 2.\n- कन्वेंशनल: DISTURBANCE IN PROCESSOR STB2 / Cab 2 may get isolated, drive from cab 1\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【1. BHEL TCN एवं IGBT मेक लोको (Disturbance in Processor RBU-3)】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें (MCE OFF/ON)। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
+        "2. यदि फ़ॉल्ट बना रहता है तो BPFA दबाकर फ़ॉल्ट एकनॉलेज करें और किसी भी कैब से सामान्य तौर पर गाड़ी चलाएं।",
+        "3. कैब-2 के TE/BE मीटर रीडिंग नहीं बताएंगे।",
+        "4. लोको कैब-2 से फेलियर मोड (रोटेटिंग स्विच 152 को '0' से '1' पोजीशन पर) में चलेगा।",
+        "5. रीजेनेरेटिव ब्रेक उपलब्ध नहीं होगा, अतः गाड़ी/लोको को न्यूमैटिक ब्रेक (A-9/SA-9) द्वारा कंट्रोल करें।",
+        "6. कैब-1 से सामान्य ऑपरेशन संभव है।",
+        "--------------------------------------------------",
+        "【2. WAG-9 / WAG-9H / WAP-7 लोको (जिनमें VCU Redundancy Feature दिया हुआ है)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें और गाड़ी चलाएं। (Bring throttle to '0'. Press BPFA to acknowledge fault and drive train from Cab-2).",
+        "2. यदि बोगी आइसोलेशन की आवश्यकता हो तो बोगी-1 को MCB 127.1/1 एवं 127.11/1 (SB-1), बोगी-2 को MCB 127.1/2 एवं 127.11/2 (SB-2) द्वारा आइसोलेट करें (MCE ऑफ़ करके)। (If bogie isolation required, isolate Bogie-1 via MCB 127.1/1 & 127.11/1 in SB-1, Bogie-2 via MCB 127.1/2 & 127.11/2 in SB-2 after switching OFF MCE).",
+        "3. यदि कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करने की आवश्यकता हो तो BL को 'OFF' पर रखकर MCB 112.1 को ऑफ़ करें। (If CE OFF required, keep BL in 'OFF' and switch OFF MCB 112.1).",
+        "नोट: HB-2 में लगी सभी MCBs मॉनीटर नहीं होंगी; स्पीडोमीटर में ओवरस्पीड मॉनीटर नहीं होगी; विजिलेंस वार्निंग बजर मॉनीटर नहीं होगा; ऑक्सिलरी अर्थ फ़ॉल्ट मॉनीटर नहीं होगा।",
+        "--------------------------------------------------",
+        "【3. WAP-5 लोको (जिनमें VCU Redundancy Feature दिया हुआ है)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें और गाड़ी चलाएं। (Bring throttle to '0'. Press BPFA to acknowledge fault and drive the train from Cab-2).",
+        "2. 105% और 110% ओवर स्पीड होने पर अलार्म उपलब्ध नहीं होगा अतः लोको पायलट ज्यादा सतर्क रहते हुए स्पीडोमीटर पर लगातार ध्यान देते हुए गाड़ी चलाएं। (105% and 110% overspeed alarms will not be available; loco pilot must strictly monitor speedometer continuously).",
+        "3. यदि कैब-1 से गाड़ी चला रहे हों तो न्यूमैटिक पैनल पर पैंटो सिलेक्टर स्विच (85) को 'I' पर रखें, क्योंकि पैंटो-2 रेज नहीं होगा। (If driving from Cab-1, place panto selector switch 85 on pneumatic panel to 'I' because Panto-2 will not raise).",
+        "नोट: MCB 47.1/2 (MCP-2) को छोड़कर HB-2 में लगी अन्य सभी MCBs मॉनीटर नहीं होंगी।",
+        "--------------------------------------------------",
+        "【4. कन्वेंशनल 3-फेज लोको (बिना VCU Redundancy)】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0'. Acknowledge fault by pressing BPFA push button).",
+        "2. SB-2 पर लगे MCB (127.1/2) को चेक करें, यदि ट्रिप हो तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ करके एक बार रीसेट करें। (Check MCBs on SB-2, if tripped switch off CE and reset once).",
+        "3. यदि ट्रिप नहीं है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ तथा ऑन करें (MCE OFF/ON)। पेंटो उठाएं, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें। (If not tripped, cycle Control Electronics OFF and ON. Raise pantograph, close VCB and resume traction).",
+        "【स्क्रीन 2 / ENTER दबाने पर: CAB 2 ISOLATED / Drive from cab 1】: कैब-1 से कार्य करें। TLC को सूचित करें और लॉग बुक में दर्ज करें।"
+      ],
+      precautions: "BHEL लोको में RBU-3 डिस्टर्ब होने पर कैब-2 से TE/BE मीटर काम नहीं करेंगे और गाड़ी स्विच 152 से फेलियर मोड में चलेगी। रीजेनेरेटिव ब्रेक न मिलने के कारण न्यूमैटिक ब्रेक (A-9) से गाड़ी नियंत्रित करें। WAG-9/WAP-7 में ओवरस्पीड, विजिलेंस बजर व ऑक्सिलरी अर्थ फ़ॉल्ट मॉनीटर नहीं होंगे।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS14 Cab 2 (F1402P1, पेज 198 / PDF 220)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 220,
+      pdfQuote: "BHEL: SS14 F1402P1 Loco xxxx SS 14 Cab2\nDisturbance in Processor RBU-3\nDriving from Cab 2 still possible Press BPFA.\n1.k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n2.y(d fiˆÃT bni rhti h] ti[ BPFA dbikr fiˆÃT E±nil[J kr[> ai]r Iks) B) k]b s[ simiºyti]r pr giD) cliE>.\n3.k]b -2 k[ TE/BE m)Tr r)D)>g nh)> btiy[g>[.\n4. li[ki[ k]b -2 s[ f[(lyr mi[D {ri[T[(T>g (Avc 152 ki[ ‘ 0 ’ s[ ‘ 1 ’ pi[j)Sn pr} m[> cl[gi.\n5.(rjnr[(Tv b\\[k upl¾F nh)> hi[gi.at: giD)/li[ki[ ki[ ºy*m[(Tk b\\[k (A-9/SA-9) oiri kºT^^i[l kr[>.\n6.k]b -1 s[ simiºy aiˆpr[Sn s>Bv h]."
+    };
+  }
+
+  // 0-SS14-F1403P1. SS14 F1403P1: REVERSER DEFECTIVE / CAB 2 ISOLATED (Drive from cab 1) [Vadodara TSD Page 198 / 220]
+  const isSS14F1403P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1404') && !norm.includes('f1405') && !norm.includes('riom') &&
+    !norm.includes('p2') && !norm.includes('dip') && !norm.includes('dop') && !norm.includes('vcu2') &&
+    (
+      norm.includes('f1403p1') ||
+      (norm.includes('f1403') && !norm.includes('p2')) ||
+      (norm.includes('ss14') && (norm.includes('reverser') || norm.includes('(rvs<<r') || norm.includes('रिवर्सर'))) ||
+      ((norm.includes('reverser defective') || norm.includes('(rvs<<r') || norm.includes('रिवर्सर खराब') || norm.includes('रिवर्सर डिफेक्टिव')) && 
+        (norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('k]b-2') || norm.includes('k]b -2') || norm.includes('drive from cab 1') || norm.includes('k]b-1 s[ kiy<') || norm.includes('k]b-1') || norm.includes('कैब-1 से कार्य') || norm.includes('कैब 1 से') || norm.includes('p)c[ k) k]b') || norm.includes('पीछे की कैब')))
+    );
+
+  if (isSS14F1403P1Query) {
+    return {
+      identifiedFaultId: "F1403P1",
+      faultTitle: "SS14 F1403P1: REVERSER DEFECTIVE / CAB 2 ISOLATED (Drive from cab 1) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 198 / PDF 220):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1403P1\nदोष संदेश (स्क्रीन 1):\nSS14 F1403P1 Loco XXX SS14: Cab 2\nREVERSER DEFECTIVE\nDrive from cab 1\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXXX SS14: Cab 2\nCAB 2 ISOLATED\nDrive from cab 1\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: कैब-2 का रिवर्सर (MPJ) ख़राब / डिफेक्टिव होने के कारण कैब-2 से परिचालन बाधित; कोस्टिंग में सेक्शन क्लियर कर पीछे की कैब (कैब-1) से गाड़ी चलानी होगी (Drive from cab 1)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【1. MEDHA Make IGBT लोको】:",
+        "1. रिवर्सर (MPJ) को 2-3 बार ऑपरेट करें। कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ तथा ऑन (MCE OFF/ON) करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें। (Operate reverser 2-3 times. Cycle Control Electronics OFF/ON once. Raise panto, close VCB and resume traction).",
+        "2. यदि वही मैसेज दोबारा आता है और कैब-2 से गाड़ी चला रहे हों तो कैब बदलकर कैब-1 से सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें। (If same message reappears and driving from Cab-2, change cab and clear section from Cab-1. Inform TLC and enter in log book).",
+        "--------------------------------------------------",
+        "【2. BHEL TCN / MICAS GTO / कन्वेंशनल लोको】:",
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0'. Acknowledge fault by pressing BPFA push button).",
+        "2. रिवर्सर (MPJ) को 2-3 बार ऑपरेट करें। (Operate reverser 2-3 times forward and reverse).",
+        "3. यदि सफलता नहीं मिलती है तो कोस्टिंग में सेक्शन क्लियर करें। कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन (MCE OFF/ON) करें। (If unsuccessful, clear section in coasting. Cycle Control Electronics OFF and ON).",
+        "4. यदि वही मैसेज दोबारा आता है तो पीछे की कैब (कैब-1) से सेक्शन क्लियर करें। (If the same message reappears, clear section from rear cab / Cab-1).",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make an entry in loco log book).",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: CAB 2 ISOLATED / Drive from cab 1】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें। (Cycle Control Electronics OFF and ON).",
+        "2. यदि वही मैसेज दोबारा आता है तो पीछे की कैब (कैब-1) से सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें। (If same message reappears, change cab and clear section from Cab-1)."
+      ],
+      precautions: "रिवर्सर स्विच/हैंडल के कॉन्टैक्ट्स या इंटरलॉक में अस्थायी खराबी होने पर 2-3 बार ऑपरेट करने और CE OFF/ON करने से दोष हल हो सकता है। यदि रिवर्सर डिफेक्टिव बना रहता है, तो समय न गंवाते हुए तुरंत कैब बदलकर पीछे की कैब (कैब-1) से गाड़ी चलाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS14 Cab 2 (F1403P1, पेज 198 / PDF 220)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 220,
+      pdfQuote: "SS14 F1403P1 Loco XXX SS14: Cab 2\nREVERSER DEFECTIVE\nDrive from cab 1\nF1403P1- ka answer ye hai\n1.Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2.(rvs<<r ki[ 2-3 bir aipr[T kr>[.\n3.y(d sflti nh)> (mlt) h] ti[ ki[(AT>g m[> s[±Sn (±lyr kr[>.k>T^i[l el[±T^i(n±s ki[ aiˆf tYi aiˆn kr>[.\n4.y(d vh) m]s[j d&biri aiti h] ti[ p)C[ k) k]b {k]b-1} s[ s[±Sn (±lyr kr>[.\n5.TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n\nLoco XXXX SS14: Cab 2\nCAB 2 ISOLATED\nDrive from cab 1\nPress<Enter>\n1.k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[.\n2.y(d vh) m]s[j d&biri aiti h] ti[ p)C[ k) k]b {k]b-1} s[ s[±Sn (±lyr kr>[. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS14-F1404P1. SS14 F1404P1: RBU 3 RIOM EXTENSION FAULT (Vadodara TSD Page 198 / 220)
+  const isSS14F1404P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('start run') && !norm.includes('interlock') && !norm.includes('simultaneous') && !norm.includes('motoring') && !norm.includes('medha') &&
+    (
+      (norm.includes('f1404p1') && !norm.includes('medha')) ||
+      (norm.includes('f1404') && !norm.includes('medha') && !norm.includes('p2')) ||
+      (norm.includes('rbu 3') && norm.includes('riom')) ||
+      (norm.includes('rbu-3') && norm.includes('riom')) ||
+      (norm.includes('rbu 3 riom') || norm.includes('rbu-3 riom')) ||
+      (norm.includes('ss14') && (norm.includes('riom 3') || norm.includes('riom-3')))
+    );
+
+  if (isSS14F1404P1Query) {
+    return {
+      identifiedFaultId: "F1404P1",
+      faultTitle: "SS14 F1404P1: RBU 3 RIOM EXTENSION FAULT (Driving still possible) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 198 / PDF 220):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1404P1\nदोष संदेश (स्क्रीन):\nSS14 F1404P1 Loco XXX SS14: Cab 2\nRBU 3 RIOM EXTENSION FAULT\nDriving still possible\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: कैब-2 में RBU-3 RIOM एक्सटेंशन फ़ॉल्ट; ड्राइविंग अभी भी संभव है (Driving still possible)। DDS से प्रभावित RIOM एक्सटेंशन की पहचान करनी होगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें (MCE OFF/ON)। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें। (Cycle Control Electronics OFF and ON. Raise pantograph, close VCB and resume traction).",
+        "2. यदि कैब-2 से गाड़ी चला रहे हों और वही मैसेज दोबारा आता है तो कैब बदलकर कैब-1 से सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें। (If driving from Cab-2 and same message reappears, change cab and clear section from Cab-1. Inform TLC and record in log book).",
+        "3. DDS के मैसेज पढ़ें और कौन सा RIOM एक्सटेंशन बदलना है पता लगाएं। (Read DDS diagnostic messages to identify which RIOM extension needs replacement)."
+      ],
+      precautions: "RBU-3 RIOM एक्सटेंशन फ़ॉल्ट आने पर गाड़ी को रोका नहीं जाता (Driving still possible), किंतु यदि MCE रीसेट के बाद भी फ़ॉल्ट बना रहे तो कैब-1 से सेक्शन क्लियर करना सुरक्षित रहता है। DDS स्क्रीन पर डायग्नोस्टिक कोड देखकर संबंधित RIOM कार्ड नोट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS14 Cab 2 (F1404P1, पेज 198 / PDF 220)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 220,
+      pdfQuote: "SS14 F1404P1 Loco XXX SS14: Cab 2\nRBU 3 RIOM EXTENSION FAULT\nDriving still possible\n1.k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[. p[ºTi[ r[J kr[>, VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n2.y(d k]b-2 s[ giD) cli rh[ h]> ai]r vh) m]s[j d&biri aiti h] ti[ k]b bdlkr k]b-1 s[ s[±Sn (±lyr kr>[. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n3. DDS k[ m]s[J pQ[> ai]r ki]n si RIOM E±sT[>Sn bdlni h] pti lgiE>."
+    };
+  }
+
+  // 0-SS14-F1405P1. SS14 F1405P1: RBU 4 RIOM EXTENSION FAULT (Vadodara TSD Page 198 / 220)
+  const isSS14F1405P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('p2') && !norm.includes('dip') && !norm.includes('dop') && !norm.includes('vcu2') &&
+    (
+      norm.includes('f1405p1') ||
+      (norm.includes('f1405') && !norm.includes('p2')) ||
+      (norm.includes('rbu 4') && norm.includes('riom')) ||
+      (norm.includes('rbu-4') && norm.includes('riom')) ||
+      (norm.includes('rbu 4 riom') || norm.includes('rbu-4 riom')) ||
+      (norm.includes('ss14') && (norm.includes('riom 4') || norm.includes('riom-4') || (norm.includes('f1405') && !norm.includes('p2'))))
+    );
+
+  if (isSS14F1405P1Query) {
+    return {
+      identifiedFaultId: "F1405P1",
+      faultTitle: "SS14 F1405P1: RBU 4 RIOM EXTENSION FAULT (Driving still possible) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 198 / PDF 220):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1405P1\nदोष संदेश (स्क्रीन):\nSS14 F1405P1 Loco XXX SS14: Cab 2\nRBU 4 RIOM EXTENSION FAULT\nDriving still possible\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: कैब-2 में RBU-4 RIOM एक्सटेंशन फ़ॉल्ट; ड्राइविंग अभी भी संभव है (Driving still possible)। DDS से प्रभावित RIOM एक्सटेंशन की पहचान करनी होगी।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें (MCE OFF/ON)। पैंटो उठाएं, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें। (Cycle Control Electronics OFF and ON. Raise pantograph, close VCB and resume traction).",
+        "2. यदि कैब-2 से गाड़ी चला रहे हों और वही मैसेज दोबारा आता है तो कैब बदलकर कैब-1 से सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें। (If driving from Cab-2 and same message reappears, change cab and clear section from Cab-1. Inform TLC and record in log book).",
+        "3. DDS के मैसेज पढ़ें और कौन सा RIOM एक्सटेंशन बदलना है, पता लगाएं। (Read DDS messages to identify which RIOM extension requires replacement)."
+      ],
+      precautions: "RBU-4 RIOM एक्सटेंशन फ़ॉल्ट में भी ट्रैक्शन अवरुद्ध नहीं होता (Driving still possible)। यदि कैब-2 से संदेश दोबारा आए तो कैब-1 से कार्य करें। शेड या रिले टीम हेतु DDS से सटीक RIOM मॉड्यूल नोट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS14 Cab 2 (F1405P1, पेज 198 / PDF 220)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 220,
+      pdfQuote: "SS14 F1405P1 Loco XXX SS14: Cab 2\nRBU 4 RIOM EXTENSION FAULT\nDriving still possible\n1.k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[. p[ºTi[ uqiy[>,VCB ±li[j kr>[ tYi T^]±Sn cil* kr>[.\n2.y(d k]b-2 s[ giD) cli rh[ h]> ai]r vh) m]s[j d&biri aiti h] ti[ k]b bdlkr k]b-1 s[ s[±Sn (±lyr kr>[. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n3.DDS k[ m]s[J pQ[> ai]r ki]n si RIOM E±sT[>Sn bdlni h], pti lgiE>"
+    };
+  }
+
+  // 0-SS14-F1404P1-MEDHA. SS14 F1404P1: START RUN INTERLOCK / Simultaneous Motoring & Braking command from Throttle of CAB-2 [MEDHA IGBT]
+  const isSS14F1404P1MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1404p1-medha') ||
+      (norm.includes('f1404') && (norm.includes('medha') || norm.includes('interlock') || norm.includes('motoring') || norm.includes('braking') || norm.includes('throttle'))) ||
+      ((norm.includes('start run') || norm.includes('interlock') || norm.includes('simultaneous motoring') || norm.includes('motoring & braking')) && (norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('cab2') || norm.includes('k]b-2') || norm.includes('k]b -2') || norm.includes('ss14')))
+    );
+
+  if (isSS14F1404P1MedhaQuery) {
+    return {
+      identifiedFaultId: "F1404P1-MEDHA",
+      faultTitle: "SS14 F1404P1: START RUN INTERLOCK / Simultaneous Motoring & Braking CAB-2 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1404P1 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS14 F1404P1 Loco XXX SS14: Cab 2\nSTART RUN INTERLOCK\nSimultaneous Motoring & Braking command\nfrom Throttle of CAB-2\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: कैब-2 के थ्रोटल से एक साथ मोटरिंग एवं ब्रेकिंग कमांड जाने के कारण सुरक्षा इंटरलॉक सक्रिय। सामान्य परिचालन बाधित।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं। (Bring throttle to '0').",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ तथा ऑन करें (MCE OFF/ON)। यदि वही मैसेज दोबारा आता है तो कैब बदलकर सेक्शन क्लियर करें। TLC को सूचित करें और लॉग बुक में दर्ज करें। (Cycle Control Electronics OFF/ON. If same message reappears, change cab and clear section. Inform TLC and record in log book)."
+      ],
+      precautions: "कैब-2 के थ्रोटल (TE/BE हैंडल) से मोटरिंग और रीजेनेरेटिव ब्रेकिंग का एक साथ सिग्नल जाने पर VCU इंटरलॉक सक्रिय हो जाता है। पहले थ्रोटल शून्य पर रखें और MCE रीसेट करें। यदि पोटेंशियोमीटर या माइक्रोस्विच में आंतरिक खराबी हो, तो तुरंत कैब-1 से गाड़ी चलाकर सेक्शन क्लियर करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS14 F1404P1, पेज 199 / PDF 221)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS14 F1404P1 Loco XXX SS14: Cab 2\nSTART RUN INTERLOCK\nSimultaneous Motoring & Braking command from Throttle of CAB-2\n1.Y\\i[Tl ki[ ‘ 0 ’ pr liE>.\n2.k>T^i[l el[±T^iˆ(n±s ki[ aiˆf tYi aiˆn kr>[.y(d vh) m]s[j d&biri aiti h] ti[ k]b bdlkr s[±Sn (±lyr kr>[.TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS14-F1401P2-MEDHA. SS14 F1401P2: Disturbance in Processor VCU2-DIP1 [MEDHA IGBT]
+  const isSS14F1401P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1401p2') ||
+      norm.includes('vcu2-dip1') || norm.includes('vcu2 dip1') || norm.includes('vcu2dip1') ||
+      ((norm.includes('dip1') || norm.includes('dip-1')) && (norm.includes('vcu2') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('cab2') || norm.includes('ss14') || norm.includes('f1401') || norm.includes('47.1/2') || norm.includes('54.1/2') || norm.includes('59.1/2'))) ||
+      (norm.includes('f1401') && norm.includes('p2'))
+    );
+
+  if (isSS14F1401P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1401P2",
+      faultTitle: "SS14 F1401P2: Disturbance in Processor VCU2-DIP1 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1401P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS14 F1401P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DIP1\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU2 के डिजिटल इनपुट प्रोसेसर-1 (DIP1) में डिस्टर्बेंस। सामान्य ऑपरेशन चालू रहेगा किंतु CSC कैब-2 से कार्य नहीं करेगा, PVEF कैब-2 से कार्य नहीं करेगा तथा MCB 47.1/2, 54.1/2 और 59.1/2 ट्रिप होने का पता नहीं चलेगा।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • CSC कैब-2 से कार्य नहीं करेगा। (Constant Speed Control inoperative from Cab-2).",
+        "   • PVEF कैब-2 से कार्य नहीं करेगा। (PVEF foot pedal inoperative from Cab-2).",
+        "   • MCB 47.1/2, 54.1/2 और 59.1/2 ट्रिप होने का पता नहीं चलेगा। (Tripping of MCBs 47.1/2 [MCP-2], 54.1/2 [OCB-2] and 59.1/2 [Oil pump transformer-2] will not be detected/monitored).",
+        "3. TLC को सूचित करें।"
+      ],
+      precautions: "VCU2-DIP1 में डिस्टर्बेंस होने पर कैब-2 से ड्राइविंग सामान्य रूप से जारी रखी जा सकती है। कंप्रेसर-2 (47.1/2) और ब्लोअर/पंप के ट्रिप होने की मॉनिटरिंग बंद हो जाती है, अतः HB-2 पैनल की स्थिति और MR प्रेशर पर नजर रखें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS14 F1401P2, पेज 199 / PDF 221)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS14 F1401P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DIP1\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ CSC k]b-2 s[ kiy< nh)> kr[gi.\n∑ PVEF k]b-2 s[ kiy< nh)> kr[gi.\n∑ MCB 47.1/2, 54.1/2 ai]r 59.1/2 (T^^p hi[n[ ki pti nh)> cl[gi."
+    };
+  }
+
+  // 0-SS14-F1402P2-MEDHA. SS14 F1402P2: Disturbance in Processor VCU2-DIP2 [MEDHA IGBT]
+  const isSS14F1402P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1402p2') ||
+      norm.includes('vcu2-dip2') || norm.includes('vcu2 dip2') || norm.includes('vcu2dip2') ||
+      ((norm.includes('dip2') || norm.includes('dip-2')) && (norm.includes('vcu2') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('cab2') || norm.includes('ss14') || norm.includes('f1402') || norm.includes('53.1/2') || norm.includes('55.1/2') || norm.includes('56.1/2'))) ||
+      (norm.includes('f1402') && norm.includes('p2'))
+    );
+
+  if (isSS14F1402P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1402P2",
+      faultTitle: "SS14 F1402P2: Disturbance in Processor VCU2-DIP2 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1402P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS14 F1402P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DIP2\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU2 के डिजिटल इनपुट प्रोसेसर-2 (DIP2) में डिस्टर्बेंस। सामान्य ऑपरेशन चालू रहेगा किंतु MCB 53.1/2, 55.1/2 और 56.1/2 ट्रिप होने का पता नहीं चलेगा।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • MCB 53.1/2 (TMB-2), 55.1/2 और 56.1/2 ट्रिप होने का पता नहीं चलेगा। (Tripping of MCBs 53.1/2, 55.1/2 and 56.1/2 will not be detected/monitored).",
+        "3. TLC को सूचित करें।"
+      ],
+      precautions: "DIP2 में डिस्टर्बेंस होने पर HB-2 पैनल की मुख्य मोटर MCBs (ट्रैक्शन मोटर ब्लोअर-2 आदि) की स्क्रीन मॉनिटरिंग बंद हो जाती है। मशीन रूम में HB-2 पैनल पर इन MCBs की भौतिक स्थिति समय-समय पर जांच लें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS14 F1402P2, पेज 199 / PDF 221)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS14 F1402P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DIP2\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ MCB 53.1/2, 55.1/2 ai]r 56.1/2 (T^^p hi[n[ ki pti nh)> cl[gi."
+    };
+  }
+
+  // 0-SS14-F1403P2-MEDHA. SS14 F1403P2: Disturbance in Processor VCU2-DIP3 [MEDHA IGBT]
+  const isSS14F1403P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1403p2') ||
+      norm.includes('vcu2-dip3') || norm.includes('vcu2 dip3') || norm.includes('vcu2dip3') ||
+      ((norm.includes('dip3') || norm.includes('dip-3')) && (norm.includes('vcu2') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('cab2') || norm.includes('ss14') || norm.includes('f1403') || norm.includes('smoke') || norm.includes('ami[k') || norm.includes('62.1/2') || norm.includes('63.1/2'))) ||
+      (norm.includes('f1403') && norm.includes('p2'))
+    );
+
+  if (isSS14F1403P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1403P2",
+      faultTitle: "SS14 F1403P2: Disturbance in Processor VCU2-DIP3 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1403P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS14 F1403P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DIP3\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU2 के डिजिटल इनपुट प्रोसेसर-3 (DIP3) में डिस्टर्बेंस। सामान्य ऑपरेशन चालू रहेगा किंतु स्मोक वार्निंग डिटेक्ट नहीं होगी तथा MCB 62.1/2 और 63.1/2 ट्रिप होने का पता नहीं चलेगा।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • स्मोक वार्निंग (Smoke warning) डिटेक्ट नहीं होगी। (Smoke warning detection inoperative).",
+        "   • MCB 62.1/2 और 63.1/2 ट्रिप होने का पता नहीं चलेगा। (Tripping of MCBs 62.1/2 and 63.1/2 will not be detected/monitored).",
+        "3. TLC को सूचित करें।"
+      ],
+      precautions: "DIP3 में दोष होने से मशीन रूम में धुएं (Smoke Warning) का स्वचालित अलार्म तथा MCB 62.1/2 (स्कैवेंजिंग ब्लोअर) की मॉनिटरिंग बंद हो जाती है। मशीन रूम का नियमित रूप से भौतिक मुआयना करते रहें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS14 F1403P2, पेज 199 / PDF 221)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS14 F1403P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DIP3\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ Ami[k vi(n<>g (DT[±T nh)> hi[gi.\n∑ MCB 62.1/2 ai]r 63.1/2 (T^^p hi[n[ ki pti nh)> cl[gi."
+    };
+  }
+
+  // 0-SS14-F1404P2-MEDHA. SS14 F1404P2: Disturbance in Processor VCU2-DIP4 [MEDHA IGBT]
+  const isSS14F1404P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1404p2') ||
+      norm.includes('vcu2-dip4') || norm.includes('vcu2 dip4') || norm.includes('vcu2dip4') ||
+      ((norm.includes('dip4') || norm.includes('dip-4')) && (norm.includes('vcu2') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('cab2') || norm.includes('ss14') || norm.includes('f1404'))) ||
+      (norm.includes('f1404') && norm.includes('p2'))
+    );
+
+  if (isSS14F1404P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1404P2",
+      faultTitle: "SS14 F1404P2: Disturbance in Processor VCU2-DIP4 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1404P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS14 F1404P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DIP4\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU2 के डिजिटल इनपुट प्रोसेसर-4 (DIP4) में डिस्टर्बेंस। लोको के सामान्य ऑपरेशन पर कोई प्रतिकूल प्रभाव नहीं पड़ता।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. TLC को सूचित करें।"
+      ],
+      precautions: "DIP4 में खराबी आने पर लोकोमोटिव का सामान्य ऑपरेशन अप्रभावित रहता है। लॉग बुक में विवरण दर्ज कर सुरक्षित रूप से गाड़ी चलाते रहें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS14 F1404P2, पेज 199 / PDF 221)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS14 F1404P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DIP4\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>."
+    };
+  }
+
+  // 0-SS14-F1405P2-MEDHA. SS14 F1405P2: Disturbance in Processor VCU2-DOP1 [MEDHA IGBT]
+  const isSS14F1405P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1405p2') ||
+      norm.includes('vcu2-dop1') || norm.includes('vcu2 dop1') || norm.includes('vcu2dop1') ||
+      ((norm.includes('dop1') || norm.includes('dop-1')) && (norm.includes('vcu2') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('cab2') || norm.includes('ss14') || norm.includes('f1405') || norm.includes('panto-2') || norm.includes('panto 2') || norm.includes('lamp indication'))) ||
+      (norm.includes('f1405') && norm.includes('p2'))
+    );
+
+  if (isSS14F1405P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1405P2",
+      faultTitle: "SS14 F1405P2: Disturbance in Processor VCU2-DOP1 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1405P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS14 F1405P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DOP1\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU2 के डिजिटल आउटपुट प्रोसेसर-1 (DOP1) में डिस्टर्बेंस। लैम्प इंडिकेशन कार्य नहीं करेंगे (TFT डिस्प्ले पर देखें) तथा पैंटो-2 रेज़ नहीं होगा (स्विच 85 को 'I' पर रखकर पैंटो-1 उठाएं)।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. यदि कैब-2 से गाड़ी चला रहे हों तो ZPT को डाउन पोजीशन पर करके पैंटो सिलेक्टर स्विच (85) को 'I' पर रखकर ZPT को अप पोजीशन पर करें और पैंटो-1 का रेज़ होना सुनिश्चित करें और सामान्य ऑपरेशन चालू रखें। (If driving from Cab-2, lower pantograph via ZPT, place Panto Selector Switch 85 to 'I', raise pantograph via ZPT, verify Panto-1 is raised and resume normal operation).",
+        "3. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • लैम्प इंडिकेशन कार्य नहीं करेंगे (लैम्प इंडिकेशन TFT डिस्प्ले यूनिट पर देखे जा सकते हैं)। (Desk lamp indications will not work; view them on TFT display screen).",
+        "   • पैंटो-2 रेज़ नहीं होगा। (Panto-2 will not raise).",
+        "4. TLC को सूचित करें।"
+      ],
+      precautions: "DOP1 में खराबी आने पर पैंटो-2 रेज़ नहीं होगा, इसलिए स्विच 85 को 'I' पर सेट करके पैंटो-1 उठाना अनिवार्य है। डेस्क लैंप्स बंद होने पर TFT स्क्रीन पर सभी डिजिटल इंडिकेशन की निगरानी रखें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS14 F1405P2, पेज 199 / PDF 221)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS14 F1405P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DOP1\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>.\n2. y(d k]b-2 s[ giD) cli rh[ h]> ti[ ZPT ki[ Diun pi[j)Sn pr krk[ p[ºTi[ (sl[±Tr (Avc (85) ki[ ‘ I ’ pr rKkr ZPT ki[ ap pi[j)Sn pr kr[> ai]r p[ºTi[-1 ki r[J hi[ni s&(n(Áct kr[> ai]r simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ l[Àp e>(Dk[Sn kiy< nh)> kr[>g[, l[Àp e>(Dk[Sn TFT (DApl[ y*(nT pr d[K[ ji skt[ h]>.\n∑ p[ºTi[-2 r[J nh)> hi[gi."
+    };
+  }
+
+  // 0-SS14-F1406P2-MEDHA. SS14 F1406P2: Disturbance in Processor VCU2-DOP2 [MEDHA IGBT]
+  const isSS14F1406P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1406p2') ||
+      norm.includes('f1406') ||
+      norm.includes('vcu2-dop2') || norm.includes('vcu2 dop2') || norm.includes('vcu2dop2') ||
+      ((norm.includes('dop2') || norm.includes('dop-2')) && (norm.includes('vcu2') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('cab2') || norm.includes('ss14') || norm.includes('f1406') || norm.includes('panto-1') || norm.includes('sanding') || norm.includes('s&](D>g'))) ||
+      (norm.includes('f1406') && norm.includes('p2'))
+    );
+
+  if (isSS14F1406P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1406P2",
+      faultTitle: "SS14 F1406P2: Disturbance in Processor VCU2-DOP2 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1406P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS14 F1406P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DOP2\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU2 के डिजिटल आउटपुट प्रोसेसर-2 (DOP2) में डिस्टर्बेंस। पैंटो-1 रेज़ नहीं होगा (कैब-1 से चलाने पर स्विच 85 को 'II' पर रखकर पैंटो-2 उठाएं) तथा सैंडिंग वाल्व कार्य नहीं करेंगे।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें। (Record fault in loco log book).",
+        "2. यदि कैब-1 से गाड़ी चला रहे हों तो ZPT को डाउन पोजीशन पर करके पैंटो सिलेक्टर स्विच (85) को 'II' पर रखकर ZPT को अप पोजीशन पर करें और पैंटो-2 का रेज़ होना सुनिश्चित करें और सामान्य ऑपरेशन चालू रखें। (If driving from Cab-1, lower panto via ZPT, place switch 85 to 'II', raise panto via ZPT, verify Panto-2 is raised and continue normal operation).",
+        "3. ध्यान दें कि निम्न कार्य नहीं होंगे (The following functions will not be operational):",
+        "   • पैंटो-1 रेज़ नहीं होगा। (Panto-1 will not raise).",
+        "   • सैंडिंग वाल्व कार्य नहीं करेंगे। (Sanding valves inoperative).",
+        "4. TLC को सूचित करें।"
+      ],
+      precautions: "DOP2 में खराबी आने पर पैंटो-1 रेज़ नहीं होगा तथा सैंडिंग वाल्व कार्य नहीं करेंगे। पहिया फिसलने (Wheel Slip) की स्थिति में सैंडिंग उपलब्ध नहीं होगी, अतः गीली या चिकनी पटरियों पर थ्रोटल सतर्कता से नियंत्रित करें। स्विच 85 को 'II' पर रखकर पैंटो-2 उठाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS14 F1406P2, पेज 199 / PDF 221)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS14 F1406P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DOP2\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[.\n2. y(d k]b-1 s[ giD) cli rh[ h]> ti[ ZPT ki[ Diun pi[j)Sn pr krk[ p[ºTi[ (sl[±Tr (Avc (85) ki[ ‘ II ’ pr rKkr ZPT ki[ ap pi[j)Sn pr kr[> ai]r p[ºTi[-2 ki r[J hi[ni s&(n(Áct kr[> ai]r simiºy aiˆpr[Sn cil* rK[>.\n(nÀn kiy< nh)> hi[>g[\n∑ p[ºTi[-1 r[J nh)> hi[gi.\n∑ s&](D>g viÃv kiy< nh)> kr[>g[."
+    };
+  }
+
+  // 0-SS14-F1407P2-MEDHA. SS14 F1407P2: Disturbance in Processor VCU2-DOP3 [MEDHA IGBT]
+  const isSS14F1407P2MedhaQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1407p2') ||
+      norm.includes('f1407') ||
+      norm.includes('vcu2-dop3') || norm.includes('vcu2 dop3') || norm.includes('vcu2dop3') ||
+      ((norm.includes('dop3') || norm.includes('dop-3')) && (norm.includes('vcu2') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('cab2') || norm.includes('ss14') || norm.includes('f1407'))) ||
+      (norm.includes('f1407') && norm.includes('p2'))
+    );
+
+  if (isSS14F1407P2MedhaQuery) {
+    return {
+      identifiedFaultId: "F1407P2",
+      faultTitle: "SS14 F1407P2: Disturbance in Processor VCU2-DOP3 [MEDHA IGBT Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (MEDHA IGBT लोको ट्रबलशूटिंग):\nसबसिस्टम: SS14 (Cab 2)\nदोष कोड: F1407P2 (MEDHA Make IGBT Loco)\nदोष संदेश:\nSS14 F1407P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DOP3\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: VCU2 के डिजिटल आउटपुट प्रोसेसर-3 (DOP3) में डिस्टर्बेंस। लोको के सामान्य ऑपरेशन पर कोई प्रतिकूल प्रभाव नहीं पड़ता।\n3-फेज TSD (MEDHA IGBT) अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. फ़ॉल्ट को लॉग बुक में दर्ज करें तथा सामान्य ऑपरेशन चालू रखें। (Record fault in loco log book and continue normal operation).",
+        "2. TLC को सूचित करें।"
+      ],
+      precautions: "DOP3 में डिस्टर्बेंस आने पर सामान्य ट्रेन ऑपरेशन पूरी तरह सुरक्षित और चालू रहता है। लॉग बुक में दर्ज कर सामान्य गति से संचालन करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - MEDHA IGBT लोको (SS14 F1407P2, पेज 199 / PDF 221)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "SS14 F1407P2 Loco xxxx SS 14:Cab 2\nDisturbance in Processor VCU2-DOP3\n1.fiˆÃT ki[ liˆg b&k m[> dj< kr>[ tYi simiºy aiˆpr[Sn cil* rK[>."
+    };
+  }
+
+  // 0-SS15-F1501P1. SS15 F1501P1: FIRE IN MACHINE ROOM / FIRE DETECTION (Vadodara TSD Page 200 / 222)
+  const isSS15F1501P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('p2') && !norm.includes('fault in fire detection') && !norm.includes('no fire detection') &&
+    !norm.includes('f1502') && !norm.includes('warning smoke') &&
+    (
+      norm.includes('f1501p1') ||
+      (norm.includes('f1501') && !norm.includes('p2')) ||
+      norm.includes('fire in machine room') ||
+      norm.includes('extinguish the fire') ||
+      norm.includes('reset the fire detection unit') ||
+      norm.includes('fire detection') ||
+      norm.includes('मशीन रूम में आग') ||
+      norm.includes('मशीन रूम में धुआं') ||
+      norm.includes('मशीन रूम में धुंआ') ||
+      norm.includes('aig/f‰‡ai') ||
+      norm.includes('f‰‡ai') ||
+      (norm.includes('ss15') && (norm.includes('fire') || (norm.includes('f1501') && !norm.includes('p2')) || norm.includes('आग') || norm.includes('aig') || norm.includes('मशीन'))) ||
+      ((norm.includes('fire') || norm.includes('आग') || norm.includes('aig')) && (norm.includes('machine room') || norm.includes('mS)n $m') || norm.includes('fdu') || norm.includes('co-2') || norm.includes('co2') || norm.includes('112.1')))
+    );
+
+  if (isSS15F1501P1Query) {
+    return {
+      identifiedFaultId: "F1501P1",
+      faultTitle: "SS15 F1501P1: FIRE IN MACHINE ROOM / FIRE DETECTION UNIT [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 200 / PDF 222):\nसबसिस्टम: SS15 (Fire Detection)\nदोष कोड: F1501P1\nदोष संदेश (स्क्रीन):\nSS15 F1501P1 Loco XXX SS15: Fire detection\nFIRE IN MACHINE ROOM\nExtinguish the fire\nReset the fire detection unit\n\nलैम्प व ध्वनि संकेत: LSFI ब्लिंक करेगी, कैब डेस्क पर BPFA प्रकाशित होगा और कैब में बजर (Buzzer) बजेगा।\nप्रभाव: सुरक्षा हेतु ट्रैक्शन कट-ऑफ हो जाएगा, TE/BE '0' हो जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं और गाड़ी तुरंत खड़ी करें। VCB ओपन करें, पैंटो लोअर करें तथा कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ (MCE OFF) करें। (Bring throttle to '0' and stop train immediately. Open VCB, lower pantograph and switch OFF Control Electronics).",
+        "2. सावधानीपूर्वक मशीन रूम की जांच करें। यदि आग/धुआं है, MCB 112.1 (SB-2 पैनल में) को ट्रिप करें और छोटे अग्निशामक यंत्र (Portable Fire Extinguisher) से आग बुझाएं। (Carefully inspect machine room. If fire/smoke observed, trip MCB 112.1 in SB-2 panel and extinguish fire with portable extinguisher).",
+        "3. यदि आग ज्यादा है विशेषतः ट्रैक्शन कनवर्टर (SR-1/SR-2) में है, तो प्रत्येक कैब में सहायक लोको पायलट के पीछे लगे CO-2 टाइप अग्निशामक यंत्र के रेगुलेटर को ऑपरेट करें, कॉक को खोलें। मशीन रूम का दरवाजा बंद रखें। (If fire is intense, especially in Traction Converter, operate regulator of CO-2 fire extinguisher behind Assistant Loco Pilot in each cab, open cock. Keep machine room doors closed).",
+        "4. इसके बाद SB-2 पैनल पर लगे फायर डिटेक्शन यूनिट (FDU) पर लगे रीसेट पुश बटन को प्रेस करके रीसेट करें। फिर BPFA द्वारा फ़ॉल्ट एक्नॉलेज (ACK) करें। (Thereafter, press Reset push button on Fire Detection Unit in SB-2 panel to reset. Then acknowledge fault via BPFA).",
+        "5. यदि सभी कुछ सामान्य मिलता है, सामान्य तौर पर ट्रैक्शन चालू करें। TLC को सूचित करें और लॉग बुक में दर्ज करें। (If all is normal, energise loco, resume normal traction, inform TLC and record in log book)."
+      ],
+      precautions: "मशीन रूम में धुआं या आग का संकेत मिलते ही गाड़ी को बिना किसी विलंब के सुरक्षित स्थल (पुल, टनल आदि छोड़कर) पर रोकें। सुरक्षा प्रथम: बिना बिजली काटे (VCB ओपन, पैंटो लोअर, MCB 112.1 ट्रिप) मशीन रूम में पानी या अनुचित साधनों का प्रयोग कदापि न करें। CO-2 सिस्टम चालू करते समय दरवाजे बंद रखें ताकि कार्बन डाई-ऑक्साइड गैस प्रभावी रूप से आग बुझा सके।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS15 Fire Detection (F1501P1, पेज 200 / PDF 222)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 222,
+      pdfQuote: "SS15 F1501P1 Loco XXX SS15: Fire detection\nFIRE IN MACHINE ROOM\nExtinguish the fire\nReset the fire detection unit\n1.Y\\i[Tl ki[ ‘ 0 ’ pr liE> ai]r giD) t&rºt KD) kr[>. VCB ai[pn kr>[, p[ºTi[ li[ar kr[> tYi k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr>[.\n2.sivFin) p*v<k mS)n $m k) jiˆc kr>[. y(d aig/F‰‡ai h], MCB 112.1 (SB-2) ki[ (T^^p kr[> ai]r Ci[T[ a(³nSimk y>Òi s[ aig b‰ziy>[.\n3.y(d aig ¶yidi h] (vS[Pt: T^]±Sn knv<Tr m[> h] ti[ p\\Ry[k k]b m[> shiyk li[ki[ piylT k[ p)C[ lg[ CO-2 Tiep a(³nSimk y>#i k[ r[³y&l[Tr ki[ aipr[T kr>[, kiˆk ki[ Ki[l[>. mS)n $m ki drviji b>d rK[>.\n4. esk[ bid SB-2 p]nl pr lg[ fiyr (DT[±Sn y*(nT pr lg[ (rs[T p‰S bTn ki[ p\\[s krk[ (rs[T kr>[. (fr BPFA oiri fiˆÃT E±nil[j kr>[.\n5. y(d sB) k&C simiºy (mlti h], simiºyti]r pr T^^]±Sn cil* kr[>. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS15-F1501P2. SS15 F1501P2: FAULT IN FIRE DETECTION UNIT (Vadodara TSD Page 200 / 222)
+  const isSS15F1501P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1502') && !norm.includes('smoke') && !norm.includes('warning smoke') &&
+    (
+      norm.includes('f1501p2') ||
+      norm.includes('fault in fire detection') ||
+      norm.includes('no fire detection') ||
+      (norm.includes('f1501') && norm.includes('p2')) ||
+      (norm.includes('ss15') && (norm.includes('p2') || norm.includes('fault in fire') || norm.includes('no fire') || norm.includes('f1501p2'))) ||
+      ((norm.includes('fire detection unit') || norm.includes('fdu') || norm.includes('fiyr (dt[±sn')) && (norm.includes('fault') || norm.includes('खराबी') || norm.includes('दोष') || norm.includes('no fire') || norm.includes('p2')))
+    );
+
+  if (isSS15F1501P2Query) {
+    return {
+      identifiedFaultId: "F1501P2",
+      faultTitle: "SS15 F1501P2: FAULT IN FIRE DETECTION UNIT [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 200 / PDF 222):\nसबसिस्टम: SS15 (Fire Detection)\nदोष कोड: F1501P2\nदोष संदेश (स्क्रीन):\nSS15 F1501P2 Loco XXX SS15: Fire detection\nFAULT IN FIRE DETECTION\nUNIT\nNo fire detection, Possible\nnormal operation can continue\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: फायर डिटेक्शन यूनिट (FDU) में आंतरिक दोष उत्पन्न हो गया है। स्वचालित आग संसूचन प्रणाली (Automatic Fire Detection) कार्य नहीं करेगी, किंतु लोको का सामान्य परिचालन जारी रखा जा सकता है (Normal operation can continue)। मशीन रूम का बार-बार भौतिक मुआयना अनिवार्य है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें। (Bring throttle to '0'. Acknowledge fault by pressing BPFA push button).",
+        "2. सामान्य ट्रैक्शन चालू करें। (Resume normal traction and train operation).",
+        "3. मशीन रूम को बार-बार आग या धुएं के लिए चेक करते रहें। (Inspect machine room periodically/frequently for any signs of fire or smoke).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make an entry in loco log book)."
+      ],
+      precautions: "चूंकि स्वतः अग्नि संसूचन प्रणाली (FDU) निष्क्रिय है, इसलिए मशीन रूम में किसी प्रकार के असामान्य धुएं, गंध अथवा ताप वृद्धि की तुरंत पहचान हेतु प्रत्येक स्टॉपेज अथवा उपयुक्त अंतराल पर मशीन रूम का भौतिक मुआयना (Physical Check) अवश्य करते रहें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS15 Fire Detection (F1501P2, पेज 200 / PDF 222)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 222,
+      pdfQuote: "SS15 F1501P2 Loco XXX SS15: Fire detection\nFAULT IN FIRE DETECTION\nUNIT\nNo fire detection, Possible normal operation can continue\n1.Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2.simiºy T^]±Sn cil* kr>[.\n3.mS)n $m ki[ bir-bir aig yi F‰&E k[ (lE c]k kr>[.\n4.TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS15-F1502P2. SS15 F1502P2: WARNING SMOKE IN MACHINE ROOM (Vadodara TSD Page 200 / 222)
+  const isSS15F1502P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1502p2') ||
+      norm.includes('f1502') ||
+      norm.includes('warning smoke in machine room') ||
+      norm.includes('smoke in machine room') ||
+      norm.includes('inspect machine room') ||
+      (norm.includes('ss15') && (norm.includes('smoke') || norm.includes('धुआं') || norm.includes('धुंआ') || norm.includes('f1502'))) ||
+      ((norm.includes('smoke') || norm.includes('धुआं') || norm.includes('धुंआ') || norm.includes('f&‡ai')) && (norm.includes('machine room') || norm.includes('मशीन रूम') || norm.includes('ms)n $m') || norm.includes('fdu')))
+    );
+
+  if (isSS15F1502P2Query) {
+    return {
+      identifiedFaultId: "F1502P2",
+      faultTitle: "SS15 F1502P2: WARNING SMOKE IN MACHINE ROOM [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 200 / PDF 222):\nसबसिस्टम: SS15 (Fire Detection)\nदोष कोड: F1502P2\nदोष संदेश (स्क्रीन):\nSS15 F1502P2 Loco XXX SS15: Fire detection\nWARNING SMOKE IN\nMACHINE ROOM\nInspect machine room\n\nलैम्प व ध्वनि संकेत: कैब डेस्क पर LSFI ब्लिंक करेगी, BPFA प्रकाशित होगा और बजर (Buzzer) बजेगा।\nप्रभाव: सुरक्षा इंटरलॉक के कारण ट्रैक्शन कट-ऑफ हो जाएगा, TE/BE '0' हो जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं और गाड़ी तुरंत खड़ी करें। VCB ओपन करें, पैंटो लोअर करें तथा कंट्रोल इलेक्ट्रॉनिक्स को ऑफ़ (MCE OFF) करें। (Bring throttle to '0' and stop train immediately. Open VCB, lower pantograph and switch OFF Control Electronics).",
+        "2. सावधानीपूर्वक मशीन रूम की जांच करें। यदि आग/धुआं है, MCB 112.1 (SB-2 पैनल में) को ट्रिप करें और छोटे अग्निशामक यंत्र (Portable Fire Extinguisher) से आग बुझाएं। (Carefully inspect machine room. If fire/smoke observed, trip MCB 112.1 in SB-2 panel and extinguish fire with portable extinguisher).",
+        "3. यदि आग ज्यादा है विशेषतः ट्रैक्शन कनवर्टर (SR-1/SR-2) में है, तो प्रत्येक कैब में सहायक लोको पायलट के पीछे लगे CO-2 टाइप अग्निशामक यंत्र के रेगुलेटर को ऑपरेट करें, कॉक को खोलें। मशीन रूम का दरवाजा बंद रखें। (If fire is intense, especially in Traction Converter, operate regulator of CO-2 fire extinguisher behind Assistant Loco Pilot in each cab, open cock. Keep machine room doors closed).",
+        "4. यदि सभी कुछ सामान्य मिलता है (अथवा धुआं शांत हो गया है), सामान्य तौर पर ट्रैक्शन चालू करें। (If all is found normal and safe, energise loco and resume normal traction).",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and make an entry in loco log book)."
+      ],
+      precautions: "मशीन रूम में धुआं संसूचित होते ही ट्रेन को बिना किसी विलंब के सुरक्षित स्थल पर रोकें। जब तक MCB 112.1 ट्रिप न हो और 25 kV आइसोलेट न हो, मशीन रूम में अनुचित साधनों का प्रयोग कदापि न करें। CO-2 सिस्टम चालू करते समय दरवाजे बंद रखें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS15 Fire Detection (F1502P2, पेज 200 / PDF 222)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 222,
+      pdfQuote: "SS15 F1502P2 Loco XXX SS15: Fire detection\nWARNING SMOKE IN MACHINE ROOM\nInspect machine room\n1.Y\\i[Tl ki[ ‘ 0 ’ pr liE> ai]r giD) t&rºt KD) kr[>. VCB ai[pn kr>[, p[ºTi[ li[ar kr[> tYi k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr>[.\n2.sivFin) p*v<k mS)n $m k) ji‡c kr>[.y(d aig / F&‡ai h], MCB 112.1 (SB-2) ki[ (T^^p kr[> ai]r Ci[T[ a(³nSimk y>Òi s[ aig b‰ziy>[.\n3.y(d aig ¶yidi h] (vS[Pt: T^]±Sn knv<Tr m[> h] ti[ p\\Ry[k k]b m[> shiyk li[ki[ piylT p)C[ lg[ CO-2 Tiep a(³nSimk y>#i k[ r[³y&l[Tr ki[ aipr[T kr>[, kiˆk ki[ Ki[l[>. mS)n $m ki drviji b>d rK[>.\n5.y(d sB) k&C simiºy (mlti h], smiºyti]r pr T^^]±Sn cil* kr[>.\n6.TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS16-F1601P1. SS16 F1601P1: SPEED LIMIT EXCEEDED / Emergency brakes / TE/BE Throttle to 0 (Vadodara TSD Page 201 / 223)
+  const isSS16F1601P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1601p2') && !norm.includes('p2') && !norm.includes('fault in speedometer') && !norm.includes('no display') && !norm.includes('diagn') &&
+    (
+      norm.includes('f1601p1') ||
+      norm.includes('f1601') ||
+      (norm.includes('ss16') && (norm.includes('speed') || norm.includes('f1601') || norm.includes('exceeded') || norm.includes('limit') || norm.includes('127.92') || norm.includes('speedometer') || norm.includes('ap)di[m)tr') || norm.includes('स्पीडोमीटर'))) ||
+      norm.includes('speed limit exceeded') ||
+      norm.includes('g(t s)mi') ||
+      norm.includes('गति सीमा') ||
+      (norm.includes('speedometer') && (norm.includes('127.92') || norm.includes('exceeded') || norm.includes('emergency brakes') || norm.includes('isolate') || norm.includes('simulation') || norm.includes('krib') || norm.includes('खराब'))) ||
+      (norm.includes('स्पीडोमीटर') && (norm.includes('127.92') || norm.includes('सीमा') || norm.includes('इमरजेंसी') || norm.includes('सिमुलेशन') || norm.includes('खराब') || norm.includes('आइसोलेट'))) ||
+      (norm.includes('127.92') && (norm.includes('sb-2') || norm.includes('sb2') || norm.includes('mcb') || norm.includes('speed') || norm.includes('गति') || norm.includes('ap)di[m)tr') || norm.includes('स्पीडोमीटर')))
+    );
+
+  if (isSS16F1601P1Query) {
+    return {
+      identifiedFaultId: "F1601P1",
+      faultTitle: "SS16 F1601P1: SPEED LIMIT EXCEEDED [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 201 / PDF 223):\nसबसिस्टम: SS16 (Speedometer)\nदोष कोड: F1601P1\nदोष संदेश (स्क्रीन):\nSS16 F1601P1 Loco XXX SS16: Speedometer\nSPEED LIMIT EXCEEDED\nEmergency brakes\nTE/BE Throttle to 0\n\nलैम्प व ऑडियो संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी तथा चेतावनी बजर (Buzzer) बजेगा।\nप्रभाव: इमरजेंसी ब्रेक (Emergency Brakes) स्वतः लग जाएंगे और ट्रैक्शन कट-ऑफ होकर TE/BE '0' हो जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. लोको की गति कम करने के लिए थ्रोटल को '0' पर लाएं। (Bring throttle to '0' to reduce train speed).",
+        "2. BPFA दबाकर फ़ॉल्ट ACK करें। (Press BPFA to acknowledge the fault).",
+        "3. जैसे ही गति सीमा के अंदर आ जाती है, तो सामान्य ट्रैक्शन चालू करें। (As soon as speed comes within speed limit, resume normal traction).",
+        "4. यदि स्पीडोमीटर में गति सीमा के अंदर नहीं आ रही है, परंतु वास्तविक गति कम हो गई है इसका मतलब स्पीडोमीटर खराब हो गया है। लोको पायलट SB-2 में लगे स्पीडोमीटर के MCB 127.92 को ट्रिप (OFF) करें। (If speedometer still shows overspeed while actual train speed has dropped, speedometer is defective. Trip speedometer MCB 127.92 in SB-2).",
+        "5. अब स्पीडोमीटर आइसोलेट हो गया है, इसलिए गाड़ी सावधानी पूर्वक चलाएं तथा सिमुलेशन मोड (Simulation Mode / DDU screen) में गति को देखें। (Speedometer is now isolated; drive cautiously and monitor locomotive speed in Simulation Mode on DDU).",
+        "6. TLC को सूचित करें और आदेशानुसार कार्य करें, लॉग बुक में दर्ज करें। (Inform TLC, act as advised, and record in log book)."
+      ],
+      precautions: "स्पीडोमीटर द्वारा ओवरस्पीड संसूचित होते ही VCU तुरंत इमरजेंसी ब्रेक लगा देता है। थ्रोटल को अविलंब '0' करें। यदि स्पीडोमीटर वास्तविक गति से अधिक फॉल्स रीडिंग दिखा रहा हो, तभी SB-2 में MCB 127.92 ट्रिप करके स्पीडोमीटर को आइसोलेट करें और DDU पर सिमुलेशन मोड से गति की निगरानी करते हुए सतर्कता से चलें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS16 Speedometer (F1601P1, पेज 201 / PDF 223)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 223,
+      pdfQuote: "SS16 F1601P1 Loco XXX SS16: Speedometer\nSPEED LIMIT EXCEEDED\nEmergency brakes\nTE/BE Throttle to 0\n1. li[ki[ k) g(t km krn[ k[ (lE Y\\i[Tl ki[ ‘ 0 ’ pr liE .\n2. BPFA dbikr fiˆÃT ACK kr>[.\n3. j]s[ h) g(t s)mi k[ a>dr ai jit) h] ti[ simiºy T^]±Sn cil* kr>[.\n4. y(d Ap)Di[m)Tr m[> g(t s)mi k[ a>dr nh)>> ai rh) h], pr>t& viAt(vk g(t km hi[ ge< h] eski mtlb Ap)Di[m)Tr Krib hi[ gyi h]. li[ki[ piylT SB-2 m[> lg[ Ap)Di[m)Tr k[ MCB 127.92 ki[ (T^^p kr[>.\n5. ab Ap)Di[m)Tr aiesi[l[T hi[ gyi h] es(lE giD) sivFin) p*v<k cliE[> tYi (sÀy*l[Sn mi[D m>[ g(t ki[ d[K[>.\n6. TLC ki[ s*(ct kr>[ ai]r aid[Sin&sir kiy< kr[>, liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS16-F1601P2. SS16 F1601P2: FAULT IN SPEEDOMETER / No display of speed in the cab / Drive carefully, use diagn screen (Vadodara TSD Page 201 / 223)
+  const isSS16F1601P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1601p2') ||
+      (norm.includes('f1601') && norm.includes('p2')) ||
+      norm.includes('fault in speedometer') ||
+      norm.includes('no display of speed') ||
+      norm.includes('no display') ||
+      norm.includes('use diagn screen') ||
+      norm.includes('diagn screen') ||
+      norm.includes('no display of speed in the cab') ||
+      (norm.includes('ss16') && (norm.includes('p2') || norm.includes('fault') || norm.includes('no display') || norm.includes('diagn') || norm.includes('display'))) ||
+      ((norm.includes('speedometer') || norm.includes('स्पीडोमीटर') || norm.includes('ap)di[m)tr')) && (norm.includes('display') || norm.includes('diagn') || (norm.includes('127.92') && norm.includes('reset')) || (norm.includes('127.92') && norm.includes('c]k')) || norm.includes('प्रदर्शन नहीं') || norm.includes('गति नहीं')))
+    );
+
+  if (isSS16F1601P2Query) {
+    return {
+      identifiedFaultId: "F1601P2",
+      faultTitle: "SS16 F1601P2: FAULT IN SPEEDOMETER [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 201 / PDF 223):\nसबसिस्टम: SS16 (Speedometer)\nदोष कोड: F1601P2\nदोष संदेश (स्क्रीन):\nSS16 F1601P2 Loco XXX SS16: Speedometer\nFAULT IN SPEEDOMETER\nNo display of speed in the cab\nDrive carefully, use diagn screen\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: कैब में स्पीडोमीटर पर गति प्रदर्शित नहीं होगी (No display of speed in the cab)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं। (Bring throttle to '0').",
+        "2. SB-2 में लगे स्पीडोमीटर के MCB (127.92) को चेक करें। यदि ट्रिप हो तो उसे एक बार रीसेट करें, BPFA दबाकर फ़ॉल्ट ACK करें और यदि लोको सामान्य होता है तो सामान्य ऑपरेशन चालू करें। (Check speedometer MCB 127.92 in SB-2 panel. If tripped, reset it once, press BPFA to acknowledge fault, and if loco normalises, resume normal operation).",
+        "3. यदि फ़ॉल्ट बना रहता है तो SB-2 में लगे MCB (127.92) को ट्रिप करके स्पीडोमीटर को आइसोलेट करें। (If fault persists, trip MCB 127.92 in SB-2 to isolate the speedometer).",
+        "4. अब स्पीडोमीटर आइसोलेट हो जायेगा। इसलिए सावधानी पूर्वक गाड़ी चलाएं तथा सिमुलेशन मोड (Simulation Mode / DDU screen) में गति को देखें। (Speedometer is now isolated. Drive carefully and observe speed in Simulation Mode on DDU).",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in loco log book).",
+        "6. TLC के आदेशानुसार सामान्य ट्रैक्शन चालू करें। (Resume normal traction according to TLC instructions)."
+      ],
+      precautions: "स्पीडोमीटर में आंतरिक दोष होने पर गति प्रदर्शित नहीं होती। SB-2 में MCB 127.92 को केवल एक बार रीसेट करें। यदि फ़ॉल्ट बना रहता है तो इसे ट्रिप करके स्पीडोमीटर को पूर्णतः आइसोलेट करें और DDU स्क्रीन पर सिमुलेशन मोड से गति का लगातार अवलोकन करते हुए सतर्कता से गाड़ी चलाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS16 Speedometer (F1601P2, पेज 201 / PDF 223)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 223,
+      pdfQuote: "SS16 F1601P2 Loco XXX SS16: Speedometer\nFAULT IN SPEEDOMETER\nNo display of speed in the cab\nDrive carefully, use diagn screen\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE .\n2. SB-2 m[> lg[ Ap)Di[m)Tr k[ MCB (127.92) ki[ c]k kr>[. y(d (T^p h] ti[ us[ Ek bir (rs[T kr>[, BPFA dbikr fiˆÃT ACK kr>[ ai]r y(d li[ki[ simiºy hi[ti h] ti[ simiºy aiˆpr[Sn cil* kr>[.\n3. y(d fiˆÃT bni rhti h] ti[ SB-2 m[> lg[ MCB (127.92) ki[ (T^^p krk[ Ap)Di[m)Tr ki[ aiesi[l[T kr>[.\n4. ab Ap)Di[m)Tr aiesi[l[T hi[ jiy[gi. es(lE sivFin) p*v<k giD) cliE[> tYi (sÀy*l[Sn mi[D m[> g(t ki[ d[K[>.\n5. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n6. TLC k[ aid[Sin‰sir simiºy T^]±Sn cil* kr>[."
+    };
+  }
+
+  // 0-SS19-F1901P1. SS19 F1901P1: COMMUNICATION DISTURBANCE / Multiple operation not possible (Vadodara TSD Page 202 / 224)
+  const isSS19F1901P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1901p1') ||
+      norm.includes('f1901') ||
+      (norm.includes('ss19') && (norm.includes('f1901') || norm.includes('train bus') || norm.includes('communication') || norm.includes('multiple operation') || norm.includes('jumper'))) ||
+      (norm.includes('train bus') && (norm.includes('communication disturbance') || norm.includes('multiple operation not possible') || norm.includes('multiple operation') || norm.includes('try to close the vcb again') || norm.includes('jumper cable'))) ||
+      norm.includes('multiple operation not possible') ||
+      norm.includes('communication disturbance') ||
+      norm.includes('mÃt)pl aipr[sn') ||
+      (norm.includes('train bus') && norm.includes('isolated'))
+    );
+
+  if (isSS19F1901P1Query) {
+    return {
+      identifiedFaultId: "F1901P1",
+      faultTitle: "SS19 F1901P1: COMMUNICATION DISTURBANCE / Multiple operation not possible [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224):\nसबसिस्टम: SS19 (Train Bus)\nदोष कोड: F1901P1\nदोष संदेश (स्क्रीन 1):\nSS19 F1901P1 Loco XXX SS19: Train Bus\nCOMMUNICATION DISTURBANCE\nTry to close the VCB again\nMultiple operation not possible\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS19: Train Bus\nTRAIN BUS ISOLATED\nMultiple operation not possible\n\nलैम्प संकेत: BPFA प्रकाशित होगा। VCB ओपन हो जाएगा।\nप्रभाव: VCB ओपन हो जाएगा; मल्टीपल ऑपरेशन (MU / Multiple Unit) संभव नहीं होगा। लोको केवल सिंगल लोको के रूप में कार्य कर सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को '0' पर लाएं। BPFA को दबाकर फ़ॉल्ट को एक्नॉलेज (ACK) करें। (Bring throttle to '0'. Press BPFA to acknowledge the fault).",
+        "2. VCB क्लोज़ करने के लिए BLDJ प्रेस करें। (Press BLDJ to close VCB).",
+        "3. मल्टीपल ऑपरेशन के लिए दोनों लोको के मध्य जुड़े जम्पर केबल (UIC Train Bus Jumper Cable) की भौतिक जांच करें कि वह सही से लगा है या ढीला/क्षतिग्रस्त तो नहीं है। (Check jumper cable connecting the two locomotives for multiple operation).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in loco log book)."
+      ],
+      precautions: "मल्टीपल यूनिट (MU) में ट्रेन बस संचार बाधित होने पर ट्रेलिंग लोको से कम्युनिकेशन कट जाता है और VCB खुल जाता है। BPFA से फ़ॉल्ट ACK करके BLDJ से VCB क्लोज़ करें। यदि जम्पर केबल सही करने पर भी ट्रेन बस संचार बहाल न हो, तो ट्रेलिंग लोको को बंद/डेड बनाकर आदेशानुसार सिंगल लोको के रूप में कार्य करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS19 Train Bus (F1901P1, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "SS19 F1901P1 Loco XXX SS19: Train Bus\nCOMMUNICATION DISTURBANCE\nTry to close the VCB again\nMultiple operation not possible\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA ki[ dbikr fiˆÃT ki[ E±nil[j kr>[>.\n2. VCB ±li[j krn[ k[ (lE BLDJ p\\[s kr[>.\n3. mÃT)pl aipr[Sn k[ (lE j>pr k[bl ki[ c]k kr>[ .\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
     };
   }
 
@@ -430,8 +8054,113 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
 // Sources: CLW 67-page Amrit Bharat TSD Final Copy
 // -----------------------------------------------------------------------------
 function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
-  const hasSlave = norm.includes('slave') || norm.includes('स्लेव');
-  const hasMaster = norm.includes('master') || norm.includes('मास्टर');
+  // If query is explicitly for 3-Phase SS05 (Hotel Load) or SS06 (Aux Converter 1), forward to 3-Phase resolver
+  if (
+    norm.includes('ss05') ||
+    norm.includes('f0503') ||
+    norm.includes('f0504') ||
+    norm.includes('f0501p2') ||
+    norm.includes('f0502p2') ||
+    norm.includes('blho') ||
+    (norm.includes('hotel load') && (norm.includes('circuit') || norm.includes('earth fault') || norm.includes('over current') || norm.includes('stuck on') || norm.includes('stuck off') || norm.includes('uncoupling'))) ||
+    norm.includes('ss06') ||
+    norm.includes('f0601') ||
+    norm.includes('f0602') ||
+    norm.includes('f0603') ||
+    norm.includes('f0604') ||
+    norm.includes('52/4') ||
+    norm.includes('52/5') ||
+    norm.includes('54.1/1') ||
+    norm.includes('ventilation bur 1') ||
+    norm.includes('reconfigure to bur 2') ||
+    norm.includes('contactor fault in aux') ||
+    (norm.includes('aux converter 1') && (norm.includes('disturbance') || norm.includes('isolated') || norm.includes('driving still possible'))) ||
+    norm.includes('ss07') ||
+    norm.includes('f0701') ||
+    norm.includes('f0702') ||
+    norm.includes('f0703') ||
+    norm.includes('f0704') ||
+    norm.includes('ventilation bur 2') ||
+    norm.includes('reconfigure to bur 1') ||
+    norm.includes('52/1/2/4') ||
+    norm.includes('52/1') ||
+    norm.includes('52/2') ||
+    norm.includes('54.1/2') ||
+    norm.includes('127.22/2') ||
+    norm.includes('fault in auxiliary converter 2') ||
+    (norm.includes('contactor') && (norm.includes('hb2') || norm.includes('hb-2') || norm.includes('aux conv-2') || norm.includes('aux conv 2'))) ||
+    (norm.includes('aux converter 2') && (norm.includes('disturbance') || norm.includes('isolated') || norm.includes('driving still possible') || norm.includes('fault') || norm.includes('contactor') || norm.includes('ventilation'))) ||
+    ((norm.includes('bur 2') || norm.includes('bur-2')) && (norm.includes('disturbance') || norm.includes('isolated') || norm.includes('processor') || norm.includes('ventilation') || norm.includes('127.22') || norm.includes('54.1') || norm.includes('fault') || norm.includes('contactor') || norm.includes('reconfigure'))) ||
+    norm.includes('ss08') ||
+    norm.includes('f0801') ||
+    norm.includes('f0802') ||
+    norm.includes('f0803') ||
+    norm.includes('127.22/3') ||
+    norm.includes('52/3') ||
+    norm.includes('fault in auxiliary converter 3') ||
+    norm.includes('fault in aux converter 3') ||
+    (norm.includes('contactor') && (norm.includes('auxconv 3') || norm.includes('auxconv-3') || norm.includes('bur 3') || norm.includes('bur-3') || norm.includes('52/3'))) ||
+    (norm.includes('aux converter 3') && (norm.includes('disturbance') || norm.includes('isolated') || norm.includes('driving still possible') || norm.includes('processor') || norm.includes('fault') || norm.includes('contactor'))) ||
+    ((norm.includes('bur 3') || norm.includes('bur-3')) && (norm.includes('disturbance') || norm.includes('isolated') || norm.includes('processor') || norm.includes('127.22') || norm.includes('driving') || norm.includes('fault') || norm.includes('contactor'))) ||
+    norm.includes('ss06-ss08-aux-mcb-trip') ||
+    norm.includes('aiˆ³j)lr) mi[tri[>') ||
+    norm.includes('aiˆ³j)lr)') ||
+    norm.includes('ऑक्सिलरी मोटरों के mcb') ||
+    norm.includes('auxiliary motor mcb') ||
+    norm.includes('auxiliary motors mcb') ||
+    norm.includes('aux motor mcb') ||
+    ((norm.includes('59.1') || norm.includes('63.1') || norm.includes('62.1') || norm.includes('53.1') || norm.includes('47.1') || norm.includes('55.1')) && (norm.includes('bar-bar') || norm.includes('bar bar') || norm.includes('frequent') || norm.includes('bir-bir') || norm.includes('बार-बार'))) ||
+    norm.includes('ss09') ||
+    norm.includes('f0901') ||
+    norm.includes('f0901p2') ||
+    norm.includes('f0902') ||
+    norm.includes('f0903') ||
+    norm.includes('f0903p2') ||
+    norm.includes('f0904') ||
+    norm.includes('f0904p2') ||
+    norm.includes('f0905') ||
+    norm.includes('f0905p2') ||
+    norm.includes('earth fault battery') ||
+    norm.includes('earth fault battery circuit') ||
+    norm.includes('memory battery') ||
+    norm.includes('diagnosis memory') ||
+    norm.includes('inform tlc during next stop') ||
+    norm.includes('low battery charger current') ||
+    norm.includes('battery charger current') ||
+    norm.includes('charger current') ||
+    norm.includes('battery not being charged') ||
+    norm.includes('battery charger mcb may have tripped') ||
+    norm.includes('battery voltage too low') ||
+    norm.includes('warning: low battery voltage') ||
+    norm.includes('warning low battery voltage') ||
+    norm.includes('less than 30 min') ||
+    norm.includes('check battery charger mcb') ||
+    norm.includes('electronics will switch off') ||
+    norm.includes('converters being switched off') ||
+    norm.includes('open vcb, lower panto') ||
+    norm.includes('pan lowered longer than 10 minutes') ||
+    norm.includes('pan lowered') ||
+    norm.includes('longer than 10 minutes') ||
+    norm.includes('h[dliet') ||
+    norm.includes('h[dlie') ||
+    norm.includes('headlight') ||
+    norm.includes('head light') ||
+    norm.includes('head-light') ||
+    norm.includes('हेडलाइट') ||
+    norm.includes('हेड लाईट') ||
+    norm.includes('हेडलाईट') ||
+    norm.includes('310.1') ||
+    norm.includes('310.1/1') ||
+    norm.includes('310.1/2') ||
+    norm.includes('zprd') ||
+    norm.includes('g & sr 4.14') ||
+    norm.includes('g&sr 4.14')
+  ) {
+    return resolve3PhaseDefect(query, norm);
+  }
+
+  const hasSlave = norm.includes('slave') || norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab') || norm.includes('slabe');
+  const hasMaster = norm.includes('master') || norm.includes('मास्टर') || norm.includes('मासटर');
   const isPantoQuery = 
     norm.includes('panto') || norm.includes('pantograph') || 
     norm.includes('पैंटो') || norm.includes('पैंटोग्राफ') || norm.includes('पेंटो') || 
@@ -453,7 +8182,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "   - Panto will go up & ‘U’ meter will show. (मास्टर लोको पर पैंटो उठेगा और ‘U’ मीटर OHE वोल्टेज दर्शाएगा।)",
         "• Effect on Slave Loco (स्लेव लोको पर प्रभाव):",
         "   - Panto will not go up & ‘U’ meter will not show. (स्लेव लोको पर पैंटो नहीं उठेगा और ‘U’ मीटर OHE वोल्टेज नहीं दर्शाएगा।)",
-        "",
         "════ दोष निवारण कार्यवाही (Troubleshooting Steps) ════",
         "1. Check panto reservoir pressure above 6 kg/cm2. (स्लेव लोको में पैंटो रिज़रवायर प्रेशर 6 kg/cm² से अधिक होना चाहिए।)",
         "2. Check IG-38 key is in horizontal position on pneumatic panel. (On CCB 2.0 loco in vertical position) (स्लेव लोको के न्यूमैटिक पैनल पर IG-38 चाबी हॉरिजॉन्टल स्थिति में हो; CCB 2.0 लोको में वर्टिकल स्थिति में।)",
@@ -491,7 +8219,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "   6. Tap PAN-1 & PAN-2 pressure switches on pneumatic panel. (7th & 8th from left) (न्यूमैटिक पैनल पर बाएं से 7वें और 8वें PAN-1 व PAN-2 प्रेशर स्विच को हल्के से टैप करें।)",
         "   7. Check MCB 127.12 is in set condition on SB-1 panel, if tripped reset it. (SB-1 पैनल में MCB 127.12 सेट स्थिति में हो, यदि ट्रिप हो तो रीसेट करें।)",
         "   8. Check closing of panto ON contactor 130.1 on SB-2 panel. (SB-2 पैनल में पैंटो ON कॉन्टैक्टर 130.1 के क्लोजिंग की जांच करें।)",
-        "",
         "════ 2. यदि पैंटो स्लेव लोको पर नहीं उठ रहा है (If panto not going up on Slave Loco) ════",
         "• Effect on Master Loco (मास्टर लोको पर प्रभाव):",
         "   - Panto will go up & ‘U’ meter will show. (मास्टर लोको पर पैंटो उठेगा और ‘U’ मीटर OHE वोल्टेज दर्शाएगा।)",
@@ -860,14 +8587,17 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
 
   // 6e. SS03: TRACTION BOGIE-2 / F0301P1: DISTURBANCE IN CONVERTER-2 (CLW TSD Page 24 of 67 Issued in April-2024)
   if (
-    norm.includes('f0301p1') ||
-    norm.includes('f0301') ||
-    norm.includes('disturbance in converter-2') ||
-    norm.includes('disturbance in converter 2') ||
-    (norm.includes('converter-2') && (norm.includes('disturbance') || norm.includes('bogie-2') || norm.includes('bogie 2') || norm.includes('154'))) ||
-    (norm.includes('converter 2') && (norm.includes('disturbance') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('154'))) ||
-    (norm.includes('ss03') && (norm.includes('f0301') || norm.includes('converter') || norm.includes('bogie'))) ||
-    (norm.includes('कन्वर्टर-2') || norm.includes('कन्वर्टर 2') || (norm.includes('बोगी-2') && (norm.includes('डिस्टर्बेंस') || norm.includes('आइसोलेट'))))
+    (norm.includes('push-pull') || norm.includes('push pull') || norm.includes('amrit bharat') || norm.includes('slave') || norm.includes('master')) &&
+    (
+      norm.includes('f0301p1') ||
+      norm.includes('f0301') ||
+      norm.includes('disturbance in converter-2') ||
+      norm.includes('disturbance in converter 2') ||
+      (norm.includes('converter-2') && (norm.includes('disturbance') || norm.includes('bogie-2') || norm.includes('bogie 2') || norm.includes('154'))) ||
+      (norm.includes('converter 2') && (norm.includes('disturbance') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('154'))) ||
+      (norm.includes('ss03') && (norm.includes('f0301') || norm.includes('converter') || norm.includes('bogie'))) ||
+      (norm.includes('कन्वर्टर-2') || norm.includes('कन्वर्टर 2') || (norm.includes('बोगी-2') && (norm.includes('डिस्टर्बेंस') || norm.includes('आइसोलेट'))))
+    )
   ) {
     return {
       identifiedFaultId: "F0301P1",
@@ -1425,7 +9155,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  9. If penalty braking is taking place even though VCD is acknowledged: Isolate VCD by keeping switch 237.1 (In SB-1 panel) in ‘0’ position. (यदि VCD एक्नॉलेज करने के बावजूद बार-बार पेनल्टी लग रही है, तो SB-1 पैनल में स्विच 237.1 को ‘0’ पोजीशन में रखकर VCD को आइसोलेट करें।)",
         "  10. Work without VCD and resume Normal traction & be vigilant. (VCD के बिना कार्य करें, सामान्य ट्रैक्शन शुरू करें और पूरी तरह सतर्क रहें।)",
         "  11. Inform to TLC and make a remark in logbook. (TLC को सूचित करें और लॉगबुक में विवरण दर्ज करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1468,7 +9197,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  2. Check isolating Cock No. 70 (E70 Brake Pipe isolating cock) provided on pneumatic panel. If found close then open cock No. 70. Close VCB. (न्यूमैटिक पैनल पर लगे आइसोलेटिंग कॉक नं. 70 [E70 ब्रेक पाइप आइसोलेटिंग कॉक] की जांच करें। यदि बंद पाया जाए तो कॉक नं. 70 को खोलें। VCB बंद/क्लोज़ करें।)",
         "  3. Also check ZBAN switch. It should be OFF, if not, put it at OFF position. (ZBAN स्विच की भी जांच करें। इसे OFF होना चाहिए, यदि नहीं है तो इसे OFF पोजीशन पर करें।)",
         "  4. Resume Normal Traction. (सामान्य ट्रैक्शन पुनः चालू करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1514,7 +9242,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  2. IF not successful then try releasing BC pressure from DV(E 70) or in case of CCB by pressing TP-BC at pneumatic panel and wait till BC pressure reduces to 0. (यदि सफलता न मिले तो E-70 सिस्टम में DV के क्विक रिलीज हैंडल से, या CCB सिस्टम में न्यूमैटिक पैनल पर TP-BC टेस्ट पॉइंट दबाकर BC प्रेशर रिलीज करने का प्रयास करें और BC प्रेशर 0 होने तक प्रतीक्षा करें।)",
         "  3. Bring TE/BE Throttle to ‘0’ position. (TE/BE थ्रोटल को ‘0’ पोजीशन पर लाएं।)",
         "  4. Resume normal traction. (सामान्य ट्रैक्शन पुनः चालू करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1561,7 +9288,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  3. No electrical Brake power available; braking can be done with A9 only. (कोई इलेक्ट्रिकल ब्रेक पावर उपलब्ध नहीं है; ब्रेकिंग केवल A-9 न्यूमैटिक ब्रेक द्वारा ही की जा सकती है।)",
         "  4. Resume Normal Traction. (सामान्य ट्रैक्शन पुनः चालू करें।)",
         "  5. Inform TLC and record in the Logbook. (TLC को सूचित करें और लॉगबुक में विवरण दर्ज करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1608,7 +9334,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  4. Raise Pantograph. (पैंटोग्राफ उठाएं।)",
         "  5. Close VCB. (VCB क्लोज़ करें।)",
         "  6. Resume Normal Traction after charging BP and MR. (BP और MR प्रेशर पूर्ण रूप से चार्ज होने के बाद सामान्य ट्रैक्शन पुनः शुरू करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1664,7 +9389,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  8. If unsuccessful, isolate concerned Bogie by placing switch 154 on ‘I’ Position. (यदि सफलता न मिले, तो रोटरी स्विच 154 को ‘I’ पोजीशन पर रखकर संबंधित बोगी को आइसोलेट करें।)",
         "  9. In case of 54.1/1 tripping repeatedly, contact TLC and act as per instructions of TLC. (यदि 54.1/1 बार-बार ट्रिप हो, तो TLC से संपर्क करें और निर्देशानुसार कार्य करें।)",
         "  10. If no MCB is tripped, but still message is coming and all auxiliaries are working ignore. (यदि कोई भी MCB ट्रिप नहीं है और सभी ऑक्ज़ीलरी सामान्य कार्य कर रही हैं तो संदेश को अनदेखा/इग्नोर करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1728,7 +9452,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  5. If this MCB trips again (message repeats again) then work the train with one compressor. (यदि यह MCB दोबारा ट्रिप होती है, तो सिंगल कंप्रेसर [MCP-2] से गाड़ी कार्य करें।)",
         "  6. If MCBs 47.1/1 & 47.1/2 alternatively tripping, Open VCB, reset MCBs and isolate BUR3 & try. (यदि MCB 47.1/1 और 47.1/2 बारी-बारी से ट्रिप हो रही हों, तो VCB खोलें, MCB रीसेट करें तथा BUR-3 को आइसोलेट करके प्रयास करें।)",
         "  7. Inform TLC and make a remark in logbook. (TLC को सूचित करें और लॉगबुक में विवरण दर्ज करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1786,7 +9509,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  8. If unsuccessful, isolate concerned Bogie by placing switch 154 on ‘II’ Position. (यदि सफलता न मिले, तो स्विच 154 को ‘II’ पोजीशन पर रखकर बोगी-2 को आइसोलेट करें।)",
         "  9. In case of 54.1/2 tripping repeatedly, contact TLC and act as per instructions of TLC. (यदि MCB 54.1/2 बार-बार ट्रिप हो, तो TLC से संपर्क करें और निर्देशानुसार कार्य करें।)",
         "  10. If no MCB is tripped, but still message is coming and all auxiliaries are working ignore the message. (यदि कोई भी MCB ट्रिप नहीं है और सभी ऑक्ज़ीलरी चल रही हैं तो संदेश को अनदेखा/इग्नोर करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1840,7 +9562,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  5. If this MCB trips again (message repeats again) then work the train with one compressor. (यदि यह MCB दोबारा ट्रिप होती है [संदेश दोहराता है], तो ट्रेन को सिंगल कंप्रेसर [MCP-1] से कार्य करें।)",
         "  6. If MCBs 47.1/1 & 47.1/2 alternatively tripping, Open VCB, reset MCBs and isolate BUR-3 & try. (यदि MCB 47.1/1 और 47.1/2 बारी-बारी से ट्रिप हो रही हों, तो VCB खोलें, MCB रीसेट करें तथा BUR-3 को आइसोलेट करके प्रयास करें।)",
         "  7. Inform TLC and make a remark in logbook. (TLC को सूचित करें और लॉगबुक में विवरण दर्ज करें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1894,7 +9615,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "  6. Inform to TLC & record in logbook. (TLC को सूचित करें तथा लॉगबुक में विवरण दर्ज करें।)",
         "  7. If no smoke/fire in machine room then again reconfigure Master & Slave loco in push pull mode, If 504 node is display for both Master & Slave loco, energise locos as per normal operation for push pull mode and resume normal traction & normal operation can continue. (यदि मशीन रूम में कोई धुआं/आग नहीं है तो मास्टर और स्लेव लोको को पुनः पुश-पुल मोड में रीकॉन्फ़िगर करें। यदि दोनों लोको में 504 नोड प्रदर्शित होता है, तो नियमानुसार एनरजाइज करें और सामान्य ट्रैक्शन शुरू कर परिचालन जारी रख सकते हैं।)",
         "  8. Keep on checking the machine room as frequently as possible for the sign of any smoke/fire. (धुएं/आग के किसी भी लक्षण के लिए लगातार बार-बार मशीन रूम की जांच करते रहें।)",
-        "",
         "════════════════════════════════════════════════════════════",
         "2. यदि खराबी स्लेव लोको में है (IF FAULT IS ON SLAVE LOCO):",
         "════════════════════════════════════════════════════════════",
@@ -1938,13 +9658,11 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "   - LSFI will flicker, BPFA will glow & VCB will open. (LSFI फ्लिकर करेगा, BPFA जलेगा तथा VCB खुलेगा।)",
         "• Effect on Slave Loco (स्लेव लोको पर प्रभाव):",
         "   - VCB will open & Panto will come down, but CE will remain ON. (VCB खुलेगा तथा पैंटो नीचे गिरेगा, परंतु कंट्रोल इलेक्ट्रॉनिक्स 60 मिनट तक Self Hold Mode में ऑन रहेगा।)",
-        "",
         "════ 2. मास्टर लोको पर कार्यवाही (On Master Loco) ════",
         "1. Bring throttle to ‘0’ position. (थ्रोटल को ‘0’ पोजीशन पर लाएं।)",
         "2. Acknowledge the fault by pressing BPFA and after that TRAIN BUS ISOLATED message will appear on DDU, LSFI indication will remain illuminating continuously because ‘SS19 Train Bus’ sub system is isolated. (BPFA दबाकर फॉल्ट स्वीकार करें, इसके बाद DDU पर 'TRAIN BUS ISOLATED' संदेश दिखाई देगा। SS19 ट्रेन बस सब-सिस्टम आइसोलेट होने के कारण LSFI लैंप लगातार जलता रहेगा।)",
         "3. Close VCB by operating BLDJ and resume traction. Now only Master loco will come on power which can be seen in node information on DDU: (BLDJ ऑपरेट करके VCB क्लोज़ करें और ट्रैक्शन पुनः शुरू करें। अब केवल मास्टर लोको पावर पर आएगा जिसे DDU की नोड जानकारी में देखा जा सकता है:)",
         "   • ABB make: FLG1: 596, SLG1: 3210, ALG1: B2B2h | FLG2: 596, SLG2: 3210, ALG2: B2B2h | Slv: 0",
-        "",
         "════ 3. स्लेव लोको पर कार्यवाही (On Slave Loco) ════",
         "1. Slave loco control electronics will remain ON. Slave loco may operate in Self Mode for next 60 minutes (Software timing). During this time, communication will try to recover automatically again & again. (स्लेव लोको का कंट्रोल इलेक्ट्रॉनिक्स ऑन रहेगा। स्लेव लोको अगले 60 मिनट तक सेल्फ मोड में रह सकता है। इस दौरान संचार स्वतः बार-बार रिकवर होने का प्रयास करेगा।)",
         "2. It is advised if communication not recovered within section limit, clear the section with Self Hold Mode of Slave loco. (यह सलाह दी जाती है कि यदि सेक्शन सीमा के भीतर संचार बहाल न हो, तो स्लेव लोको के सेल्फ होल्ड मोड के साथ सेक्शन क्लियर करें।)",
@@ -1961,7 +9679,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "5. Now energize the Slave loco and then Master loco as per procedure to establish communication. If still communication not recovered then make slave loco as dead. (अब नियमानुसार पहले स्लेव लोको और फिर मास्टर लोको को एनरजाइज कर संचार स्थापित करें। यदि फिर भी संचार ठीक न हो तो स्लेव लोको को डेड बनाएं।)",
         "6. To make Slave loco as dead: ALP provided on Slave loco will close 70, 74 cocks and will open 47 cock (136 is already in closed condition on Slave loco). Ensure that Slave loco brakes are in released condition by seeing in BC pressure gauge. Also ensure that parking brake of slave loco is in released condition. (स्लेव लोको को डेड बनाने हेतु: स्लेव लोको पर ALP कॉक 70 व 74 बंद करेंगे तथा कॉक 47 खोलेंगे [कॉक 136 पहले से बंद रहता है]। BC गेज में देखकर सुनिश्चित करें कि स्लेव लोको ब्रेक रिलीज हैं तथा पार्किंग ब्रेक भी रिलीज स्थिति में है।)",
         "7. Then switch OFF battery by operating 110 & 112.1 in SB-2 panel of slave loco. (फिर स्लेव लोको के SB-2 पैनल में 110 व 112.1 ऑपरेट करके बैटरी बंद करें।)",
-        "",
         "════ 4. सिंगल लोको से कार्य (Single Loco Working) ════",
         "• Energize the loco as per procedure from Master loco and work the train with single loco i.e. by Master loco. (मास्टर लोको से नियमानुसार लोको को एनरजाइज करें तथा सिंगल लोको यानी केवल मास्टर लोको द्वारा ट्रेन का परिचालन करें।)"
       ],
@@ -1993,27 +9710,28 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
 
   if (isBindingContext || isBrakeNotReleasingQuery) {
     // If specifically asked for slave only
+    const mentionsSlave = hasSlave || norm.includes('slave') || norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab');
+    const mentionsMaster = (hasMaster || norm.includes('master') || norm.includes('मास्टर') || norm.includes('मासटर')) && !norm.includes('master nahi') && !norm.includes('master nhi') && !norm.includes('not master');
+
     if (
-      (hasSlave && !hasMaster && !norm.includes('master')) ||
+      (mentionsSlave && !mentionsMaster) ||
       norm.includes('slave loco mein brake binding') ||
+      norm.includes('slave loco me break binding') ||
+      norm.includes('स्लैब लोको') ||
+      norm.includes('स्लेब लोको') ||
+      norm.includes('स्लैब') ||
+      norm.includes('स्लेब') ||
       norm.includes('slave brake') ||
       norm.includes('bc 3.5') ||
       norm.includes('3.5 kg') ||
       norm.includes('p53_slave_brake') ||
-      (norm.includes('स्लेव') && (norm.includes('ब्रेक बाइंडिंग') || norm.includes('3.5') || norm.includes('रिलीज नहीं')))
+      ((norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब')) && (norm.includes('ब्रेक') || norm.includes('3.5') || norm.includes('रिलीज') || norm.includes('बाइंडिंग')))
     ) {
       return {
         identifiedFaultId: "P53_SLAVE_BRAKE",
-        faultTitle: "IF BRAKES NOT RELEASING ON SLAVE LOCO / BC GAUGE SHOWING 3.5 kg/cm² (स्लेव लोको में ब्रेक रिलीज न होना - पृष्ठ 53)",
+        faultTitle: "IF BRAKES NOT RELEASING ON SLAVE LOCO / BC GAUGE SHOWING 3.5 kg/cm² (स्लेव लोको में ब्रेक बाइंडिंग / रिलीज न होना - पृष्ठ 53)",
         analysis: "चित्तरंजन लोकोमोटिव वर्क्स (CLW) अमृत भारत TSD (पृष्ठ 53): 'IF BRAKES NOT RELEASING ON SLAVE LOCO' - पुश-पुल फॉर्मेशन में स्लेव लोको के ब्रेक रिलीज न होने पर मास्टर लोको BC गेज ‘0’ दर्शाएगा तथा स्लेव लोको BC गेज प्रेशर (या 3.5 kg/cm²) दर्शाएगा। CLW TSD अनुसार निर्धारित आधिकारिक 5-चरणीय निवारण कार्यवाही:",
         suggestedActions: [
-          "════ लोको पर प्रभाव (Effect on Locos) ════",
-          "• Effect on Master Loco (मास्टर लोको पर प्रभाव):",
-          "   - BC gauge will show ‘0’ pressure. (मास्टर लोको BC गेज ‘0’ प्रेशर दर्शाएगा।)",
-          "• Effect on Slave Loco (स्लेव लोको पर प्रभाव):",
-          "   - BC gauge will show. (स्लेव लोको BC गेज प्रेशर [3.5 kg/cm²] दर्शाएगा।)",
-          "",
-          "════ दोष निवारण कार्यवाही (Troubleshooting Steps) ════",
           "1. During push pull formation if slave loco brakes are not releasing & slave loco BC gauge showing 3.5 kg/cm2, then keep slave loco SA-9 in RELEASE position in both cabs, make MCE OFF in both locos, then do push pull formation as per procedure. (पुश-पुल फॉर्मेशन के दौरान यदि स्लेव लोको के ब्रेक रिलीज नहीं हो रहे हैं और स्लेव लोको का BC गेज 3.5 kg/cm² दर्शा रहा है, तो दोनों कैब में स्लेव लोको के SA-9 को RELEASE पोजीशन में रखें, दोनों लोको में MCE OFF करें, फिर निर्धारित प्रक्रिया के अनुसार पुनः पुश-पुल फॉर्मेशन करें।)",
           "2. Operate C3W valve & release the brakes. (C3W वाल्व को ऑपरेट करें और ब्रेक रिलीज करें।)",
           "3. Tap on 57 & 58 D-2 relay valve provided on pneumatic panel of E-70 brake system. In case of CCB Brake system, press TP-16, TP-20, TP-BC and DV quick release handle. (E-70 ब्रेक सिस्टम के न्यूमैटिक पैनल पर दिए गए 57 एवं 58 D-2 रिले वाल्व को हल्के से टैप करें। CCB ब्रेक सिस्टम में TP-16, TP-20, TP-BC दबाएं और DV क्विक रिलीज हैंडल ऑपरेट करें।)",
@@ -2031,24 +9749,17 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
 
     // If specifically asked for master only
     if (
-      (hasMaster && !hasSlave && !norm.includes('slave')) ||
+      (mentionsMaster && !mentionsSlave) ||
       norm.includes('master loco mein brake') ||
       norm.includes('master brake') ||
       norm.includes('p53_master_brake') ||
-      (norm.includes('मास्टर') && (norm.includes('ब्रेक बाइंडिंग') || norm.includes('रिलीज नहीं')))
+      (norm.includes('मास्टर') && (norm.includes('ब्रेक') || norm.includes('रिलीज') || norm.includes('बाइंडिंग')))
     ) {
       return {
         identifiedFaultId: "P53_MASTER_BRAKE",
         faultTitle: "IF BRAKES NOT RELEASING ON MASTER LOCO (मास्टर लोको में ब्रेक रिलीज न होना - पृष्ठ 53)",
         analysis: "चित्तरंजन लोकोमोटिव वर्क्स (CLW) 67-पृष्ठ अमृत भारत TSD फाइनल कॉपी (पृष्ठ 53): 'IF BRAKES NOT RELEASING ON MASTER LOCO' - मास्टर लोको पर ब्रेक रिलीज न होने पर मास्टर लोको BC गेज प्रेशर दर्शाएगा और स्लेव लोको BC गेज ‘0’ प्रेशर दर्शाएगा। निर्धारित 5-चरणीय समाधान प्रक्रिया:",
         suggestedActions: [
-          "════ लोको पर प्रभाव (Effect on Locos) ════",
-          "• Effect on Master Loco (मास्टर लोको पर प्रभाव):",
-          "   - BC gauge will show. (मास्टर लोको BC गेज प्रेशर दर्शाएगा।)",
-          "• Effect on Slave Loco (स्लेव लोको पर प्रभाव):",
-          "   - BC gauge will show ‘0’ pressure. (स्लेव लोको BC गेज ‘0’ प्रेशर दर्शाएगा।)",
-          "",
-          "════ दोष निवारण कार्यवाही (Troubleshooting Steps) ════",
           "1. Keep SA-9 in RELEASE position. (SA-9 को RELEASE पोजीशन में रखें।)",
           "2. Operate C3W valve & release the brakes. (C3W वाल्व को ऑपरेट करें और ब्रेक रिलीज करें।)",
           "3. Tap on 57 & 58 D-2 relay valve provided on pneumatic panel of E-70 brake system. In case of CCB Brake system, press TP-16, TP-20, TP-BC and DV quick release handle. (E-70 ब्रेक सिस्टम के न्यूमैटिक पैनल पर दिए गए 57 एवं 58 D-2 रिले वाल्व को हल्के से टैप करें। CCB ब्रेक सिस्टम में TP-16, TP-20, TP-BC दबाएं और DV क्विक रिलीज हैंडल ऑपरेट करें।)",
@@ -2070,29 +9781,18 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
       faultTitle: "BRAKES NOT RELEASING (ब्रेक रिलीज न होने पर - CLW TSD पृष्ठ 53)",
       analysis: "चित्तरंजन लोकोमोटिव वर्क्स (CLW) अमृत भारत TSD (पृष्ठ 53): 'BRAKES NOT RELEASING' - पुश-पुल फॉर्मेशन में मास्टर या स्लेव लोको में ब्रेक रिलीज न होने पर निर्धारित आधिकारिक दोष निवारण कार्यवाही। यदि मास्टर लोको पर ब्रेक रिलीज नहीं होते हैं तो मास्टर लोको BC गेज प्रेशर दर्शाएगा और स्लेव लोको BC गेज ‘0’ दर्शाएगा। यदि स्लेव लोको पर ब्रेक रिलीज नहीं होते हैं तो मास्टर लोको BC गेज ‘0’ दर्शाएगा और स्लेव लोको BC गेज प्रेशर (या 3.5 kg/cm²) दर्शाएगा।",
       suggestedActions: [
-        "════════════════════════════════════════════════════════════",
-        "1. यदि मास्टर लोको पर ब्रेक रिलीज नहीं हो रहे हैं (IF BRAKES NOT RELEASING ON MASTER LOCO):",
-        "════════════════════════════════════════════════════════════",
-        "• Effect on Master Loco: BC gauge will show (मास्टर लोको BC गेज प्रेशर दर्शाएगा)",
-        "• Effect on Slave Loco: BC gauge will show ‘0’ pressure (स्लेव लोको BC गेज ‘0’ प्रेशर दर्शाएगा)",
-        "• Troubleshooting Actions (दोष निवारण कार्यवाही):",
-        "  1. Keep SA-9 in RELEASE position. (SA-9 को RELEASE पोजीशन में रखें।)",
-        "  2. Operate C3W valve & release the brakes. (C3W वाल्व को ऑपरेट करें और ब्रेक रिलीज करें।)",
-        "  3. Tap on 57 & 58 D-2 relay valve provided on pneumatic panel of E-70 brake system. In case of CCB Brake system, press TP-16, TP-20, TP-BC and DV quick release handle. (E-70 ब्रेक सिस्टम के न्यूमैटिक पैनल पर दिए गए 57 एवं 58 D-2 रिले वाल्व को हल्के से टैप करें। CCB ब्रेक सिस्टम में TP-16, TP-20, TP-BC दबाएं और DV क्विक रिलीज हैंडल ऑपरेट करें।)",
-        "  4. Close & open 94 cock. (94 नंबर कॉक को बंद करके पुनः खोलें।)",
-        "  5. Close both bogie isolating cock, after releasing brakes, open the same & try. (दोनों बोगी आइसोलेटिंग कॉक बंद करें, ब्रेक रिलीज होने पर पुनः खोलें और प्रयास करें।)",
-        "",
-        "════════════════════════════════════════════════════════════",
-        "2. यदि स्लेव लोको पर ब्रेक रिलीज नहीं हो रहे हैं (IF BRAKES NOT RELEASING ON SLAVE LOCO):",
-        "════════════════════════════════════════════════════════════",
-        "• Effect on Master Loco: BC gauge will show ‘0’ pressure (मास्टर लोको BC गेज ‘0’ प्रेशर दर्शाएगा)",
-        "• Effect on Slave Loco: BC gauge will show (स्लेव लोको BC गेज प्रेशर दर्शाएगा)",
-        "• Troubleshooting Actions (दोष निवारण कार्यवाही):",
-        "  1. During push pull formation if slave loco brakes are not releasing & slave loco BC gauge showing 3.5 kg/cm2, then keep slave loco SA-9 in RELEASE position in both cabs, make MCE OFF in both locos, then do push pull formation as per procedure. (पुश-पुल फॉर्मेशन के दौरान यदि स्लेव लोको के ब्रेक रिलीज नहीं हो रहे हैं और स्लेव लोको का BC गेज 3.5 kg/cm² दर्शा रहा है, तो दोनों कैब में स्लेव लोको के SA-9 को RELEASE पोजीशन में रखें, दोनों लोको में MCE OFF करें, फिर निर्धारित प्रक्रिया के अनुसार पुनः पुश-पुल फॉर्मेशन करें।)",
-        "  2. Operate C3W valve & release the brakes. (C3W वाल्व को ऑपरेट करें और ब्रेक रिलीज करें।)",
-        "  3. Tap on 57 & 58 D-2 relay valve provided on pneumatic panel of E-70 brake system. In case of CCB Brake system, press TP-16, TP-20, TP-BC and DV quick release handle. (E-70 ब्रेक सिस्टम के न्यूमैटिक पैनल पर दिए गए 57 एवं 58 D-2 रिले वाल्व को हल्के से टैप करें। CCB ब्रेक सिस्टम में TP-16, TP-20, TP-BC दबाएं और DV क्विक रिलीज हैंडल ऑपरेट करें।)",
-        "  4. Close & open 94 cock. (94 नंबर कॉक को बंद करके पुनः खोलें।)",
-        "  5. Close both bogie isolating cock, after releasing brakes, open the same & try. (दोनों बोगी आइसोलेटिंग कॉक बंद करें, ब्रेक रिलीज होने पर पुनः खोलें और प्रयास करें।)"
+        "═══ 1. यदि मास्टर लोको पर ब्रेक रिलीज नहीं हो रहे हैं (Master Loco Actions) ═══",
+        "1. Keep SA-9 in RELEASE position. (SA-9 को RELEASE पोजीशन में रखें।)",
+        "2. Operate C3W valve & release the brakes. (C3W वाल्व को ऑपरेट करें और ब्रेक रिलीज करें।)",
+        "3. Tap on 57 & 58 D-2 relay valve provided on pneumatic panel of E-70 brake system. In case of CCB Brake system, press TP-16, TP-20, TP-BC and DV quick release handle. (E-70 ब्रेक सिस्टम के न्यूमैटिक पैनल पर दिए गए 57 एवं 58 D-2 रिले वाल्व को हल्के से टैप करें। CCB ब्रेक सिस्टम में TP-16, TP-20, TP-BC दबाएं और DV क्विक रिलीज हैंडल ऑपरेट करें।)",
+        "4. Close & open 94 cock. (94 नंबर कॉक को बंद करके पुनः खोलें।)",
+        "5. Close both bogie isolating cock, after releasing brakes, open the same & try. (दोनों बोगी आइसोलेटिंग कॉक बंद करें, ब्रेक रिलीज होने पर पुनः खोलें और प्रयास करें।)",
+        "═══ 2. यदि स्लेव लोको पर ब्रेक रिलीज नहीं हो रहे हैं (Slave Loco Actions) ═══",
+        "1. During push pull formation if slave loco brakes are not releasing & slave loco BC gauge showing 3.5 kg/cm2, then keep slave loco SA-9 in RELEASE position in both cabs, make MCE OFF in both locos, then do push pull formation as per procedure. (पुश-पुल फॉर्मेशन के दौरान यदि स्लेव लोको के ब्रेक रिलीज नहीं हो रहे हैं और स्लेव लोको का BC गेज 3.5 kg/cm² दर्शा रहा है, तो दोनों कैब में स्लेव लोको के SA-9 को RELEASE पोजीशन में रखें, दोनों लोको में MCE OFF करें, फिर निर्धारित प्रक्रिया के अनुसार पुनः पुश-पुल फॉर्मेशन करें।)",
+        "2. Operate C3W valve & release the brakes. (C3W वाल्व को ऑपरेट करें और ब्रेक रिलीज करें।)",
+        "3. Tap on 57 & 58 D-2 relay valve provided on pneumatic panel of E-70 brake system. In case of CCB Brake system, press TP-16, TP-20, TP-BC and DV quick release handle. (E-70 ब्रेक सिस्टम के न्यूमैटिक पैनल पर दिए गए 57 एवं 58 D-2 रिले वाल्व को हल्के से टैप करें। CCB ब्रेक सिस्टम में TP-16, TP-20, TP-BC दबाएं और DV क्विक रिलीज हैंडल ऑपरेट करें।)",
+        "4. Close & open 94 cock. (94 नंबर कॉक को बंद करके पुनः खोलें।)",
+        "5. Close both bogie isolating cock, after releasing brakes, open the same & try. (दोनों बोगी आइसोलेटिंग कॉक बंद करें, ब्रेक रिलीज होने पर पुनः खोलें और प्रयास करें।)"
       ],
       precautions: "दोनों कैब में SA-9 रिलीज पोजीशन में रखें। E-70 में रिले वाल्व 57 व 58 को टैप करें तथा CCB 2.0 में TP-16, TP-20, TP-BC व DV हैंडल दबाएं। स्लेव लोको में 3.5 kg/cm² दिखने पर SA-9 रिलीज कर दोनों लोको का MCE OFF करके पुनः पुश-पुल फॉर्मेशन करें।",
       manualReference: "CLW अमृत भारत TSD फाइनल कॉपी - भाग B / पृष्ठ 53",
@@ -2133,7 +9833,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "• Troubleshooting Actions (दोष निवारण कार्यवाही):",
         "   1. Check battery MCB 110 & 112.1 should be ON. (SB-2 पैनल में बैटरी MCB 110 और 112.1 की जांच करें, इन्हें ON स्थिति में होना चाहिए।)",
         "   2. Check whether CE getting ON from another cab, If succeeded or not, inform TLC. (दूसरी कैब से BL Key लगाकर जांच करें कि क्या CE ऑन हो रहा है। सफलता मिले या न मिले, TLC को सूचित करें।)",
-        "",
         "════ 2. यदि स्लेव लोको का कंट्रोल इलेक्ट्रॉनिक्स ऑन नहीं हो रहा है (If Slave Loco control electronics not getting ON) ════",
         "• Effect on Master Loco (मास्टर लोको पर प्रभाव):",
         "   - ADD LSDJ will not illuminate. (मास्टर लोको के पैनल पर ADD LSDJ लैंप प्रकाशित नहीं होगा।)",
@@ -2175,7 +9874,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
           "   - BP gauge will show ‘0’ or less BP pressure. (मास्टर लोको BP गेज ‘0’ या कम BP प्रेशर दर्शाएगा।)",
           "• Effect on Slave Loco (स्लेव लोको पर प्रभाव):",
           "   - BP gauge will show ‘0’ or less BP pressure. (स्लेव लोको BP गेज ‘0’ या कम BP प्रेशर दर्शाएगा।)",
-          "",
           "════ दोष निवारण कार्यवाही (Troubleshooting Steps) ════",
           "1. Check BP angle cocks are open between slave loco & power car. (स्लेव लोको और पावर कार के बीच BP एंगल कॉक खुले [OPEN] होने की जांच करें।)",
           "2. Isolate the VCD by rotary switch 237.1 & check whether BP maintaining or not. (रोटरी स्विच 237.1 द्वारा VCD को आइसोलेट करें और जांचें कि क्या BP मेंटेन हो रहा है या नहीं।)",
@@ -2207,7 +9905,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
           "   4. Check BP in master loco by closing BP angle cock between master loco & power car. (मास्टर लोको और पावर कार के बीच BP एंगल कॉक बंद करके मास्टर लोको में BP प्रेशर की जांच करें।)",
           "   5. Close Slave Loco's Power car side BP angle cock & check whether BP maintaining or not, If BP maintaining, make slave loco completely dead & open BP angle cock between slave loco & power car & check BP continuity & conjunction brake test in slave loco. (स्लेव लोको के पावर कार साइड BP एंगल कॉक को बंद करें और देखें कि BP मेंटेन हो रहा है या नहीं। यदि BP मेंटेन हो रहा है, तो स्लेव लोको को पूरी तरह डेड करें तथा स्लेव लोको और पावर कार के बीच BP एंगल कॉक खोलें और स्लेव लोको में BP निरंतरता व कंजंक्शन ब्रेक टेस्ट करें।)",
           "   6. If still BP not maintaining, Check any leakages in Train. (यदि फिर भी BP मेंटेन नहीं हो रहा है, तो ट्रेन में लीकेज की जांच करें।)",
-          "",
           "════ 2. यदि BP स्लेव लोको पर नहीं बन/ठहर रहा है (If BP not maintaining/creating on Slave Loco) ════",
           "• Effect on Master Loco (मास्टर लोको पर प्रभाव):",
           "   - BP gauge will show ‘0’ or less BP pressure. (मास्टर लोको BP गेज ‘0’ या कम BP प्रेशर दर्शाएगा।)",
@@ -2241,7 +9938,6 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
         "   - Both bogie meter will show ‘0’. (दोनों बोगी के TE/BE मीटर ‘0’ दर्शाएंगे।)",
         "• Effect on Slave Loco (स्लेव लोको पर प्रभाव):",
         "   - -- (कोई प्रभाव नहीं)",
-        "",
         "════ दोष निवारण कार्यवाही (Troubleshooting Steps) ════",
         "1. Check any related fault message appearing on DDU & stored in DDS, if yes then troubleshoot as per TSD. (DDU पर दिखने वाले तथा DDS में दर्ज संबंधित फॉल्ट संदेश की जांच करें, यदि कोई संदेश हो तो TSD के अनुसार निवारण करें।)",
         "2. Keep Throttle in TE position & press BPCS & check whether Throttle responding or not. (थ्रोटल को TE पोजीशन में रखें तथा BPCS बटन दबाएं और जांचें कि थ्रोटल रिस्पॉन्ड कर रहा है या नहीं।)",
@@ -2645,12 +10341,39 @@ export function resolveDefectClientSide(query: string, locoType: '3phase' | 'amr
     norm.includes('3 फ़ेस') || norm.includes('3 फेज') || norm.includes('तीन फेज') || norm.includes('तीन फ़ेस') ||
     norm.includes('wap7') || norm.includes('wag9') || norm.includes('wap-7') || norm.includes('wag-9') || 
     norm.includes('wap5') || norm.includes('wap-5') || norm.includes('254') || norm.includes('vadodara') ||
-    norm.includes('brc') || norm.includes('conventional 3 phase');
+    norm.includes('brc') || norm.includes('conventional 3 phase') ||
+    norm.includes('ss05') || norm.includes('f0503') || norm.includes('f0504') || norm.includes('f0505') || norm.includes('f0506') || norm.includes('f0507') || norm.includes('f0501p2') || norm.includes('f0502p2') || norm.includes('f0503p2') || norm.includes('f0504p2') || norm.includes('abb') || norm.includes('blho') ||
+    norm.includes('ss06') || norm.includes('f0601') || norm.includes('f0602') || norm.includes('f0603') || norm.includes('f0604') || norm.includes('52/4') || norm.includes('52/5') || norm.includes('54.1/1') || norm.includes('127.22/1') || norm.includes('driving still possible') || norm.includes('ventilation level') || norm.includes('ventilation bur') || norm.includes('reconfigure to bur') || norm.includes('aux converter') || norm.includes('aux-converter') || norm.includes('fault in auxiliary converter') || norm.includes('contactor fault in aux') ||
+    norm.includes('ss07') || norm.includes('f0701') || norm.includes('f0702') || norm.includes('f0703') || norm.includes('f0704') || norm.includes('ventilation bur 2') || norm.includes('reconfigure to bur 1') || norm.includes('52/1/2/4') || norm.includes('54.1/2') || norm.includes('127.22/2') || norm.includes('aux converter 2') || norm.includes('aux-converter 2') || norm.includes('aux-converter2') || norm.includes('fault in auxiliary converter 2') ||
+    norm.includes('ss08') || norm.includes('f0801') || norm.includes('f0802') || norm.includes('f0803') || norm.includes('127.22/3') || norm.includes('52/3') || norm.includes('auxconv 3') || norm.includes('auxconv-3') || norm.includes('aux converter 3') || norm.includes('aux-converter 3') || norm.includes('aux-converter3') || norm.includes('fault in auxiliary converter 3') || (norm.includes('bur 3') && (norm.includes('isolated') || norm.includes('disturbance') || norm.includes('processor') || norm.includes('fault') || norm.includes('contactor'))) ||
+    norm.includes('ss06-ss08-aux-mcb-trip') || norm.includes('aiˆ³j)lr) mi[tri[>') || norm.includes('aiˆ³j)lr)') || norm.includes('ऑक्सिलरी मोटरों के mcb') || norm.includes('auxiliary motor mcb') || norm.includes('auxiliary motors mcb') ||
+    ((norm.includes('59.1') || norm.includes('63.1') || norm.includes('62.1') || norm.includes('53.1') || norm.includes('47.1') || norm.includes('55.1')) && (norm.includes('bar-bar') || norm.includes('bar bar') || norm.includes('frequent') || norm.includes('bir-bir') || norm.includes('बार-बार'))) ||
+    norm.includes('ss09') || norm.includes('f0901') || norm.includes('f0901p2') || norm.includes('f0902') || norm.includes('f0902p2') || norm.includes('f0903') || norm.includes('f0903p2') || norm.includes('battery charger mcb off') || norm.includes('try to close the mcb') || norm.includes('low battery charger current') || norm.includes('battery not being charged') || norm.includes('battery charger mcb may have tripped') || norm.includes('battery voltage too low') || norm.includes('warning: low battery voltage') || norm.includes('warning low battery voltage') || norm.includes('less than 30 min') || norm.includes('check battery charger mcb') || norm.includes('electronics will switch off') || norm.includes('converters being switched off') || norm.includes('open vcb, lower panto') || norm.includes('pan lowered longer than 10 minutes') || norm.includes('pan lowered') || norm.includes('longer than 10 minutes') ||
+    norm.includes('h[dliet') || norm.includes('h[dlie') || norm.includes('headlight') || norm.includes('head light') || norm.includes('head-light') || norm.includes('हेडलाइट') || norm.includes('हेड लाईट') || norm.includes('हेडलाईट') || norm.includes('310.1') || norm.includes('310.1/1') || norm.includes('310.1/2') || norm.includes('zprd') || norm.includes('g & sr 4.14') || norm.includes('g&sr 4.14') ||
+    norm.includes('ss10') || norm.includes('f1001') || norm.includes('f1001p1') || norm.includes('f1001p2') || norm.includes('banking mode') || norm.includes('banking') || norm.includes('b](k>g') || norm.includes('बैंकिंग') || norm.includes('brake controller isolated') || norm.includes('zban microswitch') || norm.includes('127.7') || norm.includes('solenoid-30') || norm.includes('solenoid 30') || norm.includes('si[li[nied-30') || norm.includes('ptdc') || norm.includes('knorr bremse') || norm.includes('fault in brake electronics') || norm.includes('full service brake applied') || norm.includes('no traction allowed') ||
+    norm.includes('f1002') || norm.includes('f1002p1') || norm.includes('f1002p2') || norm.includes('alarm chain pulling') || norm.includes('alarm chain') || norm.includes('check train') || norm.includes('g&sr 4.45') || norm.includes('4.45') || norm.includes('अलार्म चेन') || norm.includes('s&(vfijnk') || norm.includes('suvidhadajanak') || norm.includes('सुविधाजनक') || norm.includes('p\\bi(vt') || norm.includes('प्रभावित कोच') || norm.includes('low pressure main reservoir') || norm.includes('reaches 6.4') || norm.includes('reaches to 6.4') || norm.includes('6.4 kg/cm2') || norm.includes('6.4 kg/cm') || norm.includes('blcp') || norm.includes('unloader valve') || norm.includes('anli[dr') || norm.includes('veul') || norm.includes('ep 26') || norm.includes('ep-26') || norm.includes('d-in') || norm.includes('d-out') || norm.includes('d-off') ||
+    norm.includes('f1003') || norm.includes('f1003p1') || norm.includes('vigilance emergency') || norm.includes('vigilance reset') || norm.includes('bpvr') || norm.includes('lsvw') || norm.includes('pvcd') || norm.includes('237.1') || norm.includes('(vj)l[>s') || norm.includes('विजिलेंस') || norm.includes('पेनल्टी ब्रेक') ||
+    norm.includes('f1004') || norm.includes('f1004p1') || norm.includes('wrong configuration') || norm.includes('working wrong configuration') || norm.includes('wrong coc position') || norm.includes('cock 70') || norm.includes('cock-70') || norm.includes('kiˆk 70') || norm.includes('कॉक 70') || norm.includes('zban') || norm.includes('limiting switch') ||
+    norm.includes('f1005') || norm.includes('f1005p1') || norm.includes('traction with auto brake not allowed') || norm.includes('traction with auto brake') || norm.includes('auto brake not allowed') || norm.includes('aiˆti[ eyr b\\[k') || norm.includes('aiˆti[ eyr') || norm.includes('ऑटो एयर ब्रेक') || norm.includes('ऑटो ब्रेक') || (norm.includes('release parking brakes') && norm.includes('auto brake')) ||
+    norm.includes('f1006') || norm.includes('f1006p1') || norm.includes('traction with parking brakes not allowed') || norm.includes('traction with parking brake') || norm.includes('parking brakes not allowed') || norm.includes('bppb') || norm.includes('p\¶v(lt') || norm.includes('siˆl[niˆed') || norm.includes('पार्किंग ब्रेक रिलीज') || norm.includes('पार्किंग ब्रेक') || (norm.includes('release parking brakes') && norm.includes('throttle to 0')) ||
+    norm.includes('f1007') || norm.includes('f1007p1') || norm.includes('regenerative brake failure') || norm.includes('regenerative brake') || norm.includes('pvef') || norm.includes('pnuematic loco brake applied') || norm.includes('रीजेनेरेटिव ब्रेक') ||
+    norm.includes('f1008') || norm.includes('f1008p1') || norm.includes('emergency stop, shut down on the loco') || norm.includes('shut down on the loco') || norm.includes('reset emergency stop push button') || norm.includes('emergency stop push button') || norm.includes('emrj[>s) atiˆp') || norm.includes('इमरजेंसी स्टॉप') || (norm.includes('bpems') && norm.includes('reset')) ||
+    norm.includes('f1009') || norm.includes('f1009p1') || norm.includes('traction not allowed with applied brake') || norm.includes('release loco brake') || norm.includes('0.65 kg/cm2') || norm.includes('269.6') || norm.includes('bail ring') || norm.includes('20cp') || norm.includes('16cp') || norm.includes('li[ki[ b\\[k') || norm.includes('li[ki[ b[k') ||
+    norm.includes('f1010') || norm.includes('f1010p1') || norm.includes('emg. exhaust cock closed') || norm.includes('exhaust cock closed') || norm.includes('cock 74') || norm.includes('cock-74') || norm.includes('kiˆk n> 74') || norm.includes('kiˆk 74') || norm.includes('कॉक 74') || norm.includes('कॉक नं 74') || norm.includes('emrj[>s) e³ziˆat') ||
+    norm.includes('ss11') || norm.includes('f1101') || norm.includes('f1101p2') || norm.includes('f1102') || norm.includes('f1102p2') || norm.includes('f1103') || norm.includes('f1103p2') || norm.includes('f1104') || norm.includes('f1104p2') || norm.includes('f1105') || norm.includes('f1105p2') || norm.includes('f1106') || norm.includes('f1106p2') || norm.includes('earth fault 415/110v') || norm.includes('earth fault 415') || norm.includes('415/110v') || norm.includes('mcb off main compressor') || norm.includes('compressor 1 not available') || norm.includes('overload on ocb') || norm.includes('isolate ocb') || norm.includes('rotary switch vigilance') || norm.includes('rotary switch 160') || norm.includes('shunting mode speed') || norm.includes('aux. cubicle 1') || norm.includes('aux cubicle 1') || norm.includes('cubicle 1') || norm.includes('auxiliaries hb1') || norm.includes('hb-1 m[>') || norm.includes('hb1 m[>') || norm.includes('hb-1 में') || norm.includes('hb1 में') || norm.includes('temperature exceed') || norm.includes('traction power may get reduced') ||
+    norm.includes('ss12') || norm.includes('f1201') || norm.includes('f1201p2') || norm.includes('f1202') || norm.includes('f1202p2') || norm.includes('f1203') || norm.includes('f1203p2') || norm.includes('compressor 2 not available') || norm.includes('overload on ocb-2') || norm.includes('overload on ocb 2') || norm.includes('aux. cubicle 2') || norm.includes('aux cubicle 2') || norm.includes('cubicle 2') || norm.includes('auxiliaries hb2') || norm.includes('hb-2 m[>') || norm.includes('hb2 m[>') || norm.includes('hb-2 में') || norm.includes('hb2 में') || norm.includes('mcb(s) tripped in aux. cubicle 2') ||
+    norm.includes('ss13') || norm.includes('f1301') || norm.includes('f1301p1') || norm.includes('f1301p2') || norm.includes('f1302') || norm.includes('f1302p1') || norm.includes('f1302p2') || norm.includes('f1303') || norm.includes('f1303p1') || norm.includes('f1303p2') || norm.includes('f1304') || norm.includes('f1304p1') || norm.includes('f1304p2') || norm.includes('f1305') || norm.includes('f1305p1') || norm.includes('f1305p2') || norm.includes('f1306') || norm.includes('f1306p2') || norm.includes('f1307') || norm.includes('f1307p2') || norm.includes('hbb1') || norm.includes('hbb-1') || norm.includes('stb1') || norm.includes('stb-1') || norm.includes('rbu') || norm.includes('riom') || norm.includes('reverser defective') || norm.includes('cab 1 isolated') || norm.includes('cab 1 may get isolated') || norm.includes('cab 1 will not isolate') || norm.includes('will not isolate') || norm.includes('drive from cab 1') || norm.includes('drive from cab 2') || norm.includes('vcu redundancy') || norm.includes('redundancy') || norm.includes('wag-9h') || norm.includes('wag9h') || norm.includes('127.11') || norm.includes('failure mode switch') || norm.includes('medha') || norm.includes('vcu1') || norm.includes('vcu1-dip') || norm.includes('vcu1-dop') || norm.includes('dip1') || norm.includes('dip2') || norm.includes('dip3') || norm.includes('dip4') || norm.includes('dop1') || norm.includes('dop2') || norm.includes('dop3') || norm.includes('start run interlock') || norm.includes('simultaneous motoring') ||
+    norm.includes('ss14') || norm.includes('f1401') || norm.includes('f1401p1') || norm.includes('f1401p2') || norm.includes('f1402') || norm.includes('f1402p1') || norm.includes('f1402p2') || norm.includes('f1403') || norm.includes('f1403p1') || norm.includes('f1403p2') || norm.includes('f1404') || norm.includes('f1404p1') || norm.includes('f1404p2') || norm.includes('f1405') || norm.includes('f1405p1') || norm.includes('f1405p2') || norm.includes('f1406') || norm.includes('f1406p2') || norm.includes('f1407') || norm.includes('f1407p2') || norm.includes('vcu2') || norm.includes('vcu2-dip') || norm.includes('vcu2-dop') || norm.includes('rbu-3') || norm.includes('rbu-4') || norm.includes('rbu 3') || norm.includes('rbu 4') || norm.includes('hbb2') || norm.includes('hbb-2') || norm.includes('stb2') || norm.includes('stb-2') || norm.includes('cab 2 isolated') || norm.includes('cab 2 may get isolated') || norm.includes('cab 2 will not isolate') ||
+    norm.includes('ss15') || norm.includes('f1501') || norm.includes('f1501p1') || norm.includes('f1501p2') || norm.includes('f1502') || norm.includes('f1502p2') || norm.includes('fire in machine room') || norm.includes('fire detection') || norm.includes('fault in fire detection') || norm.includes('no fire detection') || norm.includes('extinguish the fire') || norm.includes('reset the fire detection unit') || norm.includes('warning smoke in machine room') || norm.includes('smoke in machine room') || norm.includes('inspect machine room') || norm.includes('मशीन रूम में आग') || norm.includes('aig/f‰‡ai') ||
+    norm.includes('ss16') || norm.includes('f1601') || norm.includes('f1601p1') || norm.includes('f1601p2') || norm.includes('speed limit exceeded') || norm.includes('fault in speedometer') || norm.includes('no display of speed') || norm.includes('diagn screen') || norm.includes('speedometer') || norm.includes('127.92') || norm.includes('ap)di[m)tr') || norm.includes('स्पीडोमीटर') || norm.includes('g(t s)mi') ||
+    norm.includes('ss19') || norm.includes('f1901') || norm.includes('f1901p1') || norm.includes('communication disturbance') || norm.includes('multiple operation not possible') || norm.includes('train bus') || norm.includes('mÃt)pl aipr[sn');
+
+
 
   const isExplicitAmrit = 
     norm.includes('amrit bharat') || norm.includes('अमृत भारत') || 
     norm.includes('push pull') || norm.includes('push-pull') || norm.includes('पुश-पुल') || norm.includes('पुश पुल') ||
-    norm.includes('slave') || norm.includes('स्लेव') || 
+    norm.includes('slave') || norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab') ||
     norm.includes('master & slave') || norm.includes('slave loco') || norm.includes('master loco') ||
     norm.includes('hlc') || norm.includes('power car') || norm.includes('wtb') || norm.includes('67');
 

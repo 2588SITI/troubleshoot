@@ -1,11 +1,12 @@
-const CACHE_NAME = 'loco-tsd-v1';
+const CACHE_NAME = 'loco-tsd-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  '/icon-maskable-512.png'
+  '/icon-maskable-512.png',
+  '/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -15,7 +16,7 @@ self.addEventListener('install', (event) => {
         try {
           await cache.add(asset);
         } catch (err) {
-          console.warn('SW cache skipped asset:', asset);
+          // Ignore individual asset cache failure
         }
       }
     })
@@ -39,39 +40,41 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Let API requests pass to network
-  if (event.request.url.includes('/api/')) {
+  const url = event.request.url;
+
+  // Let API, Vite dev internals, modules, and chrome extensions pass directly to network
+  if (
+    url.includes('/api/') ||
+    url.includes('/@vite/') ||
+    url.includes('/@fs/') ||
+    url.includes('/src/') ||
+    url.includes('/node_modules/') ||
+    url.includes('?v=') ||
+    url.includes('?t=') ||
+    !url.startsWith('http')
+  ) {
+    return;
+  }
+
+  // For HTML documents, prefer network first, fallback to cached index.html
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/index.html'))
+    );
     return;
   }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cache, but update in background
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse);
-            });
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
           }
         }).catch(() => {});
         return cachedResponse;
       }
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
-        }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return networkResponse;
-      }).catch(() => {
-        // If offline and requesting document, return cached index.html
-        if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/index.html');
-        }
-      });
+      return fetch(event.request);
     })
   );
 });

@@ -1,9 +1,7 @@
 {
   "name": "3 Phase Loco Troubleshooter",
   "description": "An application to help Indian Railways loco pilots troubleshoot and resolve defects in 3-phase electric locomotives.",
-  "requestFramePermissions": [
-    "microphone"
-  ],
+  "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
