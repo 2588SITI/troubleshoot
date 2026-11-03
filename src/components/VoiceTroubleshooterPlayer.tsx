@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Volume2, Play, Pause, Square, SkipForward, SkipBack, RotateCcw, Gauge, Languages, CheckCircle2 } from 'lucide-react';
+import { isActionableStep, getSpokenHindi, getSpokenEnglish, containsDevanagari } from '../lib/railwayBilingualSpeech';
+
+export type SpeechLanguageMode = 'hi' | 'en' | 'both';
 
 interface VoiceTroubleshooterPlayerProps {
   steps: string[];
@@ -8,142 +11,8 @@ interface VoiceTroubleshooterPlayerProps {
   fontSize?: 'normal' | 'large' | 'extra-large';
   onActiveStepChange?: (index: number | null) => void;
   className?: string;
-}
-
-/**
- * Detects if a text string contains Devanagari (Hindi) characters.
- */
-function containsDevanagari(text: string): boolean {
-  return /[\u0900-\u097F]/.test(text);
-}
-
-/**
- * Checks whether a line is an actual actionable troubleshooting step,
- * strictly filtering out headers, conditions, symptoms, and effects.
- */
-function isActionableStep(text: string): boolean {
-  if (!text || typeof text !== 'string') return false;
-  const s = text.trim();
-  if (s.length === 0) return false;
-
-  // 1. Decorative borders or section markers
-  if (/^[═\s【\-\*•#_]+|[═\s】\-\*•#_]+$/.test(s)) return false;
-
-  // 2. Condition headers ending with colon, e.g.:
-  // "यदि मास्टर लोको पर ब्रेक रिलीज नहीं हो रहे हैं (IF BRAKES NOT RELEASING ON MASTER LOCO):"
-  // "If fault is on Master Loco (यदि खराबी मास्टर लोको में है):"
-  // "If fault is on Slave Loco (यदि खराबी स्लेव लोको में है):"
-  // "यदि खराबी स्लेव लोको में है:"
-  if (/^(यदि\s+.*:\s*$|If\s+.*:\s*$)/i.test(s)) return false;
-  if (/^.*(\(IF BRAKES|\(यदि खराबी|\(IF FAULT).*:\s*$/i.test(s)) return false;
-  if (/^(यदि|if)\s+(मास्टर|स्लेव|fault|brakes|loco).*(लोको|loco|है|releasing).*:\s*$/i.test(s)) return false;
-
-  // 3. Effects / Observations (e.g., "Effect on Master Loco...", "मास्टर लोको पर प्रभाव...", "BC gauge will show...")
-  if (/^(•\s*)?(Effect\s+on\s+(Master|Slave)\s+Loco|मास्टर\s+लोको\s+पर\s+प्रभाव|स्लेव\s+लोको\s+पर\s+प्रभाव)/i.test(s)) return false;
-  if (/^(•\s*)?(Effect\s+on\s+Loco|लोको\s+पर\s+प्रभाव)/i.test(s)) return false;
-  if (/^(•\s*)?(Effect:|प्रभाव:)/i.test(s)) return false;
-  if (/^(•\s*)?(Master|Slave)\s+Loco\s*:\s*(BC|MR|Panto|VCB|No|If|LSFI)/i.test(s)) return false;
-  if (/^(•\s*)?(मास्टर|स्लेव)\s+लोको\s*:\s*(BC|MR|पैंटो|VCB|यदि|LSFI|गेज)/i.test(s)) return false;
-  if (/^(•\s*)?(BC gauge|MR gauge|BC गेज|MR गेज)\s*(will show|प्रेशर|दर्शाएगा)/i.test(s)) return false;
-
-  // 4. Section headings, e.g.:
-  // "Troubleshooting Steps (दोष निवारण प्रक्रिया):"
-  // "Troubleshooting Actions (दोष निवारण कार्यवाही):"
-  // "लक्षण (Symptoms):"
-  if (/^(Troubleshooting\s+(Steps|Actions|Procedure)|दोष\s+निवारण\s+(प्रक्रिया|कार्यवाही|चरण)|Symptoms|लक्षण|Note|नोट).*:\s*$/i.test(s)) return false;
-  if (/^(Troubleshooting\s+(Steps|Actions|Procedure)|दोष\s+निवारण\s+(प्रक्रिया|कार्यवाही|चरण))\s*(\([^\)]*\))?\s*$/i.test(s)) return false;
-
-  return true;
-}
-
-/**
- * Extracts ONLY the Hindi text from a bilingual or Hindi step.
- * If English is outside and Hindi is inside brackets: extracts the bracketed Hindi.
- * If Hindi is outside and English is inside brackets: extracts the outside Hindi.
- */
-function extractHindiOnly(text: string): string {
-  if (!text) return '';
-
-  // Extract all bracketed portions: (...) or [...]
-  const bracketMatches = Array.from(text.matchAll(/[\(\[]([^\)\]]+)[\)\]]/g));
-  let hindiFromBrackets = '';
-  for (const match of bracketMatches) {
-    if (containsDevanagari(match[1])) {
-      hindiFromBrackets += (hindiFromBrackets ? ' ' : '') + match[1];
-    }
-  }
-
-  // Text outside brackets
-  const outsideText = text.replace(/[\(\[][^\)\]]+[\)\]]/g, '').trim();
-
-  let targetHindi = '';
-  if (containsDevanagari(outsideText)) {
-    // Hindi is outside brackets
-    targetHindi = outsideText;
-  } else if (hindiFromBrackets) {
-    // Hindi was inside brackets
-    targetHindi = hindiFromBrackets;
-  } else {
-    // Fallback: If no Devanagari at all, use cleaned text
-    targetHindi = outsideText || text;
-  }
-
-  // Strip leading numbering, bullets, roman numerals: e.g. "1.", "i.", "•", "-"
-  let clean = targetHindi
-    .replace(/^(\d+|[ivx]+|[a-z])[\.\)]\s*/i, '')
-    .replace(/^[•\-\*⚡\s]+/, '')
-    .trim();
-
-  // Spoken number adjustments for clarity in Hindi
-  clean = clean
-    .replace(/\b0\b/g, 'शून्य')
-    .replace(/‘0’|'0'|"0"/g, 'शून्य')
-    .replace(/‘1’|'1'|"1"/g, 'एक')
-    .replace(/‘II’|'II'|"II"/g, 'दो')
-    .replace(/‘I’|'I'|"I"/g, 'एक');
-
-  return clean.replace(/[\s\.]+$/, '').trim();
-}
-
-/**
- * Extracts ONLY the English text from a bilingual or English step.
- * If English is outside and Hindi is inside brackets: extracts the outside English.
- * If Hindi is outside and English is inside brackets: extracts the bracketed English.
- */
-function extractEnglishOnly(text: string): string {
-  if (!text) return '';
-
-  // Extract all bracketed portions that are purely English (no Devanagari)
-  const bracketMatches = Array.from(text.matchAll(/[\(\[]([^\)\]]+)[\)\]]/g));
-  let englishFromBrackets = '';
-  for (const match of bracketMatches) {
-    if (!containsDevanagari(match[1]) && /[A-Za-z]/.test(match[1])) {
-      englishFromBrackets += (englishFromBrackets ? ' ' : '') + match[1];
-    }
-  }
-
-  // Text outside brackets
-  const outsideText = text.replace(/[\(\[][^\)\]]+[\)\]]/g, '').trim();
-
-  let targetEnglish = '';
-  if (!containsDevanagari(outsideText) && /[A-Za-z]/.test(outsideText)) {
-    // English is outside brackets
-    targetEnglish = outsideText;
-  } else if (englishFromBrackets) {
-    // English was inside brackets
-    targetEnglish = englishFromBrackets;
-  } else {
-    // Fallback: strip Devanagari characters
-    targetEnglish = text.replace(/[\u0900-\u097F]+/g, '').trim();
-  }
-
-  // Strip leading numbering, bullets, roman numerals: e.g. "1.", "i.", "•", "-"
-  let clean = targetEnglish
-    .replace(/^(\d+|[ivx]+|[a-z])[\.\)]\s*/i, '')
-    .replace(/^[•\-\*⚡\s]+/, '')
-    .trim();
-
-  return clean.replace(/[\s\.]+$/, '').trim();
+  selectedLanguage?: SpeechLanguageMode;
+  onLanguageChange?: (lang: SpeechLanguageMode) => void;
 }
 
 export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps> = ({
@@ -152,20 +21,28 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
   isDay,
   fontSize = 'normal',
   onActiveStepChange,
-  className = ''
+  className = '',
+  selectedLanguage: controlledLang,
+  onLanguageChange
 }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [currentActionIndex, setCurrentActionIndex] = useState<number | null>(null);
+  const [currentlySpeakingSubPart, setCurrentlySpeakingSubPart] = useState<'hi' | 'en' | null>(null);
   const [playbackRate, setPlaybackRate] = useState<number>(0.95);
-  const [selectedLanguage, setSelectedLanguage] = useState<'hi' | 'en'>(() => {
+  const [internalLanguage, setInternalLanguage] = useState<SpeechLanguageMode>(() => {
     if (typeof window !== 'undefined') {
       try {
-        return (localStorage.getItem('tts_lang') as 'hi' | 'en') || 'hi';
+        const saved = localStorage.getItem('tts_lang');
+        if (saved === 'hi' || saved === 'en' || saved === 'both') {
+          return saved as SpeechLanguageMode;
+        }
       } catch {}
     }
     return 'hi';
   });
+
+  const selectedLanguage = controlledLang || internalLanguage;
 
   const [isSupported, setIsSupported] = useState<boolean>(true);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -177,26 +54,30 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
   const rateRef = useRef<number>(playbackRate);
   rateRef.current = playbackRate;
 
-  const langRef = useRef<'hi' | 'en'>(selectedLanguage);
+  const langRef = useRef<SpeechLanguageMode>(selectedLanguage);
   langRef.current = selectedLanguage;
 
-  // Filter only actionable troubleshooting steps (skipping headers, conditions, effects)
+  // Process all steps into high-quality bilingual speakable items
   const actionableSteps = useMemo(() => {
     const list: Array<{ originalIndex: number; text: string; hindi: string; english: string }> = [];
 
     steps.forEach((s, idx) => {
       const trimmed = typeof s === 'string' ? s.trim() : '';
       if (trimmed.length > 0 && isActionableStep(trimmed)) {
+        const hindiText = getSpokenHindi(trimmed);
+        const englishText = getSpokenEnglish(trimmed);
+
+        // Fallback safety: ensure neither field is ever empty
         list.push({
           originalIndex: idx,
           text: trimmed,
-          hindi: extractHindiOnly(trimmed),
-          english: extractEnglishOnly(trimmed)
+          hindi: hindiText || trimmed,
+          english: englishText || trimmed
         });
       }
     });
 
-    // Fallback: If filtering removed all lines, include non-empty trimmed steps
+    // Fallback if all got filtered out: keep non-empty steps
     if (list.length === 0) {
       steps.forEach((s, idx) => {
         const trimmed = typeof s === 'string' ? s.trim() : '';
@@ -204,8 +85,8 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
           list.push({
             originalIndex: idx,
             text: trimmed,
-            hindi: extractHindiOnly(trimmed),
-            english: extractEnglishOnly(trimmed)
+            hindi: getSpokenHindi(trimmed) || trimmed,
+            english: getSpokenEnglish(trimmed) || trimmed
           });
         }
       });
@@ -246,14 +127,17 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
   }, []);
 
   // Save selected language to localStorage
-  const handleLanguageChange = (newLang: 'hi' | 'en') => {
-    setSelectedLanguage(newLang);
+  const handleLanguageChange = (newLang: SpeechLanguageMode) => {
+    setInternalLanguage(newLang);
     langRef.current = newLang;
     try {
       localStorage.setItem('tts_lang', newLang);
     } catch {}
+    if (onLanguageChange) {
+      onLanguageChange(newLang);
+    }
 
-    // If currently speaking, replay current action step with the new language
+    // If currently speaking, immediately switch language for the active step
     if (isPlaying && currentActionIndex !== null) {
       speakActionAt(currentActionIndex, newLang);
     }
@@ -267,6 +151,7 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
     setIsPlaying(false);
     setIsPaused(false);
     setCurrentActionIndex(null);
+    setCurrentlySpeakingSubPart(null);
     currentActionRef.current = 0;
     if (onActiveStepChange) {
       onActiveStepChange(null);
@@ -274,7 +159,7 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
   }, [onActiveStepChange]);
 
   // Speak a specific action step by index
-  const speakActionAt = useCallback((index: number, activeLang?: 'hi' | 'en') => {
+  const speakActionAt = useCallback((index: number, activeLang?: SpeechLanguageMode) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     const currentSteps = actionableStepsRef.current;
     if (index < 0 || index >= currentSteps.length) {
@@ -297,75 +182,113 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
       onActiveStepChange(stepItem.originalIndex);
     }
 
-    // Extract pure chosen language text (no bilingual repetitions!)
-    const cleanAction = useLang === 'hi' ? stepItem.hindi : stepItem.english;
-
-    // Direct action for Step 1. "Next, [action]" for subsequent steps (no "Step 1", "Step 2" noise)
-    const spokenText = index === 0 ? cleanAction : `Next, ${cleanAction}`;
-
-    if (!spokenText.trim()) {
-      const nextIdx = index + 1;
-      if (nextIdx < currentSteps.length) {
-        speakActionAt(nextIdx, useLang);
-      } else {
-        stopPlayback();
-      }
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(spokenText);
-    utterance.rate = rateRef.current;
-    utterance.pitch = 1.0;
-
-    // Select optimal voice for language
-    if (availableVoices.length > 0) {
-      if (useLang === 'hi') {
-        const hindiVoice = availableVoices.find(v => 
+    // Helper to find optimal voice
+    const getVoiceFor = (langCode: 'hi' | 'en', text: string) => {
+      if (availableVoices.length === 0) return null;
+      if (langCode === 'hi' || containsDevanagari(text)) {
+        return availableVoices.find(v => 
           v.lang.toLowerCase().startsWith('hi') || 
           v.name.toLowerCase().includes('hindi')
-        );
-        if (hindiVoice) utterance.voice = hindiVoice;
-        utterance.lang = 'hi-IN';
+        ) || null;
       } else {
-        const engVoice = availableVoices.find(v => 
+        return availableVoices.find(v => 
           v.lang.toLowerCase() === 'en-in' || 
           v.name.toLowerCase().includes('india') ||
           v.lang.toLowerCase().startsWith('en')
-        );
-        if (engVoice) utterance.voice = engVoice;
-        utterance.lang = 'en-IN';
-      }
-    } else {
-      utterance.lang = useLang === 'hi' ? 'hi-IN' : 'en-IN';
-    }
-
-    utterance.onend = () => {
-      if (isPlayingRef.current) {
-        const nextIdx = currentActionRef.current + 1;
-        if (nextIdx < actionableStepsRef.current.length) {
-          // Brief pause (250ms) between steps
-          setTimeout(() => {
-            if (isPlayingRef.current) {
-              speakActionAt(nextIdx, useLang);
-            }
-          }, 250);
-        } else {
-          stopPlayback();
-        }
+        ) || null;
       }
     };
 
-    utterance.onerror = (e) => {
-      if (e.error === 'canceled' || e.error === 'interrupted') return;
+    // Handler to advance to next step
+    const advanceNext = () => {
+      if (!isPlayingRef.current) return;
       const nextIdx = currentActionRef.current + 1;
       if (nextIdx < actionableStepsRef.current.length) {
-        speakActionAt(nextIdx, useLang);
+        setTimeout(() => {
+          if (isPlayingRef.current) {
+            speakActionAt(nextIdx, useLang);
+          }
+        }, 300);
       } else {
         stopPlayback();
       }
     };
 
-    window.speechSynthesis.speak(utterance);
+    if (useLang === 'both') {
+      // DUAL MODE: First speak Hindi, then speak English
+      setCurrentlySpeakingSubPart('hi');
+      const hiText = stepItem.hindi;
+      const hiUtterance = new SpeechSynthesisUtterance(hiText);
+      hiUtterance.rate = rateRef.current;
+      hiUtterance.pitch = 1.0;
+      hiUtterance.lang = 'hi-IN';
+      const hiVoice = getVoiceFor('hi', hiText);
+      if (hiVoice) hiUtterance.voice = hiVoice;
+
+      hiUtterance.onend = () => {
+        if (!isPlayingRef.current) return;
+        // Pause briefly before speaking English
+        setTimeout(() => {
+          if (!isPlayingRef.current) return;
+          setCurrentlySpeakingSubPart('en');
+          const enText = stepItem.english;
+          const enUtterance = new SpeechSynthesisUtterance(enText);
+          enUtterance.rate = rateRef.current;
+          enUtterance.pitch = 1.0;
+          enUtterance.lang = containsDevanagari(enText) ? 'hi-IN' : 'en-IN';
+          const enVoice = getVoiceFor('en', enText);
+          if (enVoice) enUtterance.voice = enVoice;
+
+          enUtterance.onend = advanceNext;
+          enUtterance.onerror = (e) => {
+            if (e.error !== 'canceled' && e.error !== 'interrupted') advanceNext();
+          };
+          window.speechSynthesis.speak(enUtterance);
+        }, 350);
+      };
+
+      hiUtterance.onerror = (e) => {
+        if (e.error !== 'canceled' && e.error !== 'interrupted') advanceNext();
+      };
+
+      window.speechSynthesis.speak(hiUtterance);
+
+    } else if (useLang === 'hi') {
+      // HINDI ONLY MODE
+      setCurrentlySpeakingSubPart('hi');
+      const spokenText = stepItem.hindi;
+      const utterance = new SpeechSynthesisUtterance(spokenText);
+      utterance.rate = rateRef.current;
+      utterance.pitch = 1.0;
+      utterance.lang = 'hi-IN';
+      const voice = getVoiceFor('hi', spokenText);
+      if (voice) utterance.voice = voice;
+
+      utterance.onend = advanceNext;
+      utterance.onerror = (e) => {
+        if (e.error !== 'canceled' && e.error !== 'interrupted') advanceNext();
+      };
+      window.speechSynthesis.speak(utterance);
+
+    } else {
+      // ENGLISH ONLY MODE
+      setCurrentlySpeakingSubPart('en');
+      let spokenText = stepItem.english;
+      // Prepend "Step X" or "Next," cleanly if not the first step
+      const utterance = new SpeechSynthesisUtterance(spokenText);
+      utterance.rate = rateRef.current;
+      utterance.pitch = 1.0;
+      // If there are residual Devanagari characters, use hi-IN voice so it doesn't mute
+      utterance.lang = containsDevanagari(spokenText) ? 'hi-IN' : 'en-IN';
+      const voice = getVoiceFor('en', spokenText);
+      if (voice) utterance.voice = voice;
+
+      utterance.onend = advanceNext;
+      utterance.onerror = (e) => {
+        if (e.error !== 'canceled' && e.error !== 'interrupted') advanceNext();
+      };
+      window.speechSynthesis.speak(utterance);
+    }
   }, [availableVoices, stopPlayback, onActiveStepChange]);
 
   // Start speaking
@@ -452,20 +375,28 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
                     🔊 बोलकर सुनाएं (पायलट वॉइस)
                   </span>
                   <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-amber-950 shadow-sm">
-                    {selectedLanguage === 'hi' ? '🇮🇳 केवल हिंदी' : '🇬🇧 ONLY ENGLISH'}
+                    {selectedLanguage === 'hi' 
+                      ? '🇮🇳 केवल हिंदी' 
+                      : selectedLanguage === 'en' 
+                        ? '🇬🇧 ONLY ENGLISH' 
+                        : '🌐 दोनों (HINDI + ENGLISH)'}
                   </span>
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-black/30 text-emerald-200">
                     {totalDisplaySteps} निवारण कदम
                   </span>
                 </div>
                 <p className="text-xs text-emerald-100 font-medium truncate">
-                  सिर्फ निवारण कार्यवाही (हेडर/प्रभाव नहीं पढ़ेगा • सिंगल भाषा)
+                  {selectedLanguage === 'hi'
+                    ? 'सभी कदम स्पष्ट हिंदी में बोलकर सुनाएगा'
+                    : selectedLanguage === 'en'
+                      ? 'All steps spoken clearly in professional railway English'
+                      : 'हिंदी एवं इंग्लिश दोनों भाषाओं में क्रमशः बोलकर सुनाएगा'}
                 </p>
               </div>
             </button>
 
             {/* Language Selector Buttons */}
-            <div className="flex items-center gap-1.5 bg-black/25 p-1 rounded-xl self-end sm:self-center border border-white/20">
+            <div className="flex items-center gap-1 bg-black/30 p-1 rounded-xl self-end sm:self-center border border-white/20">
               <span className="text-[10px] font-bold text-emerald-200 px-1 hidden xs:inline flex items-center gap-1">
                 <Languages className="w-3 h-3" />
                 भाषा:
@@ -473,26 +404,38 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
               <button
                 type="button"
                 onClick={() => handleLanguageChange('hi')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
                   selectedLanguage === 'hi'
                     ? "bg-amber-400 text-amber-950 shadow-sm"
                     : "text-emerald-100 hover:text-white hover:bg-white/10"
                 }`}
-                title="सिर्फ हिंदी वाला हिस्सा बोलें"
+                title="सिर्फ हिंदी में बोलें"
               >
-                <span>🇮🇳 केवल हिंदी</span>
+                <span>🇮🇳 हिंदी</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleLanguageChange('en')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
                   selectedLanguage === 'en'
                     ? "bg-amber-400 text-amber-950 shadow-sm"
                     : "text-emerald-100 hover:text-white hover:bg-white/10"
                 }`}
-                title="Speak English action portion only"
+                title="Speak in English only"
               >
-                <span>🇬🇧 English Only</span>
+                <span>🇬🇧 English</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLanguageChange('both')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                  selectedLanguage === 'both'
+                    ? "bg-amber-400 text-amber-950 shadow-sm"
+                    : "text-emerald-100 hover:text-white hover:bg-white/10"
+                }`}
+                title="दोनों भाषाएं (Hindi + English)"
+              >
+                <span>🌐 दोनों</span>
               </button>
             </div>
           </div>
@@ -510,7 +453,7 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
               <span className="font-black text-sm tracking-wide text-emerald-400 flex items-center gap-1.5">
                 <Volume2 className="w-4 h-4 text-emerald-400" />
-                {isPaused ? "रोका गया (Paused)" : "निवारण कार्यवाही (Action)"}
+                {isPaused ? "रोका गया (Paused)" : "निवारण कार्यवाही (Speaking)"}
               </span>
               <span className="text-xs font-black px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 कदम {currentDisplayStepNum} / {totalDisplaySteps}
@@ -523,7 +466,7 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
                 <button
                   type="button"
                   onClick={() => handleLanguageChange('hi')}
-                  className={`px-2.5 py-1 rounded text-xs font-black transition-all ${
+                  className={`px-2 py-1 rounded text-xs font-black transition-all ${
                     selectedLanguage === 'hi' ? "bg-amber-400 text-black shadow-sm" : "text-slate-300 hover:text-white"
                   }`}
                   title="सिर्फ हिंदी बोलें"
@@ -533,12 +476,22 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
                 <button
                   type="button"
                   onClick={() => handleLanguageChange('en')}
-                  className={`px-2.5 py-1 rounded text-xs font-black transition-all ${
+                  className={`px-2 py-1 rounded text-xs font-black transition-all ${
                     selectedLanguage === 'en' ? "bg-amber-400 text-black shadow-sm" : "text-slate-300 hover:text-white"
                   }`}
                   title="English only"
                 >
                   🇬🇧 English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange('both')}
+                  className={`px-2 py-1 rounded text-xs font-black transition-all ${
+                    selectedLanguage === 'both' ? "bg-amber-400 text-black shadow-sm" : "text-slate-300 hover:text-white"
+                  }`}
+                  title="दोनों भाषाएं (Hindi + English)"
+                >
+                  🌐 दोनों
                 </button>
               </div>
 
@@ -555,7 +508,7 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
             </div>
           </div>
 
-          {/* Current Step Spoken Preview (Showing clean single language) */}
+          {/* Current Step Spoken Preview */}
           <div className="p-3 rounded-xl bg-slate-800/90 border border-slate-700 mb-3.5">
             <div className="flex items-center justify-between text-xs text-slate-400 font-bold mb-1">
               <span className="flex items-center gap-1 text-emerald-300">
@@ -563,16 +516,41 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
                 <span>बोली जा रही कार्यवाही:</span>
               </span>
               <span className="text-amber-400 font-black text-[11px] uppercase bg-black/40 px-2 py-0.5 rounded">
-                {selectedLanguage === 'hi' ? 'केवल हिंदी (No English Repetition)' : 'English Only (No Hindi Repetition)'}
+                {selectedLanguage === 'hi'
+                  ? '🇮🇳 केवल हिंदी'
+                  : selectedLanguage === 'en'
+                    ? '🇬🇧 English Only'
+                    : currentlySpeakingSubPart === 'hi'
+                      ? '🇮🇳 हिंदी (Step 1/2)'
+                      : '🇬🇧 English (Step 2/2)'}
               </span>
             </div>
-            <p className={`font-bold leading-relaxed text-slate-100 ${
-              fontSize === 'extra-large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
-            }`}>
-              {currentStepData 
-                ? (selectedLanguage === 'hi' ? currentStepData.hindi : currentStepData.english)
-                : ''}
-            </p>
+            
+            {/* Display Spoken Content */}
+            {currentStepData && (
+              <div className="space-y-1.5">
+                {(selectedLanguage === 'hi' || selectedLanguage === 'both') && (
+                  <p className={`font-bold leading-relaxed text-slate-100 ${
+                    currentlySpeakingSubPart === 'hi' ? 'text-amber-200' : 'text-slate-300'
+                  } ${
+                    fontSize === 'extra-large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                  }`}>
+                    {selectedLanguage === 'both' && <span className="text-xs text-amber-400 mr-2 font-mono">🇮🇳 [HI]</span>}
+                    {currentStepData.hindi}
+                  </p>
+                )}
+                {(selectedLanguage === 'en' || selectedLanguage === 'both') && (
+                  <p className={`font-medium leading-relaxed ${
+                    currentlySpeakingSubPart === 'en' ? 'text-emerald-200 font-bold' : 'text-slate-300'
+                  } ${
+                    fontSize === 'extra-large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                  }`}>
+                    {selectedLanguage === 'both' && <span className="text-xs text-emerald-400 mr-2 font-mono">🇬🇧 [EN]</span>}
+                    {currentStepData.english}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Player Navigation & Stop Buttons */}

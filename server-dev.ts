@@ -20,11 +20,42 @@ interface ManualPage {
 let manualCache: string = "";
 let manualPages: ManualPage[] = [];
 let amritBharatPages: ManualPage[] = [];
+let conventionalPages: ManualPage[] = [];
+let conventionalCache: string = "";
 
 function loadManualMemory() {
   const jsonPath = path.join(process.cwd(), "manual_pages.json");
   const txtPath = path.join(process.cwd(), "manual_extracted.txt");
   const amritJsonPath = path.join(process.cwd(), "amrit_bharat_pages.json");
+  const convJsonPath = path.join(process.cwd(), "conventional_tsd_pages.json");
+  const convTxtPath = path.join(process.cwd(), "conventional_tsd_extracted.txt");
+
+  // Load Conventional Locomotive BRC 2018 252-page TSD data into memory
+  if (fs.existsSync(convJsonPath)) {
+    try {
+      const data = fs.readFileSync(convJsonPath, "utf8");
+      const parsed = JSON.parse(data);
+      conventionalPages = parsed.map((p: any) => ({
+        page: p.page,
+        text: p.text || "",
+        charCount: (p.text || "").length,
+        part: p.part || "",
+        title: p.title || `Page ${p.page}`
+      }));
+      console.log(`[Memory] Loaded ${conventionalPages.length} Conventional TSD pages into RAM`);
+    } catch (e) {
+      console.error("[Memory] Error reading conventional_tsd_pages.json:", e);
+    }
+  }
+
+  if (fs.existsSync(convTxtPath)) {
+    try {
+      conventionalCache = fs.readFileSync(convTxtPath, "utf8");
+      console.log(`[Memory] Loaded full Conventional TSD text (${conventionalCache.length} chars) into RAM`);
+    } catch (e) {
+      console.error("[Memory] Error reading conventional_tsd_extracted.txt:", e);
+    }
+  }
 
   // Load Amrit Bharat CLW 67-page TSD data into memory
   if (fs.existsSync(amritJsonPath)) {
@@ -105,17 +136,53 @@ function getGroundedSolution(rawQuery: string, locoType: string) {
     norm.includes('slave') || norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab') ||
     norm.includes('master & slave') || norm.includes('slave loco') || norm.includes('master loco') ||
     norm.includes('hlc') || norm.includes('power car') || norm.includes('wtb') || norm.includes('67');
+  const isExplicitConventional =
+    norm.includes('conventional') || norm.includes('कन्वेंशनल') ||
+    norm.includes('wap4') || norm.includes('wap-4') || norm.includes('wag7') || norm.includes('wag-7') ||
+    norm.includes('wag5') || norm.includes('wag-5') || norm.includes('wam4') || norm.includes('wam-4') ||
+    norm.includes('q44') || norm.includes('q118') || norm.includes('qop') || norm.includes('qoa') ||
+    norm.includes('qlm') || norm.includes('qrsi') || norm.includes('zsmgr') || norm.includes('c118') ||
+    norm.includes('c145') || norm.includes('hmcs') || norm.includes('hqop') || norm.includes('hqoa') ||
+    norm.includes('blrdj') || norm.includes('lsgr') || norm.includes('tap changer') || norm.includes('arno') ||
+    norm.includes('qsit') || norm.includes('lssit') || norm.includes('siv fault') ||
+    norm.includes('lschba') || norm.includes('lsdj') || norm.includes('lsb') || norm.includes('lsp') || norm.includes('lsrsi') ||
+    norm.includes('cpa') || norm.includes('mcpa') || norm.includes('zcpa') ||
+    norm.includes('नोच रिपीटर') || norm.includes('notch repeater') ||
+    norm.includes('कर्षण बल') || norm.includes('tractive force') ||
+    norm.includes('पायलट लैम्प') || norm.includes('pilot lamp') ||
+    norm.includes('bpt') ||
+    norm.includes('ट्रैक्शन वोल्टमीटर') || (norm.includes('voltmeter') && norm.includes('deviat')) ||
+    norm.includes('vept') || norm.includes('íìºãí') || norm.includes('íìnãí') || norm.includes('éäèâ') ||
+    norm.includes('पैंटो नहीं उठता') || norm.includes('पेन्टो नहीं उठता') ||
+    ((norm.includes('panto nahi uthta') || norm.includes('pento nahi uthta')) && !norm.includes('3 phase') && !norm.includes('3-phase') && !norm.includes('3फ़ेस') && !norm.includes('3-फ़ेस') && !norm.includes('slave')) ||
+    norm.includes('conv-headlight-not-glowing') ||
+    norm.includes('úìåôâåã') || norm.includes('úëå ôâåã') ||
+    norm.includes('blprd') || norm.includes('blprf') || norm.includes('blprr') ||
+    norm.includes('hrtpr') || norm.includes('rtpr') ||
+    norm.includes('हेडलाइट प्रकाशित नहीं होती') || norm.includes('हेड लाइट प्रकाशित नहीं होती') ||
+    norm.includes('headlight prakashit nahi hoti') ||
+    ((norm.includes('headlight') || norm.includes('हेडलाइट') || norm.includes('हेड लाइट')) &&
+     (norm.includes('नहीं') || norm.includes('not') || norm.includes('nahi') || norm.includes('off') || norm.includes('खराब') || norm.includes('फेल')) &&
+     (norm.includes('bl') || norm.includes('zrt') || norm.includes('zpr') || norm.includes('blprd') || norm.includes('blprf') || norm.includes('blprr') || norm.includes('hrtpr') || norm.includes('rtpr') || norm.includes('40 kmph') || norm.includes('dc to dc') || norm.includes('g & sr') || norm.includes('कन्वेंशनल') || norm.includes('conventional') || norm.includes('wap4') || norm.includes('wag7') || norm.includes('wag5'))) ||
+    norm.includes('conv-horn-whistle-failure') ||
+    norm.includes('ʬीसल') || norm.includes('İʬसल') || norm.includes('हॉनŊ') || norm.includes('डुɘेƛ') || norm.includes('सैİȵंग') ||
+    norm.includes('व्हीसल') || norm.includes('व्हिसल') || norm.includes('whistle') ||
+    ((norm.includes('हॉर्न') || norm.includes('horn') || norm.includes('हॉन') || norm.includes('सीटी')) && (norm.includes('फेल') || norm.includes('fail') || norm.includes('लीकेज') || norm.includes('leakage') || norm.includes('सैंडिंग') || norm.includes('डुप्लेक्स') || norm.includes('4.50') || norm.includes('गाड़ी') || norm.includes('लोको')));
 
-  let effectiveType: '3phase' | 'amrit_bharat' = locoType === 'amrit_bharat' ? 'amrit_bharat' : '3phase';
-  if (norm.includes('3 phase ka pooch raha') || (isExplicit3Phase && !isExplicitAmrit)) {
+  let effectiveType: '3phase' | 'amrit_bharat' | 'conventional' = locoType === 'conventional' ? 'conventional' : locoType === 'amrit_bharat' ? 'amrit_bharat' : '3phase';
+  if (norm.includes('3 phase ka pooch raha') || (isExplicit3Phase && !isExplicitAmrit && !isExplicitConventional)) {
     effectiveType = '3phase';
-  } else if (isExplicitAmrit && !isExplicit3Phase) {
+  } else if (isExplicitConventional && !isExplicit3Phase && !isExplicitAmrit) {
+    effectiveType = 'conventional';
+  } else if (isExplicitAmrit && !isExplicit3Phase && !isExplicitConventional) {
     effectiveType = 'amrit_bharat';
+  } else if (isExplicitConventional) {
+    effectiveType = 'conventional';
   }
 
   // 2. Delegate to official solver first:
   const res = resolveDefectClientSide(rawQuery, effectiveType);
-  if (res && res.identifiedFaultId && (res.identifiedFaultId !== 'GEN_TSD_ASSIST' || effectiveType === '3phase')) {
+  if (res && res.identifiedFaultId && (res.identifiedFaultId !== 'GEN_TSD_ASSIST' || effectiveType === '3phase' || effectiveType === 'conventional')) {
     return res;
   }
 
@@ -614,7 +681,7 @@ async function startServer() {
   app.post("/api/troubleshoot", async (req, res) => {
     try {
       const rawProblem = req.body.problem;
-      const locoType = req.body.locoType === 'amrit_bharat' ? 'amrit_bharat' : '3phase';
+      const locoType = req.body.locoType === 'amrit_bharat' ? 'amrit_bharat' : req.body.locoType === 'conventional' ? 'conventional' : '3phase';
       if (!rawProblem || typeof rawProblem !== "string" || !rawProblem.trim()) {
         return res.status(400).json({ error: "कृपया समस्या का विवरण दर्ज करें (Please provide a problem description)." });
       }
@@ -1061,6 +1128,130 @@ Format your output strictly as a JSON object with this schema:
     const pageObj = amritBharatPages.find(p => p.page === pageNum);
     if (!pageObj) {
       return res.status(404).json({ error: "Section not found" });
+    }
+
+    res.json(pageObj);
+  });
+
+  // API endpoints for Conventional Locomotive BRC 2018 252-Page TSD
+  app.get("/api/conventional/info", (req, res) => {
+    getManualContext();
+    const pdfPath = path.join(process.cwd(), "public", "assets", "aistudio", "CONVENTIONAL_TSD_af9c2421.pdf");
+    const hasPdf = fs.existsSync(pdfPath);
+    const pdfStats = hasPdf ? fs.statSync(pdfPath) : null;
+
+    res.json({
+      title: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WAG5, WAM4, WAP4 & WAG7 Locos)",
+      subTitle: "क्षेत्रीय विद्युत प्रशिक्षण केन्द्र, वड़ोदरा (Western Railway, BRC) - चतुर्थ संस्करण 2018",
+      totalPages: conventionalPages.length || 252,
+      totalCharacters: conventionalPages.reduce((acc, p) => acc + p.charCount, 0),
+      pdfFileSize: pdfStats ? `${(pdfStats.size / (1024 * 1024)).toFixed(1)} MB` : "23.4 MB",
+      memoryStatus: "Permanent In-Memory Cache Active (BRC वडोदरा कन्वेंशनल TSD मेमोरी में सुरक्षित)",
+      chapters: [
+        { id: "c1", title: "अध्याय 1: शेड में अथवा स्टेशन पर खड़े लोको की पूर्ण तैयारी (Checklist, Cab-1/2, HT/LT)", pageStart: 19, pageEnd: 32 },
+        { id: "c2", title: "अध्याय 2: लोकोमोटिव को लाइन पर चलाना (टैक्शन मोटर, लाइन कॉन्टैक्टर, MP, EEC, DBR, ढलान)", pageStart: 33, pageEnd: 44 },
+        { id: "c3", title: "अध्याय 3: महत्वपूर्ण परिचालन सम्बन्धित अनुदेश और तकनीकी मार्गदर्शन (लॉग बुक, ब्रेक टेस्ट, ऊर्जा बचत)", pageStart: 45, pageEnd: 50 },
+        { id: "c4", title: "अध्याय 4: मानक अनुदेश (फ्यूज, EM कॉन्टैक्टर वेज, रिले वेज, HQOA '0', HQOP)", pageStart: 51, pageEnd: 52 },
+        { id: "c5", title: "अध्याय 5: DJ का ट्रिप होना (रिले टारगेट: QLM, QRSI, QOP, QLA, QOA व DJ फेलियर 1-8)", pageStart: 55, pageEnd: 67 },
+        { id: "c6", title: "अध्याय 6: ऑग्जीलरी फेलियर (MCP, MPH, MVSI, MVSL, MVRH, MVMT, CHBA, डैमेज)", pageStart: 68, pageEnd: 70 },
+        { id: "c7", title: "अध्याय 7: फ्यूज पिघलने के फेलियर (Add CCBA, CCBA, CCPT, CCLS, CCA, CCDJ 1-17)", pageStart: 71, pageEnd: 73 },
+        { id: "c8", title: "अध्याय 8: ट्रैक्शन फेलियर (कर्षण बल पूर्ण हानि, आंशिक हानि, पहली नोच ऑटो रिग्रेशन 1-14)", pageStart: 74, pageEnd: 80 },
+        { id: "c9", title: "अध्याय 9: विविध फेलियर (पायलट लैम्प, CPA, पेन्टो, DBR, हेडलाइट, सीटी 1-28)", pageStart: 81, pageEnd: 86 },
+        { id: "c10", title: "अध्याय 10: न्यूमेटिक फेलियर (MR, BP, FP, लोड अटैच लीकेज, कैब बदलते ब्रेक बंधना 1-19)", pageStart: 87, pageEnd: 91 },
+        { id: "c11", title: "अध्याय 11: उपकरण आइसोलेट करने के बाद ट्रैक्शन चालू करने की शर्तें व प्रतिबंध (1-27)", pageStart: 95, pageEnd: 98 },
+        { id: "c12", title: "अध्याय 12: WAG5 के MU ऑपरेशन के लिये परिचालन अनुदेश (1-9)", pageStart: 101, pageEnd: 103 },
+        { id: "c13", title: "अध्याय 13: मल्टीपल यूनिट (MU) ऑपरेशन में लोको की ट्रबल-शूटिंग (1-11)", pageStart: 104, pageEnd: 107 },
+        { id: "c14", title: "अध्याय 14: दोष निवारण निर्देशिका WAG-7 लोको (1-2)", pageStart: 111, pageEnd: 111 },
+        { id: "c15", title: "अध्याय 15: दोष निवारण निर्देशिका WAP-4 लोको (1-14)", pageStart: 115, pageEnd: 117 },
+        { id: "c16", title: "अध्याय 16: दोष निवारण निर्देशिका WAM-4(6P) लोको (1-14)", pageStart: 121, pageEnd: 122 },
+        { id: "c17", title: "अध्याय 17: स्टेटिक इन्वर्टर यूनिट (SIV) लोको - परिचालन अनुदेश व ट्रबल शूटिंग", pageStart: 125, pageEnd: 137 },
+        { id: "c18", title: "अध्याय 18: माइक्रोप्रोसेसर (MPCS) लोको - परिचालन अनुदेश एवं ट्रबल शूटिंग (1-73)", pageStart: 141, pageEnd: 152 },
+        { id: "c19", title: "अध्याय 19: ड्रम कॉन्टेक्टर मैनुअल ऑपरेशन (J-1/J-2 रिवर्सर, CTF-1/2/3)", pageStart: 155, pageEnd: 159 },
+        { id: "c20_23", title: "अध्याय 20-23: रिले व कॉन्टेक्टर वेज विधि (PC-8, COMET, EM, EP, टारगेट रिले रीसेट)", pageStart: 160, pageEnd: 166 },
+        { id: "c24", title: "अध्याय 24: हैण्ड ब्रेक लगाना व रिलीज करना (Vertical WAG-5, Horizontal WAP-4, Gear Type)", pageStart: 167, pageEnd: 169 },
+        { id: "mod", title: "मॉडिफिकेशन: VCD (135), ZLS/HLS (138), BPEMS (138), एयर ड्रायर, ट्विन बीम, न्यूमेटिक पैनल", pageStart: 173, pageEnd: 193 },
+        { id: "ckt", title: "सर्किट डायग्राम (DJ/VCB, ARNO, SI Unit, Tap Changer, Line Contactor, Power Circuit)", pageStart: 195, pageEnd: 247 }
+      ],
+      subsystems: [
+        { code: "CONV_DJ", name: "DJ/VCB & MAIN POWER (डीजे, वीसीबी एवं मुख्य सर्किट)" },
+        { code: "CONV_PNEUMATIC", name: "PNEUMATIC SYSTEM (न्यूमेटिक ब्रेक, MR, BP, FP, CP)" },
+        { code: "CONV_AUX", name: "AUXILIARIES (आर्नो, MCP, MPH, MVMT, MVSI, MVRH)" },
+        { code: "CONV_SIV", name: "STATIC INVERTER - SIV (स्टेटिक इन्वर्टर यूनिट)" },
+        { code: "CONV_MPCS", name: "MICROPROCESSOR - MPCS (माइक्रोप्रोसेसर लोको)" },
+        { code: "CONV_TRACTION", name: "TRACTION SYSTEM (कर्षण, रिवर्सर, CTF, शंटिंग, DBR)" },
+        { code: "CONV_PILOT", name: "PILOT LAMPS & FUSES (पायलट लैम्प एवं विभिन्न फ्यूज)" },
+        { code: "CONV_MU", name: "MULTIPLE UNIT - MU (मल्टीपल लोको ऑपरेशन)" }
+      ]
+    });
+  });
+
+  app.get("/api/conventional/pdf", (req, res) => {
+    const pdfPath = path.join(process.cwd(), "public", "assets", "aistudio", "CONVENTIONAL_TSD_af9c2421.pdf");
+    if (fs.existsSync(pdfPath)) {
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", 'inline; filename="Conventional_Loco_TSD_BRC_Vadodara.pdf"');
+      return res.sendFile(pdfPath);
+    }
+    return res.status(404).json({ error: "CONVENTIONAL_TSD_af9c2421.pdf not found on server" });
+  });
+
+  app.get("/api/conventional/search", (req, res) => {
+    getManualContext();
+    const query = (req.query.q as string || "").trim().toLowerCase();
+    if (!query) {
+      return res.json({ results: [], total: 0 });
+    }
+
+    const matches: Array<{
+      page: number;
+      title: string;
+      snippet: string;
+      matchCount: number;
+    }> = [];
+
+    for (const pageObj of conventionalPages) {
+      const lower = pageObj.text.toLowerCase();
+      if (lower.includes(query) || (pageObj.title && pageObj.title.toLowerCase().includes(query))) {
+        const idx = lower.indexOf(query);
+        const start = Math.max(0, idx - 80);
+        const end = Math.min(pageObj.text.length, idx + query.length + 140);
+        const snippet = (start > 0 ? "..." : "") + pageObj.text.substring(start, end).replace(/\s+/g, ' ') + (end < pageObj.text.length ? "..." : "");
+
+        let count = 0;
+        let pos = lower.indexOf(query);
+        while (pos !== -1 && count < 20) {
+          count++;
+          pos = lower.indexOf(query, pos + query.length);
+        }
+
+        matches.push({
+          page: pageObj.page,
+          title: pageObj.title || `Page ${pageObj.page}`,
+          snippet,
+          matchCount: count || 1
+        });
+      }
+    }
+
+    matches.sort((a, b) => b.matchCount - a.matchCount);
+
+    res.json({
+      query,
+      total: matches.length,
+      results: matches
+    });
+  });
+
+  app.get("/api/conventional/page/:pageNumber", (req, res) => {
+    getManualContext();
+    const pageNum = parseInt(req.params.pageNumber, 10);
+    if (isNaN(pageNum) || pageNum < 1 || pageNum > conventionalPages.length) {
+      return res.status(404).json({ error: "Invalid page number" });
+    }
+
+    const pageObj = conventionalPages.find(p => p.page === pageNum);
+    if (!pageObj) {
+      return res.status(404).json({ error: "Page not found" });
     }
 
     res.json(pageObj);

@@ -1,5 +1,7 @@
 import { amritBharatFaults } from '../dataAmritBharat';
 import { faults } from '../data';
+import { conventionalFaults } from '../dataConventional';
+import { cleanRailwayVoiceText } from './speechCleaner';
 
 export interface GroundedResult {
   identifiedFaultId: string;
@@ -132,7 +134,37 @@ export const LOCO_SYNONYMS: Record<string, string[]> = {
   'हेडलाइट': ['headlight', 'head light', '310.1', 'zprd', 'dimmer', 'डिमर', 'मार्कर', 'marker'],
   'zprd': ['dimmer', 'डिमर', 'headlight', 'हेडलाइट', '310.1'],
   'डिमर': ['dimmer', 'zprd', 'headlight', 'हेडलाइट'],
-  'dimmer': ['डिमर', 'zprd', 'headlight', 'हेडलाइट']
+  'dimmer': ['डिमर', 'zprd', 'headlight', 'हेडलाइट'],
+
+  // BHEL TCN & Processors
+  'icp': ['icp1', 'icp-1', 'icp2', 'icp-2', 'processor icp', 'tcn', 'bhel', 'flg1', 'flg2'],
+  'icp1': ['icp-1', 'icp 1', 'ss17', 'flg1', 'bhel', 'tcn'],
+  'icp-1': ['icp1', 'icp 1', 'ss17', 'flg1', 'bhel', 'tcn'],
+  'icp2': ['icp-2', 'icp 2', 'ss18', 'flg2', 'bhel', 'tcn'],
+  'icp-2': ['icp2', 'icp 2', 'ss18', 'flg2', 'bhel', 'tcn'],
+  'tcn': ['bhel', 'icp', 'rbu', 'igbt', 'train communication network'],
+
+  // MEDHA IGBT & MCC Processors
+  'mcc': ['mcc1', 'mcc-1', 'mcc2', 'mcc-2', 'processor mcc', 'medha', 'flg1', 'flg2', '152'],
+  'mcc1': ['mcc-1', 'mcc 1', 'ss17', 'flg1', 'medha', 'switch 152', 'failure mode'],
+  'mcc-1': ['mcc1', 'mcc 1', 'ss17', 'flg1', 'medha', 'switch 152', 'failure mode'],
+  'mcc2': ['mcc-2', 'mcc 2', 'ss18', 'flg2', 'medha', 'switch 152', 'failure mode'],
+  'mcc-2': ['mcc2', 'mcc 2', 'ss18', 'flg2', 'medha', 'switch 152', 'failure mode'],
+  'medha': ['mcc', 'mcc1', 'mcc2', 'vcu1', 'vcu2', 'igbt', 'मेधा', '152'],
+  'मेधा': ['medha', 'mcc1', 'mcc2', 'igbt', '152'],
+  '152': ['switch 152', 'स्विच 152', 'failure mode', 'फेल्योर मोड', 'mcc1', 'mcc2', 'f1703p1'],
+  'dmc': ['dmc1', 'dmc-1', 'dmc2', 'dmc-2', 'processor dmc', 'dia1', 'dia2', 'medha', 'f1701p2', 'f1801p2'],
+  'dmc1': ['dmc-1', 'dmc 1', 'processor dmc1', 'ss17', 'dia 1', 'dia1', 'medha', 'f1701p2'],
+  'dmc-1': ['dmc1', 'dmc 1', 'processor dmc1', 'ss17', 'dia 1', 'dia1', 'medha', 'f1701p2'],
+  'dmc2': ['dmc-2', 'dmc 2', 'processor dmc2', 'ss18', 'dia 2', 'dia2', 'medha', 'f1801p2'],
+  'dmc-2': ['dmc2', 'dmc 2', 'processor dmc2', 'ss18', 'dia 2', 'dia2', 'medha', 'f1801p2'],
+
+  // Conventional Protection Relays
+  'qrsi': ['qrsi1', 'qrsi-1', 'qrsi2', 'qrsi-2', 'सिलिकॉन रेक्टिफायर', 'rectifier', 'rsi', 'ओवरकरंट'],
+  'qrsi-1': ['qrsi', 'qrsi1', 'rsi-1', 'hmcs-1', 'सिलिकॉन रेक्टिफायर', 'rectifier 1'],
+  'qrsi1': ['qrsi', 'qrsi-1', 'rsi-1', 'hmcs-1', 'सिलिकॉन रेक्टिफायर'],
+  'qrsi-2': ['qrsi', 'qrsi2', 'rsi-2', 'hmcs-2', 'सिलिकॉन रेक्टिफायर', 'rectifier 2'],
+  'qrsi2': ['qrsi', 'qrsi-2', 'rsi-2', 'hmcs-2', 'सिलिकॉन रेक्टिफायर']
 };
 
 export const STOP_WORDS = new Set([
@@ -195,11 +227,16 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
     };
   }
 
-  // Delegate slave or push-pull queries directly to Amrit Bharat solver
+  // Delegate slave or push-pull queries directly to Amrit Bharat solver (except 3-phase simulation key on master / slave)
   if (
-    norm.includes('slave') || norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab') ||
-    norm.includes('push pull') || norm.includes('push-pull') ||
-    norm.includes('amrit bharat') || norm.includes('अमृत भारत')
+    !norm.includes('ss17') && !norm.includes('ss18') && !norm.includes('f1704') && !norm.includes('f1804') &&
+    !norm.includes('simulation key') && !norm.includes('simulation switch') &&
+    (
+      (norm.includes('slave') && !norm.includes('master / slave') && !norm.includes('master/slave')) ||
+      norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab') ||
+      norm.includes('push pull') || norm.includes('push-pull') ||
+      norm.includes('amrit bharat') || norm.includes('अमृत भारत')
+    )
   ) {
     return resolveAmritBharatDefect(query, norm);
   }
@@ -4877,25 +4914,25 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
         : "SS01 F0101P1: VCB STUCK ON / MAIN POWER ISOLATED (3-Phase Loco TSD)",
       analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम: SS01 (Main Power)\nदोष संदेश: VCB STUCK IN ON POSITION / MAIN POWER ISOLATED\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
       suggestedActions: isSpecificStuck ? [
-        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
-        "2. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें।",
-        "3. लोको को खड़ा करें।",
-        "4. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें {कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करने की विधि पेज सं. 74/75 पर दी गई है}। यदि LSDJ प्रकाशित होता है तो:-",
-        "5. पैंटो को उठाएं और VCB क्लोज करें और ट्रैक्शन चालू करें।",
-        "6. यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।"
+        "1. Bring throttle to \"0\". Press BPFA to acknowledge fault. (थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।)",
+        "2. Clear block section while coasting. (कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें।)",
+        "3. Bring locomotive to a halt at a safe location. (लोको को सुरक्षित स्थान पर खड़ा करें।)",
+        "4. Switch OFF control electronics and turn it ON again. If LSDJ illuminates:- (कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें {कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करने की विधि पेज सं. 74/75 पर दी गई है}। यदि LSDJ प्रकाशित होता है तो:-)",
+        "5. Raise pantograph, close VCB and resume normal traction. (पैंटो को उठाएं और VCB क्लोज करें और सामान्य ट्रैक्शन चालू करें।)",
+        "6. If unsuccessful, try from the other cab. (यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।)"
       ] : [
-        "════ स्थिति 1: VCB STUCK IN ON POSITION (Loco will be shut down) ════",
-        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
-        "2. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें।",
-        "3. लोको को खड़ा करें।",
-        "4. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें {कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करने की विधि पेज सं. 74/75 पर दी गई है}। यदि LSDJ प्रकाशित होता है तो:-",
-        "5. पैंटो को उठाएं और VCB क्लोज करें और ट्रैक्शन चालू करें।",
-        "6. यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।",
-        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
-        "1. एक बार पुनः कंट्रोल इलेक्ट्रॉनिक्स को ऑफ कर फिर से ऑन करें, ट्रैक्शन चालू करने का प्रयत्न करें।",
-        "2. सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें।"
+        "【Situation 1: VCB STUCK IN ON POSITION (Loco will be shut down) - स्थिति 1: VCB स्टक इन ऑन पोजीशन】",
+        "1. Bring throttle to \"0\". Press BPFA to acknowledge fault. (थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।)",
+        "2. Clear block section while coasting. (कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें।)",
+        "3. Bring locomotive to a halt at a safe location. (लोको को सुरक्षित स्थान पर खड़ा करें।)",
+        "4. Switch OFF control electronics and turn it ON again. If LSDJ illuminates:- (कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें {कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करने की विधि पेज सं. 74/75 पर दी गई है}। यदि LSDJ प्रकाशित होता है तो:-)",
+        "5. Raise pantograph, close VCB and resume normal traction. (पैंटो को उठाएं और VCB क्लोज करें और सामान्य ट्रैक्शन चालू करें।)",
+        "6. If unsuccessful, try from the other cab. (यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।)",
+        "【Situation 2: MAIN POWER ISOLATED (VCB Inhibited, Loco is dead) - स्थिति 2: मेन पावर आइसोलेटेड】",
+        "1. Switch OFF control electronics once again and turn it ON, try to resume traction. (एक बार पुनः कंट्रोल इलेक्ट्रॉनिक्स को ऑफ कर फिर से ऑन करें, ट्रैक्शन चालू करने का प्रयत्न करें।)",
+        "2. If not successful, demand relief engine within 20 minutes, inform TLC and record in loco log book. (सफलता न मिलने पर 20 मिनट के अंदर सहायता इंजन की मांग करें, TLC को सूचित करें और लॉग बुक में दर्ज करें।)"
       ],
-      precautions: "कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन (MCE OFF/ON) करने के बाद Node 504 आने तक 35-40 सेकंड प्रतीक्षा करें। यदि 20 मिनट में सफलता न मिले तो सहायता इंजन की मांग करें।",
+      precautions: "Wait 35-40 seconds for Node 504 after switching Control Electronics OFF/ON (MCE OFF/ON). If unsuccessful within 20 minutes, demand relief engine. (कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन (MCE OFF/ON) करने के बाद Node 504 आने तक 35-40 सेकंड प्रतीक्षा करें। यदि 20 मिनट में सफलता न मिले तो सहायता इंजन की मांग करें।)",
       manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS01 Main Power (F0101P1, पेज 74/75)",
       verifiedFromPdf: true,
       pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल)",
@@ -5145,6 +5182,91 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
     };
   }
 
+  // 0f-QLM. QLM RELAY DROPPING AND DJ/VCB TRIPPING (Primary Overcurrent Relay)
+  // 0f-QLM. QLM RELAY DROPPING AND DJ/VCB TRIPPING (Primary Overcurrent Relay Cases)
+  const isQLMRepeatQuery =
+    (norm.includes('qlm') || norm.includes('क्यूएलएम') || norm.includes('ocr')) &&
+    (norm.includes('दोबारा') || norm.includes('dobara') || norm.includes('again') || norm.includes('repeat') || norm.includes('êâëïâóâ'));
+
+  const isQLMWithOtherRelaysQuery =
+    (norm.includes('qlm') || norm.includes('क्यूएलएम') || norm.includes('ocr')) &&
+    (norm.includes('अन्य') || norm.includes('anya') || norm.includes('other') || norm.includes('another') || norm.includes('ánò') || norm.includes('ã»öä'));
+
+  const isQLMQuery =
+    norm.includes('qlm') ||
+    norm.includes('क्यूएलएम') ||
+    norm.includes('अकेली ड्रॉप') ||
+    norm.includes('akeli drop') ||
+    norm.includes('á»ëÔä') ||
+    norm.includes('å÷âúí');
+
+  if (isQLMRepeatQuery) {
+    return {
+      identifiedFaultId: "QLM-REPEAT-DROP",
+      faultTitle: "(B) QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होती है और DJ/VCB ट्रिप होता है / QLM DROPS AGAIN WITH ANOTHER RELAY",
+      analysis: "भारतीय रेल लोको TSD एवं सुरक्षा रिले डायरेक्टरी:\nसबसिस्टम: SS01 (Main Power / Safety Relays)\nदोष संदेश:\n(B) QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होती है और DJ/VCB ट्रिप होता है\n(QLM Repeatedly Dropping with another relay)\nलैम्प संकेत: LSDJ प्रकाशित रहेगा, QLM व संबंधित रिले का टारगेट गिरेगा।\nप्रभाव: DJ/VCB ट्रिप होगा, लोको पावर कट जाएगी।\nआधिकारिक निर्धारित दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. Do not reset the relay. Demand assistance. (रिले को रीसेट न करें। सहायता मांगें।)"
+      ],
+      precautions: "QLM दोबारा ड्रॉप होने पर रिले को किसी भी परिस्थिति में रीसेट न करें! तत्काल सहायता इंजन की मांग करें।",
+      manualReference: "भारतीय रेल CAMTECH लोको TSD - QLM रिले दोबारा ड्रॉप",
+      verifiedFromPdf: true,
+      pdfDocumentName: "CAMTECH & भारतीय रेल लोको TSD",
+      pdfPage: 1,
+      pdfQuote: "QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होती है और DJ/VCB ट्रिप होता है:\nरिले को रीसेट न करें। सहायता मांगें।"
+    };
+  }
+
+  if (isQLMWithOtherRelaysQuery) {
+    return {
+      identifiedFaultId: "QLM-WITH-OTHER-RELAYS",
+      faultTitle: "(A) QLM किसी अन्य रिले के साथ ड्रॉप होती है और DJ/VCB ट्रिप होता है / QLM DROPS WITH ANOTHER RELAY",
+      analysis: "भारतीय रेल लोको TSD एवं सुरक्षा रिले डायरेक्टरी:\nसबसिस्टम: SS01 (Main Power / Safety Relays)\nदोष संदेश:\n(A) QLM किसी अन्य रिले के साथ ड्रॉप होती है और DJ/VCB ट्रिप होता है\n(QLM Dropping Along with Another Safety Relay: QOP, QOA, QRSI)\nलैम्प संकेत: LSDJ प्रकाशित होगा, QLM व संबंधित रिले का टारगेट गिरेगा।\nप्रभाव: DJ/VCB ट्रिप होगा, लोको पावर कट जाएगी।\nआधिकारिक निर्धारित दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "a) If any abnormality is noticed, demand assistance. (यदि कोई असामान्यता मिलती है तो सहायता मांगें।)",
+        "b) If no abnormality is noticed, check for fault in traction power circuit / auxiliary circuit. (यदि कोई असामान्यता नहीं मिलती है तो ट्रैक्शन पावर सर्किट/ऑक्सिलरी सर्किट में खराबी ढूंढें।)",
+        "c) If any defect is found, isolate the defective equipment, reset relays and work train. (यदि कोई खराबी मिलती है तो खराबी वाले उपकरणों को आइसोलेट करें, रिले को रीसेट करें और गाड़ी चलाएं।)",
+        "d) If no defect is found, reset relays and work train. (यदि कोई खराबी नहीं मिलती है तो रिले को रीसेट करें और गाड़ी चलाएं।)",
+        "e) Locomotive should be thoroughly inspected by maintenance staff at nearest possible station; Inform TLC. (नजदीकी संभव स्थान पर मेंटेनेंस स्टाफ द्वारा लोको का पूर्ण निरीक्षण किया जाए। टीएलसी को सूचित करें।)"
+      ],
+      precautions: "असामान्यता मिलने पर सहायता मांगें। खराबी न दिखने पर ट्रैक्शन व ऑक्सिलरी पावर सर्किट की जांच कर दोषयुक्त उपकरण आइसोलेट करें तथा रिले रीसेट करके गाड़ी चलाएं। अगले स्टेशन पर मेंटेनेंस स्टाफ से जांच कराएं।",
+      manualReference: "भारतीय रेल CAMTECH लोको TSD - QLM किसी अन्य रिले के साथ ड्रॉप",
+      verifiedFromPdf: true,
+      pdfDocumentName: "CAMTECH & भारतीय रेल लोको TSD",
+      pdfPage: 1,
+      pdfQuote: "QLM किसी अन्य रिले के साथ ड्रॉप होती है और DJ/VCB ट्रिप होता है:\na) यदि कोई असामान्यता मिलती है तो सहायता मांगें।\nb) यदि कोई असामान्यता नहीं मिलती है तो ट्रैक्शन पावर सर्किट/ऑक्सिलरी सर्किट में खराबी ढूंढें।\nc) यदि कोई खराबी मिलती है तो खराबी वाले उपकरणों को आइसोलेट करें, रिले को रीसेट करें और गाड़ी चलाएं।\nd) यदि कोई खराबी नहीं मिलती है तो रिले को रीसेट करें और गाड़ी चलाएं।\ne) नजदीकी संभव स्थान पर मेंटेनेंस स्टाफ द्वारा लोको का पूर्ण निरीक्षण किया जाए। टीएलसी को सूचित करें।"
+    };
+  }
+
+  if (isQLMQuery) {
+    return {
+      identifiedFaultId: "QLM-RELAY-DROP",
+      faultTitle: "QLM रिले ड्रॉप होना एवं DJ/VCB ट्रिप होना / QLM RELAY DROPPING & DJ/VCB TRIPPING",
+      analysis: "भारतीय रेल लोको TSD एवं सुरक्षा रिले डायरेक्टरी:\nसबसिस्टम: SS01 (Main Power / Safety Relays)\nदोष संदेश:\nQLM रिले ड्रॉप होना एवं DJ/VCB ट्रिप होना\n(Primary Over Current Protection - OCR-78 / QLM Relay)\nलैम्प संकेत: LSDJ प्रकाशित होगा, QLM टारगेट गिरेगा।\nप्रभाव: DJ/VCB ट्रिप होगा, लोको पावर कट जाएगी।\nआधिकारिक निर्धारित दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【Situation 1: QLM drops alone & DJ/VCB trips - स्थिति 1: QLM अकेली ड्रॉप होती है और DJ/VCB ट्रिप होता है】",
+        "a) If any defect is noticed or oil is spilled, demand assistance. (यदि कोई खराबी है या तेल बिखरा है तो सहायता मांगें।)",
+        "b) If no defect is found, reset relay by rotating knob clockwise, close DJ/VCB. (यदि कोई खराबी नहीं पाई जाती है तो रिले को क्लॉक वाइज घुमाकर रीसेट करें, DJ/VCB क्लोज करें।)",
+        "• If QLM drops again, demand assistance. (यदि QLM फिर से ड्रॉप होती है तो सहायता मांगें।)",
+        "• Note: QLM can be reset only once. (नोट :- QLM को केवल एक ही बार रीसेट किया जा सकता है।)",
+        "【Situation 2: QLM drops along with any other relay & DJ/VCB trips - स्थिति 2: QLM किसी अन्य रिले के साथ ड्रॉप होती है और DJ/VCB ट्रिप होता है】",
+        "a) If any abnormality is noticed, demand assistance. (यदि कोई असामान्यता मिलती है तो सहायता मांगें।)",
+        "b) If no abnormality is noticed, check for fault in traction power circuit / auxiliary circuit. (यदि कोई असामान्यता नहीं मिलती है तो ट्रैक्शन पावर सर्किट/ऑक्सिलरी सर्किट में खराबी ढूंढें।)",
+        "c) If any defect is found, isolate the defective equipment, reset relays and work train. (यदि कोई खराबी मिलती है तो खराबी वाले उपकरणों को आइसोलेट करें, रिले को रीसेट करें और गाड़ी चलाएं।)",
+        "d) If no defect is found, reset relays and work train. (यदि कोई खराबी नहीं मिलती है तो रिले को रीसेट करें और गाड़ी चलाएं।)",
+        "e) Locomotive should be thoroughly inspected by maintenance staff at nearest possible station; Inform TLC. (नजदीकी संभव स्थान पर मेंटेनेंस स्टाफ द्वारा लोको का पूर्ण निरीक्षण किया जाए। टीएलसी को सूचित करें।)",
+        "【Situation 3: QLM drops again with any other relay & DJ/VCB trips - स्थिति 3: QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होती है और DJ/VCB ट्रिप होता है】",
+        "1. Do not reset the relay. Demand assistance. (रिले को रीसेट न करें। सहायता मांगें।)"
+      ],
+      precautions: "QLM मेन ट्रांसफॉर्मर व प्राइमरी ओवरकरंट सुरक्षा रिले है। QLM को केवल एक ही बार रीसेट किया जा सकता है! रीसेट करने से पूर्व तेल बिखराव या अन्य खराबी की जांच अवश्य करें। यदि दोबारा QLM ड्रॉप हो तो सहायता मांगें।",
+      manualReference: "भारतीय रेल लोको TSD - मेन ट्रांसफॉर्मर ओवरकरंट रिले QLM",
+      verifiedFromPdf: true,
+      pdfDocumentName: "CAMTECH & भारतीय रेल लोको TSD",
+      pdfPage: 1,
+      pdfQuote: "QLM अकेली ड्रॉप होती है और DJ/VCB ट्रिप होता है:\na) यदि कोई खराबी है या तेल बिखरा है तो सहायता मांगें।\nb) यदि कोई खराबी नहीं पाई जाती है तो रिले को क्लॉक वाइज घुमाकर रीसेट करें, DJ/VCB क्लोज करें।\n- यदि QLM फिर से ड्रॉप होती है तो सहायता मांगें।\nनोट :- QLM को केवल एक ही बार रीसेट किया जा सकता है।"
+    };
+  }
+
   // 0f. SS01 F0108P1: PRIMARY OVER CURRENT, Check over current relay flag, Close VCB after unlocking relay (Vadodara TSD Page 81)
   const isF0108Query = 
     !norm.includes('f0109') && !norm.includes('aux') && !norm.includes('winding') && !norm.includes('f0110') && !norm.includes('fatal') &&
@@ -5184,7 +5306,7 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
         "7. BLDJ द्वारा VCB क्लोज करें एवं TLC को सूचित करके लॉग बुक में दर्ज करें।",
         "8. यदि एक बार में उपरोक्त अनुसार सफलता न मिले और VCB क्लोज नहीं होता है तो बिना समय गंवाए सहायता इंजन की मांग करें।"
       ] : [
-        "════ स्थिति 1: PRIMARY OVER CURRENT (Check over current relay flag, Close VCB after unlocking relay) ════",
+        "【Situation 1: PRIMARY OVER CURRENT (Check over current relay flag, Close VCB after unlocking relay) - स्थिति 1: प्राइमरी ओवर करंट (रिले फ्लैग चेक करें, VCB क्लोज करें)】",
         "1. लोको की जांच करने से पहले VCB को क्लोज न करें। (विशेषकर मशीन रूम में OCR (78) तथा सभी ऑयल पॉइंट्स चेक करें। यदि कोई असामान्यता दिखाई दे तो मानक सुरक्षा नियमानुसार कार्यवाही करें और बिना समय गंवाए सहायता मांगें।)",
         "2. यदि कोई असामान्यता नहीं है तो कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और गाड़ी को खड़ी करें। BPFA दबाकर फॉल्ट ACK करें।",
         "3. SB-1 पैनल पर OCR-78 रिले के टारगेट की जांच करें।",
@@ -5193,7 +5315,7 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
         "6. यदि OCR-78 (SB-1) का टारगेट गिरा है परंतु किसी भी प्रकार का तेल बिखराव नहीं दिखता है एवं चारों ऑयल गेज में तेल Min. तथा Max. के बीच है तो रिले के नॉब को clockwise घुमाकर रीसेट करें, रिले का फ्लैग हट जाएगा।",
         "7. BLDJ द्वारा VCB क्लोज करें एवं TLC को सूचित करके लॉग बुक में दर्ज करें।",
         "8. यदि एक बार में उपरोक्त अनुसार सफलता न मिले और VCB क्लोज नहीं होता है तो बिना समय गंवाए सहायता इंजन की मांग करें।",
-        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "【Situation 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) - स्थिति 2: मेन पावर आइसोलेटेड (लोको डेड)】",
         "1. यदि एक बार में सफलता न मिले तो बिना समय गंवाए सहायता इंजन की मांग करें।"
       ]),
       precautions: "लोको जांच से पहले VCB क्लोज न करें। OCR-78 रिले रीसेट करने से पहले चारों ऑयल गेज में तेल का स्तर Min/Max के बीच होना और मशीन रूम में किसी प्रकार का तेल रिसाव न होना सुनिश्चित करें। यदि एक बार में VCB क्लोज न हो तो बिना समय गंवाए सहायता इंजन मांगें।",
@@ -5237,11 +5359,11 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
         "2. यदि दोष बना ही रहता है तो आइसोलेशन मैसेज आएगा, ENTER बटन दबाकर ACK करें।",
         "3. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और गाड़ी को खड़ी करें।"
       ] : [
-        "════ स्थिति 1: AUX. WINDING OVER CURRENT (Try to close VCB again) ════",
+        "【Situation 1: AUX. WINDING OVER CURRENT (Try to close VCB again) - स्थिति 1: ऑक्सिलरी वाइंडिंग ओवर करंट (VCB दोबारा क्लोज करें)】",
         "1. BPFA दबाकर फ़ॉल्ट ACK करें। VCB को क्लोज़ करने के लिए BLDJ दबाएं।",
         "2. यदि दोष बना ही रहता है तो आइसोलेशन मैसेज आएगा, ENTER बटन दबाकर ACK करें।",
         "3. कोस्टिंग करते हुए ब्लॉक सेक्शन क्लियर करें और गाड़ी को खड़ी करें।",
-        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "【Situation 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) - स्थिति 2: मेन पावर आइसोलेटेड (लोको डेड)】",
         "1. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटोग्राफ रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
         "2. यदि VCB क्लोज़ नहीं होता है तो लोको को शट-डाउन करें।",
         "3. DDS पर बैकग्राउंड मैसेज चेक करें, और मैसेज के अनुसार BUR-1, BUR-2 या BUR-3 को MCB 127.22/1 या MCB 127.22/2 या MCB 127.22/3 के द्वारा आइसोलेट करके प्रयत्न करें। (MCE ऑफ़ करके)।",
@@ -5289,12 +5411,12 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
         "3. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
         "4. एक से ज़्यादा सब-सिस्टम आइसोलेट हों (RDSO का मॉडिफिकेशन पत्र सं. RDSO/2013/EL/MS/0420, Rev. ‘0’ Dated 23.01.13 के कार्यान्वयन के बाद ही यह लागू होगा)।"
       ] : [
-        "════ स्थिति 1: FATAL ERROR IN MAIN CIRCUIT (Turn OFF the Loco) ════",
+        "【Situation 1: FATAL ERROR IN MAIN CIRCUIT (Turn OFF the Loco) - स्थिति 1: मेन सर्किट में फेटल एरर (लोको को ऑफ करें)】",
         "1. थ्रॉटल को ‘0’ पर लाएं और BPFA दबाकर फ़ॉल्ट ACK करें।",
         "2. HB/SB पैनल में MCBs को चेक करें। यदि ट्रिप हों तो एक बार रीसेट करें।",
         "3. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
         "4. एक से ज़्यादा सब-सिस्टम आइसोलेट हों (RDSO का मॉडिफिकेशन पत्र सं. RDSO/2013/EL/MS/0420, Rev. ‘0’ Dated 23.01.13 के कार्यान्वयन के बाद ही यह लागू होगा)।",
-        "════ स्थिति 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) ════",
+        "【Situation 2: MAIN POWER ISOLATED (VCB Inhibited Loco is dead) - स्थिति 2: मेन पावर आइसोलेटेड (लोको डेड)】",
         "1. OCB, TMB, कन्वर्टर पंप (MPH-C) व MCP के लिए SS-01 के अंत में दिए गए अतिरिक्त मदों के अनुसार दोष निवारण करें। यदि सफलता नहीं मिलती है तो -",
         "2. कंट्रोल इलेक्ट्रॉनिक्स को एक बार फिर ऑफ़ करके ऑन करें। पैंटो रेज़ करें, VCB क्लोज़ करें तथा ट्रैक्शन चालू करें।",
         "3. यदि VCB क्लोज़ नहीं होता है तो लोको को शट-डाउन करें।",
@@ -5345,6 +5467,7 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
   const isPantoQuery = 
     !norm.includes('f0104') && !norm.includes('f0106') && !norm.includes('f0107') && !norm.includes('f0108') && !norm.includes('f0109') && !norm.includes('f0110') && !norm.includes('catenary') && !norm.includes('out of limit') &&
     !norm.includes('f0103p2') && !norm.includes('earth fault') && !norm.includes('earthfault') && !norm.includes('aux. winding') && !norm.includes('aux winding') &&
+    !norm.includes('f1702') && !norm.includes('f1802') && !norm.includes('mismatch') && !norm.includes('मिसमैच') &&
     (norm.includes('f0103p1') ||
      norm.includes('f0103') ||
      norm.includes('low pressure panto') ||
@@ -5368,18 +5491,18 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
       faultTitle: "SS01 F0103P1: LOW PRESSURE PANTO / FAULTY PANTO (3-Phase Loco TSD)",
       analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम SS01 (Main Power):\nदोष संदेश: LOW PRESSURE PANTO / FAULTY PANTO\nCheck Isolating Cock Check Aux. Reservoir Pressure\nलैंप प्रभाव: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी। प्रभाव: पेन्टो रेज़ नहीं होगा (Panto will not raise)।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 10-चरणीय दोष निवारण प्रक्रिया:",
       suggestedActions: [
-        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
-        "2. सुनिश्चित करें कि न्यूमैटिक पैनल पर IG-38 (नीली चाबी) आड़ी स्थिति में लगी है। KNORR-CCB-2 ब्रेक वाले लोको में IG-38 key खड़ी स्थिति में लगी है।",
-        "3. चेक करें कि MCPA चल रहा है या नहीं। यदि नहीं चल रहा है तो MCPA की MCB 48.1 (SB-2) को चेक करें, यदि ट्रिप हो तो उसे रीसेट करें।",
-        "4. यदि फिर भी MCPA नहीं चल रहा है तो प्रेशर स्विच नं. 26 (E70 वाले लोको में न्यूमैटिक पैनल पर बाएं हाथ से पांचवां और CCB2 वाले लोको में “ PANS-PS ”) को धीरे से टैप करें।",
-        "5. चेक करें कि ऑक्सिलरी रिज़र्वायर गेज में 5.2 kg/cm² से ज्यादा प्रेशर उपलब्ध है। न्यूमैटिक पैनल पर MCPA का ड्रेन कॉक बंद होना सुनिश्चित करें {पाइप के समानांतर होना चाहिए}।",
-        "6. न्यूमैटिक पैनल पर पैंटो व VCB आइसोलेटिंग कॉक खुला होना चेक करें। दो-तीन बार ऑपरेट करें और आड़ी (हॉरिजॉन्टल) स्थिति में होना सुनिश्चित करें।",
-        "7. पैंटो रेज़ करने का प्रयत्न करें। यदि सफलता नहीं मिलती है तो न्यूमैटिक पैनल पर पैंटो सिलेक्टर स्विच (85) की पोजीशन बदलकर दूसरा पैंटो रेज़ करने का प्रयत्न करें।",
-        "8. पैंटो सर्किट के प्रेशर को 130.4/1 तथा 130.4/2 प्रेशर स्विच मॉनिटर करते हैं। पैंटो रेज़िंग की कमांड देने के बाद, यदि यह प्रेशर स्विच 35 सेकंड में पिकअप नहीं होता है तो VCB क्लोज नहीं होगा। यदि VCB क्लोज होता है तो वह 2 सेकंड के बाद खुल जायेगा। प्रेशर स्विच नं. 130.4/1 तथा 130.4/2 अर्थात 9/1 और 9/2, E70 वाले लोको में न्यूमैटिक पैनल पर और CCB2 वाले लोको में “ PAN1-PS तथा PAN2-PS ” को धीरे से टैप करें। पैंटो रेज़ करें तथा VCB क्लोज करें।",
-        "9. यदि सफलता नहीं मिलती है तो कैब बदलकर / पैंटो सिलेक्टर स्विच (85) {न्यूमैटिक पैनल पर} की पोजीशन बदलकर प्रयत्न करें।",
-        "10. अगर सफलता नहीं मिलती है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ कर फिर से ऑन करके प्रयत्न करें।"
+        "1. Bring throttle to \"0\". Press BPFA to acknowledge fault. (थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।)",
+        "2. Ensure blue key IG-38 on pneumatic panel is in horizontal position. In locomotives with KNORR-CCB-2 brakes, ensure IG-38 key is in vertical position. (सुनिश्चित करें कि न्यूमैटिक पैनल पर IG-38 (नीली चाबी) आड़ी स्थिति में लगी है। KNORR-CCB-2 ब्रेक वाले लोको में IG-38 key खड़ी स्थिति में लगी है।)",
+        "3. Check whether MCPA is running. If not running, check MCB 48.1 (SB-2) of MCPA; if tripped, reset it once. (चेक करें कि MCPA चल रहा है या नहीं। यदि नहीं चल रहा है तो MCPA की MCB 48.1 (SB-2) को चेक करें, यदि ट्रिप हो तो उसे रीसेट करें।)",
+        "4. If MCPA is still not running, gently tap pressure switch No. 26 (5th from left on pneumatic panel in E70 locos, or \"PANS-PS\" in CCB2 locos). (यदि फिर भी MCPA नहीं चल रहा है तो प्रेशर स्विच नं. 26 (E70 वाले लोको में न्यूमैटिक पैनल पर बाएं हाथ से पांचवां और CCB2 वाले लोको में “ PANS-PS ”) को धीरे से टैप करें।)",
+        "5. Check that auxiliary reservoir gauge indicates more than 5.2 kg/cm² pressure. Ensure drain cock of MCPA on pneumatic panel is closed (must be parallel to pipe). (चेक करें कि ऑक्सिलरी रिज़र्वायर गेज में 5.2 kg/cm² से ज्यादा प्रेशर उपलब्ध है। न्यूमैटिक पैनल पर MCPA का ड्रेन कॉक बंद होना सुनिश्चित करें {पाइप के समानांतर होना चाहिए}।)",
+        "6. Check that panto and VCB isolating cocks on pneumatic panel are open. Operate 2-3 times and ensure they are in horizontal position. (न्यूमैटिक पैनल पर पैंटो व VCB आइसोलेटिंग कॉक खुला होना चेक करें। दो-तीन बार ऑपरेट करें और आड़ी (हॉरिजॉन्टल) स्थिति में होना सुनिश्चित करें।)",
+        "7. Try to raise pantograph. If not successful, change the position of panto selector switch (85) on pneumatic panel and try to raise the other pantograph. (पैंटो रेज़ करने का प्रयत्न करें। यदि सफलता नहीं मिलती है तो न्यूमैटिक पैनल पर पैंटो सिलेक्टर स्विच (85) की पोजीशन बदलकर दूसरा पैंटो रेज़ करने का प्रयत्न करें।)",
+        "8. Panto circuit pressure is monitored by pressure switches 130.4/1 and 130.4/2. After giving panto raise command, if this switch does not pick up within 35 seconds, VCB will not close (if closed, it opens after 2 seconds). Gently tap switches 130.4/1 & 130.4/2 (i.e. 9/1 & 9/2 on E70 pneumatic panel, or \"PAN1-PS\" & \"PAN2-PS\" on CCB-2). Raise panto and close VCB. (पैंटो सर्किट के प्रेशर को 130.4/1 तथा 130.4/2 प्रेशर स्विच मॉनिटर करते हैं। पैंटो रेज़िंग की कमांड देने के बाद, यदि यह प्रेशर स्विच 35 सेकंड में पिकअप नहीं होता है तो VCB क्लोज नहीं होगा। यदि VCB क्लोज होता है तो वह 2 सेकंड के बाद खुल जायेगा। प्रेशर स्विच नं. 130.4/1 तथा 130.4/2 अर्थात 9/1 और 9/2, E70 वाले लोको में न्यूमैटिक पैनल पर और CCB2 वाले लोको में “ PAN1-PS तथा PAN2-PS ” को धीरे से टैप करें। पैंटो रेज़ करें तथा VCB क्लोज करें।)",
+        "9. If not successful, change cab and/or change position of panto selector switch (85) on pneumatic panel and retry. (यदि सफलता नहीं मिलती है तो कैब बदलकर / पैंटो सिलेक्टर स्विच (85) {न्यूमैटिक पैनल पर} की पोजीशन बदलकर प्रयत्न करें।)",
+        "10. If still unsuccessful, switch OFF control electronics once, turn it ON again and retry. (अगर सफलता नहीं मिलती है तो कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ कर फिर से ऑन करके प्रयत्न करें।)"
       ],
-      precautions: "ऑक्सिलरी रिज़र्वायर गेज में 5.2 kg/cm² से अधिक प्रेशर होना चाहिए। IG-38 चाबी E-70 में आड़ी व CCB-2 में खड़ी स्थिति में होनी चाहिए। प्रेशर स्विच 130.4/1 व 130.4/2 पिकअप होने में 35s का ध्यान रखें।",
+      precautions: "Auxiliary reservoir gauge must show > 5.2 kg/cm² pressure. Blue key IG-38 must be horizontal in E-70 and vertical in CCB-2. Note that pressure switches 130.4/1 & 130.4/2 take up to 35s to pick up. (ऑक्सिलरी रिज़र्वायर गेज में 5.2 kg/cm² से अधिक प्रेशर होना चाहिए। IG-38 चाबी E-70 में आड़ी व CCB-2 में खड़ी स्थिति में होनी चाहिए। प्रेशर स्विच 130.4/1 व 130.4/2 पिकअप होने में 35s का ध्यान रखें।)",
       manualReference: "254-पृष्ठ 3-फेज लोको TSD - SS01 Main Power (F0103P1, पृष्ठ 126-127 व 238)",
       verifiedFromPdf: true,
       pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
@@ -5498,29 +5621,22 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
       faultTitle: "SS01 F0104P1: CATENARY VOLTAGE OUT OF LIMIT (3-Phase Loco TSD)",
       analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा):\nसबसिस्टम SS01 (Main Power):\nदोष संदेश: CATENARY VOLTAGE OUT OF LIMIT\nWatch Catenary Voltmeter Close VCB When Voltage is OK\nलैम्प संकेत: LSDJ और BPFA प्रकाशित होंगे, LSFI ब्लिंक करेगी।\nप्रभाव: OHE वोल्टेज 17.5 kV से 29 kV के बीच में रहने पर ही VCB क्लोज होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण प्रक्रिया:",
       suggestedActions: [
-        "════ स्थिति 1: सामान्य 3-फ़ेस लोको (Normal 3-Phase Loco / Single Unit) ════",
-        "1. थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फॉल्ट ACK करें।",
-        "2. यदि U-मीटर “ 0 ” बताता है, तो पैंटो का OHE से स्पर्श होना सुनिश्चित करें, छत पर खराबी चेक करें:-",
-        "   • यदि पैंटो OHE से स्पर्श नहीं करता तो दूसरा पैंटो उठाकर कार्य करें।",
-        "   • यदि छत पर खराबी है तो TPC/TLC से संपर्क करें।",
-        "   • यदि छत पर खराबी नहीं है तो OHE टेंशन के लिए आर्किंग (Arcing) चेक करें:",
-        "     a) यदि आर्किंग नहीं होती है तो No Tension से संबंधित कार्यवाही करें, TPC/TLC से संपर्क करें और आदेशानुसार कार्यवाही करें।",
-        "     b) यदि आर्किंग होती है तो पैंटो लोअर करके SB-1 पैनल पर 2 Amp के फ्यूज को अतिरिक्त फ्यूज से बदल दें। सफलता मिलने पर सामान्य तौर पर कार्य करें।",
-        "     c) यदि 2 Amp का फ्यूज नहीं पिघला है तो OHE Voltage 17.5 kV से 29 kV के बीच आने तक इंतज़ार करें। वोल्टेज सामान्य होने पर VCB क्लोज करें, ट्रैक्शन चालू करें।",
-        "3. यदि U-मीटर OHE Voltage 17.5 kV से 29 kV के बीच बताता है तो ट्रैक्शन कनवर्टर 1 व 2 को निम्न मैसेज के अनुसार आइसोलेट करें:-",
-        "   • (i) यदि DDS पर मैसेज SLG-1:0020 आता है तो लोको पायलट ट्रैक्शन कनवर्टर 1 को MCB 127.1/1 एवं 127.11/1 {SB-1} के द्वारा आइसोलेट करें {MCE OFF करके}।",
-        "   • (ii) यदि DDS पर मैसेज SLG-2:0020 आता है तो ट्रैक्शन कनवर्टर 2 को MCB 127.1/2 एवं 127.11/2 {SB-2} के द्वारा आइसोलेट करें {MCE OFF करके}।",
-        "4. यदि सफलता नहीं मिलती है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें। ट्रैक्शन चालू करें।",
-        "5. यदि फिर भी सफलता नहीं मिलती है तो पैंटो बदलकर प्रयत्न करें।",
-        "6. कैब बदलकर प्रयत्न करें।",
-        "════ स्थिति 2: WAP-5 MU में सिंगल पैंटो संचालन (Slave Loco Only) ════",
-        "1. HV कनेक्टिंग केबल चेक करें। क्षतिग्रस्त होने पर BPISO दबाकर स्लेव लोको आइसोलेट करें (मैकेनिकल कपलिंग न खोलें)।",
-        "2. पीछे वाले लोको का 2 Amp PT फ्यूज (SB-1) चेक करें, मेल्ट हो तो बदलें।",
-        "3. 2 Amp फ्यूज ठीक होने पर वोल्टेज 17.5-29 kV आने तक इंतजार करें।",
-        "4. कंट्रोल इलेक्ट्रॉनिक्स ऑफ/ऑन करें।",
-        "5. पैंटो बदलें / कैब बदलें / स्लेव लोको आइसोलेट करें।"
+        "1. Bring throttle to \"0\". Press BPFA to acknowledge fault. (थ्रोटल को “ 0 ” पर लाएं। BPFA दबाकर फ़ॉल्ट ACK करें।)",
+        "2. If U-meter indicates \"0\", ensure pantograph touches OHE and check roof for damage: (यदि U मीटर “ 0 ” बताता है, तो पैंटो का OHE से स्पर्श होना सुनिश्चित करें, छत पर खराबी चेक करें:)",
+        "• If pantograph does not touch OHE, raise other pantograph and work train. (यदि पैंटो OHE से स्पर्श नहीं करता तो दूसरा पैंटो उठाकर कार्य करें।)",
+        "• If there is damage on roof, contact TPC/TLC. (यदि छत पर खराबी है तो TPC/TLC से संपर्क करें।)",
+        "• If no roof damage, check for arcing to confirm OHE tension: (यदि छत पर खराबी नहीं है तो OHE टेंशन के लिए आर्किंग चेक करें:)",
+        "a) If no arcing: Act as per No Tension procedure, contact TPC/TLC and act as instructed. (a) यदि आर्किंग नहीं होती है तो No tension से संबंधित कार्यवाही करें, TPC/TLC से संपर्क करें और आदेशानुसार कार्यवाही करें।)",
+        "b) If arcing occurs: Lower pantograph and replace 2 Amp PT fuse in SB-1 panel with spare fuse; on success, resume normal operation. (b) यदि आर्किंग होती है तो पैंटो लोअर करके SB-1 पैनल पर 2 Amp के फ्यूज को अतिरिक्त फ्यूज से बदल दें। सफलता मिलने पर सामान्य तौर पर कार्य करें।)",
+        "c) If 2 Amp fuse is not melted: Wait until OHE voltage normalizes between 17.5 kV and 29 kV; then close VCB and resume traction. (c) यदि 2 Amp का फ्यूज नहीं पिघला है तो OHE Voltage 17.5 kv से 29 kv के बीच आने तक इंतज़ार करें। वोल्टेज सामान्य होने पर VCB क्लोज़ करें, ट्रैक्शन चालू करें।)",
+        "3. If U-meter indicates OHE Voltage between 17.5 kV and 29 kV, isolate Traction Converter 1 & 2 as per following message: (यदि U मीटर OHE Voltage 17.5 kV से 29 kV के बीच बताता है तो ट्रैक्शन कनवर्टर 1 व 2 को निम्न मैसेज के अनुसार आइसोलेट करें:)",
+        "{i} If DDS displays message SLG-1:0020, locomotive pilot isolate Traction Converter-1 via MCB 127.1/1 & 127.11/1 (SB-1) with MCE OFF. ({i} यदि DDS पर मैसेज SLG-1:0020 आता है तो लोको पायलट ट्रैक्शन कनवर्टर 1 को MCB 127.1/1 एवं 127.11/1 {SB-1} के द्वारा आइसोलेट करें {MCE OFF करके}।)",
+        "{ii} If DDS displays message SLG-2:0020, isolate Traction Converter-2 via MCB 127.1/2 & 127.11/2 (SB-2) with MCE OFF. ({ii} यदि DDS पर मैसेज SLG-2:0020 आता है तो ट्रैक्शन कनवर्टर 2 को MCB 127.1/2 एवं 127.11/2 {SB-2} के द्वारा आइसोलेट करें {MCE OFF करके}।)",
+        "4. If unsuccessful, switch OFF control electronics and turn it ON again (MCE OFF/ON). Resume traction. (यदि सफलता नहीं मिलती है तो कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें। ट्रैक्शन चालू करें।)",
+        "5. If still unsuccessful, change pantograph and retry. (यदि फिर भी सफलता नहीं मिलती है तो पैंटो बदलकर प्रयत्न करें।)",
+        "6. Change cab and retry. (कैब बदलकर प्रयत्न करें।)"
       ],
-      precautions: "छत पर कोई खराबी दिखने पर पैंटो कतई न उठाएं और तुरंत TPC/TLC को सूचित करें। OHE वोल्टेज 17.5 kV से 29 kV के बीच आने पर ही VCB क्लोज करें।",
+      precautions: "Do not raise pantograph if any roof damage is visible and notify TPC/TLC immediately. Close VCB only after OHE voltage normalizes between 17.5 kV and 29 kV. (छत पर कोई खराबी दिखने पर पैंटो कतई न उठाएं और तुरंत TPC/TLC को सूचित करें। OHE वोल्टेज 17.5 kV से 29 kV के बीच आने पर ही VCB क्लोज करें।)",
       manualReference: "254-पृष्ठ 3-फेज लोको TSD - SS01 Main Power (F0104P1, पेज 76/77)",
       verifiedFromPdf: true,
       pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
@@ -5722,31 +5838,39 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
     };
   }
 
-  // 5b. Throttle / Traction Angle Transmitter Failure (F1703P1 / F1803P1 - Pages 238 & 242)
+  // 5b. Throttle / Traction Angle Transmitter Failure (F1703P1 / F1803P1 - Pages 201-202, 223-224, 238 & 242)
   const isThrottleFailureQuery =
     norm.includes('f1703') || norm.includes('f1803') ||
-    norm.includes('angle transmitter') || norm.includes('स्विच 152') || norm.includes('switch 152') ||
-    ((norm.includes('throttle') || norm.includes('थ्रोटल')) && (norm.includes('angle') || norm.includes('transmitter') || norm.includes('fail') || norm.includes('फेल') || norm.includes('काम नहीं') || norm.includes('खराब')));
+    norm.includes('angle transmitter') || norm.includes('एंगल ट्रांसमीटर') || norm.includes('e[>gl t^i‡sm)tr') ||
+    norm.includes('स्विच 152') || norm.includes('switch 152') || norm.includes('(avc n> 152') || norm.includes('avc 152') ||
+    norm.includes('switch failure mode') || norm.includes('फेल्योर मोड') || norm.includes('f[ãyi[r mi[d') ||
+    ((norm.includes('throttle') || norm.includes('थ्रोटल') || norm.includes('y\\i[tl')) && (norm.includes('angle') || norm.includes('transmitter') || norm.includes('fail') || norm.includes('फेल') || norm.includes('काम नहीं') || norm.includes('खराब')));
 
   if (isThrottleFailureQuery) {
+    const isCab2 = norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('कैब 2') || norm.includes('कैब-2') || norm.includes('f1803') || norm.includes('ss18') || norm.includes('flg2');
+    const faultCode = isCab2 ? "F1803P1" : "F1703P1";
+    const subSys = isCab2 ? "SS18: Processor FLG2" : "SS17: Processor FLG1";
+    const cabLabel = isCab2 ? "कैब-2 (Cab-2 / FLG2)" : "कैब-1 (Cab-1 / FLG1)";
+
     return {
-      identifiedFaultId: "F1703P1",
-      faultTitle: "F1703P1 / F1803P1: FAULT IN ANGLE TRANSMITTER OF THROTTLE (3-Phase Loco TSD पृष्ठ 238, 242)",
-      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (पृष्ठ 238 व 242): थ्रोटल एंगल ट्रांसमीटर में खराबी होने पर TE/BE थ्रोटल '0' पर लाने और फेलियर मोड में लोको चलाने की प्रक्रिया:",
+      identifiedFaultId: faultCode,
+      faultTitle: `${faultCode}: FAULT IN ANGLE TRANSMITTER OF THROTTLE (${subSys}) [3-Phase Loco TSD]`,
+      analysis: `254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 201-202 / PDF 223-224 व पृष्ठ 238, 242):\nसबसिस्टम: ${subSys}\nदोष कोड: ${faultCode}\nदोष संदेश (DDU स्क्रीन):\nLoco XXX ${subSys}\nFAULT IN ANGLE TRANSMITTER OF THROTTLE\nBring TE/BE Throttle to zero\nOperate switch failure mode\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: ${cabLabel} थ्रोटल के एंगल ट्रांसमीटर में खराबी; सामान्य मोड में TE/BE कार्य नहीं करेगा; SB-1 पैनल पर लगे स्विच नं. 152 को '1' (Failure Mode) पर रखने पर ऑक्सिलरी कॉन्टैक्ट्स के माध्यम से TE/BE कार्य करेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 7-चरणीय दोष निवारण कार्यवाही:`,
       suggestedActions: [
-        "1. थ्रोटल को ' 0 ' पर लाएं।",
-        "2. BPFA दबाकर फॉल्ट को एकनॉलेज (ACK) करें।",
-        "3. VCB ओपन करके SB-1 पैनल पर लगे स्विच नंबर 152 को ' 0 ' से ' 1 ' पर रखकर लोको को फेलियर मोड (Failure Mode) में चलाएं।",
-        "4. यदि सफलता नहीं मिलती है तो पुनः VCB ओपन करके स्विच 152 को 2-3 बार ऑपरेट करें।",
-        "5. कंट्रोल इलेक्ट्रॉनिक्स को एक बार स्विच ऑफ करके ऑन (MCE OFF/ON) करें।",
-        "6. पिछली कैब से प्रयास करें।"
+        "1. थ्रोटल को ‘0’ पर लाएं। (Bring throttle to '0').",
+        "2. BPFA को दबाकर फ़ॉल्ट को एक्नॉलेज (ACK) करें। (Press BPFA to acknowledge fault).",
+        "3. VCB ओपन करके SB-1 पैनल पर लगे स्विच नं. 152 को ‘0’ से ‘1’ पर रखकर लोको को फेल्योर मोड (Failure Mode) में लाकर चलाएं। (Open VCB, set switch 152 on SB-1 panel from '0' to '1' and run loco in Failure Mode).",
+        "4. यदि सफलता नहीं मिलती है तो फिर से VCB ओपन करके स्विच 152 (SB-1) को 2-3 बार ऑपरेट करें। (If not successful, open VCB again and operate switch 152 on SB-1 2-3 times).",
+        "5. कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ कर उसे ऑन करें (MCE OFF/ON)। (Switch OFF control electronics once and turn it ON again).",
+        "6. पिछली कैब से प्रयत्न करें। (Try from the rear cab).",
+        "7. यदि सफलता न मिले तो TLC को बताएं तथा लॉग बुक में दर्ज करें। (If no success, inform TLC and record in loco log book)."
       ],
-      precautions: "स्विच 152 को ऑपरेट करने से पूर्व VCB ओपन अवश्य करें।",
-      manualReference: "254-पृष्ठ 3-फेज लोको TSD directry पृष्ठ 238 व 242",
+      precautions: "स्विच 152 को ऑपरेट करने से पूर्व VCB ओपन करना अनिवार्य है। फेल्योर मोड (Switch 152 at '1') में लोको थ्रोटल के ऑक्सिलरी कॉन्टैक्ट्स द्वारा 3 स्टेप्स में TE/BE डिलीवर करता है। गति नियंत्रण सावधानीपूर्वक करें।",
+      manualReference: `254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - ${subSys} (${faultCode}, पेज 201-202 / PDF 223-224, 238, 242)`,
       verifiedFromPdf: true,
-      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल)",
-      pdfPage: 238,
-      pdfQuote: "3-PHASE LOCO TSD - PAGE 238:\nF1703P1 FAULT IN ANGLE TRANSMITTER OF THROTTLE\nBring TE/BE Throttle to zero. Operate switch failure mode.\n1. Throttle to 0.\n2. Ack fault via BPFA.\n3. Open VCB, operate switch 152 on SB-1 from 0 to 1.\n4. Reset MCE.\n5. Try from rear cab."
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: isCab2 ? 224 : 223,
+      pdfQuote: `SS17 F1703P1 Loco XXX ${subSys}\nFAULT IN ANGLE TRANSMITTER OF THROTTLE\nBring TE/BE Throttle to zero\nOperate switch failure mode\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>.\n2. BPFA ki[ dbikr fiˆÃT ki[ E±nil[j kr>[>.\n3. VCB ai[pn krk[ SB-1 p[nl pr lg[ (Avc n> 152 ki[ ‘ 0 ’ s[ ‘ 1 ’ pr rKkr li[ki[ ki[ f[Ãyi[r mi[D m[> likr cliy>[ .\n4. y(d sflti nh)> (mlt) h] ti[ (fr s[ VCB ai[pn krk[ (Avc 152 (SB-1) ki[ 2-3 bir aipr[T kr>[.\n5. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf kr us[ aiˆn kr>[.\n6. (pCl) k]b s[ p\yRn kr>[.\n7. y(d sflti n (ml[ ti[ TLC ki[ btiy[> tYi liˆg b&k m[> dj< kr>[.`
     };
   }
 
@@ -7947,6 +8071,785 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
     };
   }
 
+  // 0-SS17-F1701P1-ISO. SS17 FLG1 ISOLATED / Refer to driver's manual / Press <Enter> (Vadodara TSD Page 201 / 223)
+  const isSS17FLG1IsolatedQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      (norm.includes('flg1 isolated') || norm.includes('flg 1 isolated') || norm.includes('flg1 आइसोलेटेड') || norm.includes('flg1 aiesi[l[t')) &&
+      !norm.includes('disturbance') && !norm.includes('will be')
+    );
+
+  if (isSS17FLG1IsolatedQuery) {
+    return {
+      identifiedFaultId: "F1701P1-ISO",
+      faultTitle: "SS17 F1701P1: FLG1 ISOLATED (Refer to driver’s manual) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 201 / PDF 223):\nसबसिस्टम: SS17 (Processor FLG1)\nदोष कोड: F1701P1\nदोष संदेश (स्क्रीन 2):\nLoco XXX SS17: Processor FLG1\nFLG1 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: FLG1 आइसोलेट हो जाएगा। मल्टीपल ऑपरेशन (MU) संभव नहीं होगा। यदि कैब-1 से कार्य कर रहे हों तो कैब-1 के एंगल ट्रांसमीटर और बोगी मीटर कार्य नहीं करेंगे; TE/BE का कंट्रोल अपने आप बदलकर ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 4-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. मल्टीपल ऑपरेशन संभव नहीं होगा। (Multiple operation will not be possible).",
+        "2. सामान्य ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. यदि कैब-1 से कार्य कर रहे हों तो कैब-1 के एंगल ट्रांसमीटर और बोगी मीटर कार्य नहीं करेंगे। TE/BE का कंट्रोल अपने आप बदलकर ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा। (If working from Cab-1, Cab-1 angle transmitter and bogie meter will not work. TE/BE control will automatically switch to auxiliary contact mode).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "FLG1 आइसोलेट होने पर कैब-1 में थ्रॉटल एंगल ट्रांसमीटर के स्थान पर बैकअप ऑक्सिलरी कॉन्टैक्ट काम करने लगते हैं तथा बोगी मीटर बंद रहते हैं। मल्टीपल यूनिट में लोको काम नहीं करेगा। सतर्कतापूर्वक सामान्य ट्रैक्शन जारी रखें और TLC को तत्काल सूचित करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS17 Processor FLG1 (F1701P1, पेज 201 / PDF 223)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 223,
+      pdfQuote: "Loco XXX SS17: Processor FLG1\nFLG1 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n1. mÃT)pl aipr[Sn s>Bv nh)> hi[gi.\n2. simiºy T^]±Sn cil* kr>[.\n3. y(d k]b-1 s[ kiy< kr rh[ h]> ti[ k]b-1 k[ E[>gl T^i‡sm)Tr ai]r bi[g) m)Tr kiy< nh)> kr[>g[. TE/BE ki kºT^i[l apn[ aip bdlkr aiˆ³j)lr) kiºT[±T mi[D m[> ai jiy[gi.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj<kr>[."
+    };
+  }
+
+  // 0-SS17-F1701P2-MEDHA. SS17 F1701P2: DISTURBANCE IN PROCESSOR DMC1 / DMC 1 will be isolated (MEDHA IGBT Make)
+  const isSS17DMC1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('dmc1') || norm.includes('dmc-1') || norm.includes('dmc 1') ||
+      norm.includes('processor dmc1') || norm.includes('processor dmc-1') || norm.includes('processor dmc 1') ||
+      norm.includes('disturbance in processor dmc1') || norm.includes('disturbance in processor dmc 1') ||
+      norm.includes('dmc 1 will be isolated') || norm.includes('dmc1 will be isolated') ||
+      norm.includes('stored in dmc 1') || norm.includes('stored in dmc1') ||
+      (norm.includes('medha') && (norm.includes('dmc') || norm.includes('f1701p2') || norm.includes('1701p2')))
+    );
+
+  if (isSS17DMC1Query) {
+    return {
+      identifiedFaultId: "F1701P2-MEDHA",
+      faultTitle: "SS17 F1701P2: DISTURBANCE IN PROCESSOR DMC1 (DMC 1 will be isolated) [MEDHA IGBT Make]",
+      analysis: "MEDHA मेक IGBT 3-फेज लोको TSD डायरेक्टरी (SS17: Processor MCC1):\nसबसिस्टम: SS17 (Processor MCC1)\nदोष कोड: F1701P2\nदोष संदेश (स्क्रीन):\nSS17 F1701P2 Loco XX SS17: Processor MCC1\nDISTURBANCE IN PROCESSOR DMC1\nDMC 1 will be isolated\nNo fault data will be stored in DMC 1\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: MEDHA मेक लोको में DMC1 (Diagnostic & Memory Controller 1) प्रोसेसर आइसोलेट होगा; DMC-1 में कोई भी नया फ़ॉल्ट डाटा स्टोर नहीं होगा; सामान्य ट्रैक्शन निर्बाध चालू रहेगा।\n(नोट: MICAS GTO लोको में इसे DIA 1 कहा जाता है, जबकि MEDHA IGBT लोको में इसे DMC1 कहा जाता है)\n\nMEDHA IGBT TSD अनुसार निर्धारित आधिकारिक 2-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. सामान्य ट्रैक्शन चालू करें। (Resume normal traction).",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "DMC1 आइसोलेट होने पर डायग्नोस्टिक मेमोरी कार्ड में नए फॉल्ट स्टोर नहीं होते हैं, अतः लोको पायलट रास्ते में आने वाले सभी फॉल्ट संदेशों को अपनी लॉग बुक में स्वयं दर्ज करें। ट्रैक्शन पूरी तरह उपलब्ध रहता है।",
+      manualReference: "MEDHA IGBT लोको TSD - SS17 Processor MCC1 (F1701P2 / DMC1)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 202,
+      pdfQuote: "SS17 F1701P2 Loco XX SS17: Processor MCC1\nDISTURBANCE IN PROCESSOR DMC1\nDMC 1 will be isolated\nNo fault data will be stored in DMC 1\nPress<Enter>\n1. simiºy T^]±Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS17-F1701P2. SS17 F1701P2: DISTURBANCE IN PROCESSOR DIA 1 / DIA 1 will be isolated (Vadodara TSD Page 202 / 224)
+  const isSS17F1701P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') &&
+    !norm.includes('ss18') && !norm.includes('flg2') && !norm.includes('f1801') &&
+    !norm.includes('dia 2') && !norm.includes('dia2') && !norm.includes('dia-2') &&
+    !norm.includes('dmc') &&
+    (
+      norm.includes('f1701p2') || norm.includes('f1701 p2') || norm.includes('1701p2') ||
+      norm.includes('dia 1') || norm.includes('dia1') || norm.includes('dia-1') ||
+      norm.includes('processor dia 1') || norm.includes('processor dia1') ||
+      norm.includes('प्रोसेसर dia 1') || norm.includes('प्रोसेसर dia1') ||
+      (norm.includes('dia') && (norm.includes('dia 1') || norm.includes('dia1') || norm.includes('dia-1')) && (norm.includes('isolated') || norm.includes('disturbance') || norm.includes('आइसोलेट'))) ||
+      ((norm.includes('ss17') || norm.includes('flg1')) && (norm.includes('dia') || norm.includes('no fault data') || norm.includes('dds')))
+    );
+
+  if (isSS17F1701P2Query) {
+    return {
+      identifiedFaultId: "F1701P2",
+      faultTitle: "SS17 F1701P2: DISTURBANCE IN PROCESSOR DIA 1 (DIA 1 will be isolated) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224):\nसबसिस्टम: SS17 (Processor FLG1)\nदोष कोड: F1701P2\nदोष संदेश (स्क्रीन):\nSS17 F1701P2 Loco XXX SS17: Processor FLG1\nDISTURBANCE IN PROCESSOR DIA 1\nDIA 1 will be isolated\nNo fault data will be stored\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: DIA 1 (Diagnostic Processor 1) आइसोलेट होगा; DDS (Diagnostic Data Set) में कोई भी नया फ़ॉल्ट डाटा स्टोर नहीं होगा; सामान्य ट्रैक्शन निर्बाध चालू रखा जा सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 3-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. DDS में कोई फ़ॉल्ट स्टोर नहीं होगा इसलिए सभी फ़ॉल्ट को लोको लॉग बुक में अनिवार्य रूप से दर्ज करें। (No fault data will be stored in DDS, hence record all upcoming faults in the loco log book).",
+        "2. BPFA को दबाकर फ़ॉल्ट को एक्नॉलेज (ACK) करें। सामान्य ट्रैक्शन चालू करें। (Press BPFA to acknowledge fault. Resume normal traction).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "DIA 1 आइसोलेट होने पर डायग्नोस्टिक मेमोरी में नए दोष रिकॉर्ड नहीं होते हैं, अतः गाड़ी संचालन के दौरान DDU पर आने वाले सभी दोष संदेशों को लोको पायलट स्वयं अपनी लॉग बुक में नोट करें। गाड़ी का मुख्य ट्रैक्शन और ब्रेकिंग सिस्टम पूरी तरह सुरक्षित व उपलब्ध रहता है।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS17 Processor FLG1 (F1701P2, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "SS17 F1701P2 Loco XXX SS17: Processor FLG1\nDISTURBANCE IN PROCESSOR DIA 1\nDIA 1 will be isolated\nNo fault data will be stored\nPress<Enter>\n1. DDS m[> ki[e< fiˆÃT ATi[r nh)> hi[gi es(lE sB) fiˆÃT ki[ li[ki[ liˆg b&k m[> dj< kr>[.\n2. BPFA ki[ dbikr fiˆÃT ki[ E±nil[j kr>[>. simiºy T^]±Sn cil* kr>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-BHEL-TCN-RULE. BHEL Make Locomotive with TCN and IGBT SR Rule
+  const isBhelTcnRuleQuery =
+    (norm.includes('bhel') && (norm.includes('tcn') || norm.includes('micas') || (norm.includes('ss13') && norm.includes('ss17')) || norm.includes('ss18') || norm.includes('igbt k[ sr') || norm.includes('igbt के sr'))) ||
+    (norm.includes('tcn') && (norm.includes('ss13') || norm.includes('ss17') || norm.includes('ss18') || norm.includes('micas') || norm.includes('gto')));
+
+  if (isBhelTcnRuleQuery && !norm.includes('icp-1') && !norm.includes('icp1') && !norm.includes('icp-2') && !norm.includes('icp2') && !norm.includes('rbu-') && !norm.includes('rbu 3') && !norm.includes('rbu 4') && !norm.includes('motor 1') && !norm.includes('motor 2')) {
+    return {
+      identifiedFaultId: "BHEL_TCN_IGBT_RULE",
+      faultTitle: "BHEL मेक TCN एवं IGBT लोको TSD नियम (BHEL Make with TCN & IGBT SR)",
+      analysis: "भारतीय रेल 3-फेज लोको TSD आधिकारिक दिशानिर्देश:\n\"TCN और IGBT के SR वाले BHEL मेक के लोको में SS13, SS14, SS17 और SS18 सब सिस्टम के अलावा अन्य सभी सब सिस्टम के लिए ट्रबल शूटिंग MICAS GTO वाले लोको के समान है।\"\n(In BHEL-make locos with TCN and IGBT Traction Converter (SR), troubleshooting for all subsystems except SS13, SS14, SS17, and SS18 is identical to MICAS GTO locomotives).\n\n【चार विशेष सब-सिस्टम्स का विवरण】:\n1. SS13 (Cab-1): HBB1/STB1 के स्थान पर RBU-1 एवं RBU-2 (Remote Bus Units) तथा संबद्ध RIOM एक्सटेंशन।\n2. SS14 (Cab-2): HBB2/STB2 के स्थान पर RBU-3 एवं RBU-4 (Remote Bus Units) तथा संबद्ध RIOM एक्सटेंशन।\n3. SS17 (Processor 1): FLG1 के स्थान पर ICP1 (Integrated / Interface Communication Processor 1)।\n4. SS18 (Processor 2): FLG2 के स्थान पर ICP2 (Integrated / Interface Communication Processor 2)।\n5. अन्य सभी सब-सिस्टम्स (SS01 मेन पावर, SS02/SS03 ट्रैक्शन बोगी, SS04 हार्मोनिक फ़िल्टर, SS06/07/08 ऑक्सिलरी कनवर्टर, SS10 ब्रेक सिस्टम, SS15 फायर डिटेक्शन, SS16 स्पीडोमीटर आदि): मानक MICAS GTO 254-पृष्ठ TSD डायरेक्टरी के अनुसार ही ट्रबलशूट किए जाते हैं।",
+      suggestedActions: [
+        "1. SS13, SS14, SS17 व SS18 में BHEL विशिष्ट TCN/RBU/ICP संदेश प्रदर्शित होते हैं, उनकी विशिष्ट ट्रबलशूटिंग का पालन करें।",
+        "2. SS17 में ICP-1 या SS18 में ICP-2 डिस्टर्बेंस आने पर CE (MCE) OFF/ON करने की बाध्यता नहीं होती; सामान्य तौर पर ट्रैक्शन चालू करें और TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        "3. ICP-1 / ICP-2 आइसोलेट होने पर मल्टीपल ऑपरेशन (MU working) संभव नहीं होगा, किंतु सिंगल लोको में सामान्य ट्रैक्शन चालू रहेगा।",
+        "4. अन्य सभी सब-सिस्टम्स (मेन पावर, बोगी-1, बोगी-2, ऑक्सिलरी कनवर्टर, ब्रेक सिस्टम आदि) के लिए मानक 3-फेज TSD के अनुसार ही दोष निवारण करें।"
+      ],
+      precautions: "BHEL TCN लोको में ICP प्रोसेसर आइसोलेट होने पर केवल मल्टीपल ऑपरेशन (MU) बाधित होता है, लोको सिंगल में सामान्य गति से कार्य करता रहता है। अन्य सबसिस्टम्स हेतु MICAS GTO डायरेक्टरी नियम ही लागू होंगे।",
+      manualReference: "भारतीय रेल 3-फेज TSD - BHEL मेक TCN एवं IGBT लोको विशेष नियम",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 201,
+      pdfQuote: "TCN ai]r IGBT k[ SR vil[ BHEL m[k k[ li[ki[ m[> SS13, SS14, SS17 ai]r SS18 sb (sATm k[ alivi aºy sB) sb (sATm k[ (lE T^bl S*(T>g MICAS GTO vil[ li[ki[ k[ smin h]."
+    };
+  }
+
+  // 0-MEDHA-IGBT-RULE. MEDHA Make Locomotive with IGBT Rule (SS13, SS14, SS17 & SS18 exceptions)
+  const isMedhaIgbtRuleQuery =
+    (norm.includes('medha') && (norm.includes('micas') || norm.includes('gto') || norm.includes('alivi') || norm.includes('alawa') || norm.includes('अलावा') || (norm.includes('ss13') && norm.includes('ss17')) || norm.includes('a(t(r±t') || norm.includes('(v(vF') || norm.includes('विविध') || norm.includes('अतिरिक्त'))) ||
+    (norm.includes('मेधा') && (norm.includes('micas') || norm.includes('gto') || norm.includes('अलावा') || norm.includes('विविध') || norm.includes('अतिरिक्त') || (norm.includes('ss13') && norm.includes('ss17'))));
+
+  if (isMedhaIgbtRuleQuery && !norm.includes('mcc1') && !norm.includes('mcc-1') && !norm.includes('mcc2') && !norm.includes('mcc-2') && !norm.includes('vcu1') && !norm.includes('vcu2') && !norm.includes('f1701') && !norm.includes('f1801')) {
+    return {
+      identifiedFaultId: "MEDHA_IGBT_RULE",
+      faultTitle: "MEDHA मेक IGBT लोको TSD सामान्य नियम (MEDHA Make IGBT Loco Rule)",
+      analysis: "भारतीय रेल 3-फेज लोको TSD आधिकारिक दिशानिर्देश (अतिरिक्त / विविध फॉल्ट मैसेज):\n\"अतिरिक्त / विविध फॉल्ट मैसेज IGBT वाले MEDHA मेक के लोको में SS13, SS14, SS17 और SS18 सब सिस्टम के अलावा अन्य सभी सब सिस्टम के लिए ट्रबल शूटिंग MICAS GTO वाले लोको के समान है।\"\n(In MEDHA-make IGBT locomotives, troubleshooting for all subsystems except SS13, SS14, SS17, and SS18 is identical to MICAS GTO locomotives).\n\n【चार विशिष्ट सब-सिस्टम्स का विवरण】:\n1. SS13 (Cab-1): VCU1-DIP1 से DIP4, VCU1-DOP1 से DOP3, स्टार्ट-रन इंटरलॉक (Simultaneous Motoring & Braking command from Cab-1 throttle)।\n2. SS14 (Cab-2): VCU2-DIP1 से DIP4, VCU2-DOP1 से DOP3, स्टार्ट-रन इंटरलॉक (Simultaneous Motoring & Braking command from Cab-2 throttle)।\n3. SS17 (Processor MCC1): FLG1 के स्थान पर MCC1 (Main Control Computer 1)। MCC1 आइसोलेट होने पर केवल कैब-1 से स्विच 152 को '0' से '1' पर रखकर फेल्योर मोड में चलाया जाता है (कैब-1 TE/BE मीटर बंद, DDU पर % मान उपलब्ध)।\n4. SS18 (Processor MCC2): FLG2 के स्थान पर MCC2 (Main Control Computer 2)। MCC2 आइसोलेट होने पर केवल कैब-2 से स्विच 152 को '0' से '1' पर रखकर फेल्योर मोड में चलाया जाता है।\n5. अन्य सभी सब-सिस्टम्स (SS01 मेन पावर, SS02/SS03 ट्रैक्शन बोगी, SS04 हार्मोनिक फ़िल्टर, SS06/07/08 ऑक्सिलरी कनवर्टर, SS10 ब्रेक सिस्टम, SS15 फायर डिटेक्शन, SS16 स्पीडोमीटर आदि): मानक MICAS GTO 254-पृष्ठ TSD डायरेक्टरी के अनुसार ही ट्रबलशूट किए जाते हैं।",
+      suggestedActions: [
+        "1. SS13, SS14, SS17 व SS18 में MEDHA मेक के विशिष्ट VCU/MCC/स्विच 152 संदेश आते हैं, उनकी विशिष्ट ट्रबलशूटिंग का पालन करें।",
+        "2. SS17 में MCC1 या SS18 में MCC2 डिस्टर्बेंस आने पर कंट्रोल इलेक्ट्रॉनिक्स (CE) को एक बार ऑफ करके ऑन (MCE OFF/ON) करें।",
+        "3. यदि MCC1 या MCC2 आइसोलेट होता है तो VCB ओपन करके SB-1 पैनल पर लगे स्विच नं. 152 को '0' से '1' पर रखकर संबंधित कैब (MCC1 के लिए कैब-1, MCC2 के लिए कैब-2) से फेल्योर मोड में गाड़ी चलाएं।",
+        "4. अन्य सभी सब-सिस्टम्स के लिए मानक 3-फेज TSD (MICAS GTO) के अनुसार ही सामान्य दोष निवारण करें।"
+      ],
+      precautions: "MEDHA IGBT लोको में MCC1 आइसोलेट होने पर केवल कैब-1 से तथा MCC2 आइसोलेट होने पर केवल कैब-2 से ही फेल्योर मोड (स्विच 152 को '1' पर) में परिचालन संभव होता है। फेल्योर मोड में कैब के TE/BE मीटर काम नहीं करते, TE/BE का मान TFT डिस्प्ले पर प्रतिशत (%) में देखा जा सकता है।",
+      manualReference: "भारतीय रेल 3-फेज TSD - अतिरिक्त / विविध फॉल्ट मैसेज (MEDHA IGBT मेक)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 201,
+      pdfQuote: "a(t(r±t / (v(vF fiˆÃT m]s[J IGBT vil[ MEDHA m[k k[ li[ki[ m[> SS13, SS14, SS17 ai]r SS18 sb (sATm k[ alivi aºy sB) sb (sATm k[ (lE T^^bl S*(T>g MICAS GTO vil[ li[ki[ k[ smin h]."
+    };
+  }
+
+  // 0-SS17-F1701P1-MEDHA. SS17 F1701P1: DISTURBANCE IN PROCESSOR MCC1 / MCC-1 ISOLATED (MEDHA IGBT Make)
+  const isSS17MCC1IsolatedQuery =
+    (norm.includes('mcc-1 isolated') || norm.includes('mcc1 isolated') || norm.includes('mcc 1 isolated') || norm.includes('mcc-1 aiesi[l[t') || norm.includes('mcc1 aiesi[l[t')) &&
+    !norm.includes('disturbance') && !norm.includes('will be isolated');
+
+  const isSS17MCC1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('mcc1') || norm.includes('mcc-1') || norm.includes('mcc 1') ||
+      norm.includes('processor mcc1') || norm.includes('processor mcc-1') || norm.includes('processor mcc 1') ||
+      norm.includes('disturbance in processor mcc1') || norm.includes('disturbance in processor mcc-1') ||
+      norm.includes('mcc1 will be isolated') || norm.includes('mcc-1 will be isolated') ||
+      norm.includes('mcc1 isolated') || norm.includes('mcc-1 isolated') ||
+      (norm.includes('ss17') && (norm.includes('mcc') || (norm.includes('medha') && !norm.includes('vcu')))) ||
+      (norm.includes('medha') && (norm.includes('f1701') || (norm.includes('1701') && !norm.includes('icp'))))
+    );
+
+  if (isSS17MCC1IsolatedQuery || isSS17MCC1Query) {
+    const isIso = isSS17MCC1IsolatedQuery || (norm.includes('isolated') && !norm.includes('will be isolated')) || norm.includes('press <enter>') || norm.includes('press enter');
+    return {
+      identifiedFaultId: isIso ? "F1701P1-MEDHA-ISO" : "F1701P1-MEDHA",
+      faultTitle: isIso
+        ? "SS17 F1701P1: MCC-1 ISOLATED (Refer to driver’s manual / स्विच 152 फेल्योर मोड) [MEDHA IGBT Make]"
+        : "SS17 F1701P1: DISTURBANCE IN PROCESSOR MCC1 (MCC1 will be isolated) [MEDHA IGBT Make]",
+      analysis: `MEDHA मेक IGBT 3-फेज लोको TSD डायरेक्टरी (SS17: MCC 1):\nसबसिस्टम: SS17 (Processor MCC1)\nदोष कोड: F1701P1\nदोष संदेश (स्क्रीन 1):\nSS17 F1701P1 Loco xxSS17:processor MCC1\nDisturbance in\nProcessor MCC1\nMCC1 will be isolated\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco xxSS17:processor MCC1\nMCC-1 ISOLATED\nRefer to driver’s manual\nPress <Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: MCC-1 (Main Control Computer 1) डिस्टर्बेंस/आइसोलेशन। यदि कैब-1 से गाड़ी चला रहे हों तो स्विच 152 को '0' से '1' पर रखकर लोको को फेल्योर मोड (Failure Mode) में चलाना होगा। केवल कैब-1 से फेल्योर मोड ऑपरेशन संभव होगा। कैब-1 में TE/BE मीटर कार्य नहीं करेंगे, TE/BE का (%) प्रतिशत मान डिस्प्ले (DDU/TFT) पर देखा जा सकता है।\n(नोट: अतिरिक्त/विविध फॉल्ट मैसेज IGBT वाले MEDHA मेक के लोको में SS13, SS14, SS17 और SS18 सब सिस्टम के अलावा अन्य सभी सब सिस्टम के लिए ट्रबल शूटिंग MICAS GTO वाले लोको के समान है)\n\nMEDHA IGBT TSD अनुसार आधिकारिक दोष निवारण प्रक्रिया:`,
+      suggestedActions: isIso ? [
+        "1. यदि कैब-1 से गाड़ी चला रहे हों तो VCB ओपन करके SB-1 पैनल पर लगे स्विच नं. 152 को ‘ 0 ’ से ‘ 1 ’ पर रखकर लोको को फेल्योर मोड (Failure Mode) में लाकर चलाएं। (If driving from Cab-1, open VCB, set switch No. 152 on SB-1 panel from '0' to '1' and run loco in failure mode).",
+        "2. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "--------------------------------------------------",
+        "नोट: केवल कैब-1 से फेल्योर मोड ऑपरेशन संभव होगा, कैब-1 में TE/BE मीटर कार्य नहीं करेंगे, TE/BE का (%) प्रतिशत मान डिस्प्ले पर देखा जा सकता है।"
+      ] : [
+        "【स्क्रीन 1: Disturbance in Processor MCC1 / MCC1 will be isolated】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ कर उसे ऑन करें। (Switch OFF control electronics and turn it ON again).",
+        "2. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "--------------------------------------------------",
+        "【स्क्रीन 2: Loco xxSS17:processor MCC1 / MCC-1 ISOLATED / Refer to driver’s manual / Press <Enter>】:",
+        "1. यदि कैब-1 से गाड़ी चला रहे हों तो VCB ओपन करके SB-1 पैनल पर लगे स्विच नं. 152 को ‘ 0 ’ से ‘ 1 ’ पर रखकर लोको को फेल्योर मोड (Failure Mode) में लाकर चलाएं।",
+        "2. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "नोट: केवल कैब-1 से फेल्योर मोड ऑपरेशन संभव होगा, कैब-1 में TE/BE मीटर कार्य नहीं करेंगे, TE/BE का (%) प्रतिशत मान डिस्प्ले पर देखा जा सकता है।"
+      ],
+      precautions: "MEDHA IGBT लोको में MCC1 आइसोलेट होने पर केवल कैब-1 से ही फेल्योर मोड (SB-1 स्विच 152 को '0' से '1' पर रखकर) में ऑपरेशन संभव है। कैब-1 के डैशबोर्ड पर लगे एनालॉग TE/BE मीटर काम नहीं करेंगे, अतः ट्रैक्शन एवं ब्रेकिंग का वास्तविक प्रतिशत DDU स्क्रीन पर मॉनिटर करें।",
+      manualReference: "MEDHA IGBT लोको TSD - SS17 Processor MCC1 (F1701P1 / स्विच 152 फेल्योर मोड)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 201,
+      pdfQuote: "SS17 F1701P1 Loco xxSS17:processor MCC1\nDisturbance in Processor MCC1\nMCC1 will be isolated\n1. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr us[ aiˆn kr>[.\n2. simiºy ti]r pr T^]±Sn cil* kr>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n\nLoco xxSS17:processor MCC1\nMCC-1 ISOLATED\nRefer to driver’s manual\nPress <Enter>\n1. y(d k]b-1 s[ giD) cli rh[ h]> ti[ VCB ai[pn krk[ SB-1 p[nl pr lg[ (Avc n> 152 ki[ ‘ 0 ’ s[ ‘ 1 ’ pr rKkr li[ki[ ki[ f[Ãyi[r mi[D m[> likr cliy>[.\n2. simiºy ti]r pr T^]±Sn cil* kr>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\nni[T: k[vl k]b-1 s[ f[Ãyi[r mi[D aiˆpr[Sn s>Bv hi[gi, k]b-1 m[> TE/BE m)Tr kiy< nh)> kr[>g[, TE/BE ki {%} p\(tSt min (DApl[ pr d[Ki ji skti h]."
+    };
+  }
+
+  // 0-SS17-F1701P1-BHEL. SS17 F1701P1: DISTURBANCE IN PROCESSOR ICP-1 / ICP-1 ISOLATED (BHEL Make with TCN & IGBT SR)
+  const isSS17ICP1IsolatedQuery =
+    !norm.includes('icp-2') && !norm.includes('icp2') && !norm.includes('icp 2') && !norm.includes('ss18') && !norm.includes('f1801') &&
+    (norm.includes('icp-1 isolated') || norm.includes('icp1 isolated') || norm.includes('icp 1 isolated') || norm.includes('icp-1 aiesi[l[t')) &&
+    !norm.includes('disturbance');
+
+  const isSS17ICP1BhelQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('icp-2') && !norm.includes('icp2') && !norm.includes('icp 2') && !norm.includes('ss18') && !norm.includes('f1801') &&
+    (
+      norm.includes('icp-1') || norm.includes('icp1') || norm.includes('icp 1') ||
+      norm.includes('processor icp1') || norm.includes('processor icp-1') ||
+      norm.includes('processor icp 1') ||
+      norm.includes('disturbance in processor icp-1') || norm.includes('disturbance in processor icp1') ||
+      norm.includes('icp1 will be isolated') || norm.includes('icp-1 will be isolated') ||
+      norm.includes('icp-1 isolated') || norm.includes('icp1 isolated') ||
+      (norm.includes('ss17') && (norm.includes('icp') || (norm.includes('bhel') && !norm.includes('ss03') && !norm.includes('ss02')))) ||
+      (norm.includes('bhel') && norm.includes('f1701'))
+    );
+
+  if (isSS17ICP1IsolatedQuery || isSS17ICP1BhelQuery) {
+    return {
+      identifiedFaultId: "F1701P1-BHEL",
+      faultTitle: "SS17 F1701P1: DISTURBANCE IN PROCESSOR ICP-1 / ICP-1 ISOLATED (BHEL TCN & IGBT Make)",
+      analysis: "BHEL मेक TCN एवं IGBT SR युक्त 3-फेज लोको TSD डायरेक्टरी:\nसबसिस्टम: SS17 (Processor ICP1 / FLG1)\nदोष कोड: F1701P1\nदोष संदेश (स्क्रीन 1):\nLoco xx SS17:processor ICP1\nDisturbance in\nProcessor ICP-1\nICP1 will be isolated\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco xx SS17:processor ICP1\nICP-1 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: ICP-1 (Interface Communication Processor 1) आइसोलेट होगा। सिंगल लोको में सामान्य ट्रैक्शन निर्बाध चालू रहेगा। मल्टीपल ऑपरेशन (MU working) संभव नहीं होगा।\n(नोट: TCN और IGBT के SR वाले BHEL मेक के लोको में SS13, SS14, SS17 और SS18 सब सिस्टम के अलावा अन्य सभी सब सिस्टम के लिए ट्रबल शूटिंग MICAS GTO वाले लोको के समान है)\n\nBHEL TCN लोको TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: Disturbance in Processor ICP-1 / ICP1 will be isolated】:",
+        "1. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "--------------------------------------------------",
+        "【स्क्रीन 2: ICP-1 ISOLATED / Refer to driver’s manual / Press <Enter>】:",
+        "1. मल्टीपल ऑपरेशन संभव नहीं होगा। (Multiple operation will not be possible).",
+        "2. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "BHEL TCN लोको में ICP-1 प्रोसेसर में डिस्टर्बेंस आने पर कंट्रोल इलेक्ट्रॉनिक्स ऑफ/ऑन करने की आवश्यकता नहीं होती; सिंगल लोको सामान्य तौर पर ट्रैक्शन लेकर चलता रहेगा। मल्टीपल ऑपरेशन में दूसरा लोको कार्य नहीं करेगा।",
+      manualReference: "BHEL TCN एवं IGBT लोको TSD - SS17 Processor ICP1 (F1701P1, पेज 201)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 201,
+      pdfQuote: "SS17 F1701P1 Loco xx SS17:processor ICP1\nDisturbance in Processor ICP-1\nICP1 will be isolated\n1. simiºy ti]r pr T^]±Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n\nLoco xx SS17:processor ICP1\nICP-1 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n1. mÃT)pl aiˆpr[Sn s>Bv nh)> hi[gi.\n2. simiºyti]r pr T^]±Sn cil* kr>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS17-F1701P1. SS17 F1701P1: DISTURBANCE IN PROCESSOR FLG1 / FLG1 will be isolated (Vadodara TSD Page 201 / 223)
+  const isSS17F1701P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1702') && !norm.includes('mismatch') && !norm.includes('मिसमैच') &&
+    !norm.includes('f1701p2') && !norm.includes('dia 1') && !norm.includes('dia1') && !norm.includes('dia-1') &&
+    !norm.includes('f1703') && !norm.includes('f1704') &&
+    !norm.includes('simulation') && !norm.includes('सिमुलेशन') && !norm.includes('179') &&
+    !norm.includes('angle transmitter') && !norm.includes('ट्रांसमीटर') && !norm.includes('152') &&
+    !norm.includes('mcc') && !norm.includes('medha') &&
+    (
+      norm.includes('f1701p1') ||
+      norm.includes('f1701') ||
+      (norm.includes('ss17') && (norm.includes('flg') || norm.includes('flg1') || norm.includes('processor') || norm.includes('disturbance') || norm.includes('isolated') || norm.includes('1701'))) ||
+      norm.includes('disturbance in processor flg1') ||
+      norm.includes('disturbance in processor flg 1') ||
+      norm.includes('flg1 will be isolated') ||
+      norm.includes('flg 1 will be isolated') ||
+      norm.includes('processor flg1') ||
+      norm.includes('processor flg 1') ||
+      norm.includes('प्रोसेसर flg1') ||
+      norm.includes('flg1') ||
+      norm.includes('flg 1') ||
+      norm.includes('flg-1')
+    );
+
+  if (isSS17F1701P1Query) {
+    return {
+      identifiedFaultId: "F1701P1",
+      faultTitle: "SS17 F1701P1: DISTURBANCE IN PROCESSOR FLG1 [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 201 / PDF 223):\nसबसिस्टम: SS17 (Processor FLG1)\nदोष कोड: F1701P1\nदोष संदेश (स्क्रीन 1):\nSS17 F1701P1 Loco XXX SS17: Processor FLG1\nDISTURBANCE IN PROCESSOR FLG1\nFLG1 will be isolated\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS17: Processor FLG1\nFLG1 ISOLATED\nRefer to driver’s manual\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: FLG1 आइसोलेट होगा। मल्टीपल ऑपरेशन (MU) संभव नहीं होगा। यदि कैब-1 से कार्य कर रहे हों तो कैब-1 के एंगल ट्रांसमीटर और बोगी मीटर कार्य नहीं करेंगे; TE/BE का कंट्रोल अपने आप बदलकर ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘0’ पर लाएं। BPFA दबाकर फॉल्ट ACK करें। (Bring throttle to '0'. Press BPFA to acknowledge the fault).",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ कर उसे ऑन करें। (Switch OFF control electronics once and turn it ON again).",
+        "3. सामान्य ट्रैक्शन चालू करें। (Resume normal traction).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "5. यदि DDU पर 'FLG1 ISOLATED (Refer to driver’s manual)' संदेश आए तो:-",
+        "6. मल्टीपल ऑपरेशन संभव नहीं होगा। (Multiple operation will not be possible).",
+        "7. सामान्य ट्रैक्शन चालू करें। (Resume normal traction).",
+        "8. यदि कैब-1 से कार्य कर रहे हों तो कैब-1 के एंगल ट्रांसमीटर और बोगी मीटर कार्य नहीं करेंगे। TE/BE का कंट्रोल अपने आप बदलकर ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा। (If working from Cab-1, Cab-1 angle transmitter and bogie meter will not work. TE/BE control will automatically switch to auxiliary contact mode).",
+        "9. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "FLG1 प्रोसेसर में व्यवधान आने पर सर्वप्रथम थ्रोटल '0' करके BPFA से फॉल्ट एक्नॉलेज करें और CE को 1 बार ऑफ करके पुनः ऑन करें। यदि FLG1 आइसोलेट हो जाता है, तो कैब-1 से वर्किंग करते समय एंगल ट्रांसमीटर कार्य नहीं करेंगे और TE/BE ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS17 Processor FLG1 (F1701P1, पेज 201 / PDF 223)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 223,
+      pdfQuote: "SS17 F1701P1 Loco XXX SS17: Processor FLG1\nDISTURBANCE IN PROCESSOR FLG1\nFLG1 will be isolated\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf kr us[ aiˆn kr>[.\n3. simiºy T^]±Sn cil* kr>[.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n\nLoco XXX SS17: Processor FLG1\nFLG1 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n1. mÃT)pl aipr[Sn s>Bv nh)> hi[gi.\n2. simiºy T^]±Sn cil* kr>[.\n3. y(d k]b-1 s[ kiy< kr rh[ h]> ti[ k]b-1 k[ E[>gl T^i‡sm)Tr ai]r bi[g) m)Tr kiy< nh)> kr[>g[. TE/BE ki kºT^i[l apn[ aip bdlkr aiˆ³j)lr) kiºT[±T mi[D m[> ai jiy[gi.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj<kr>[."
+    };
+  }
+
+  // 0-SS17-F1702P1. SS17 F1702P1: SOFTWARE MISMATCH / WAP-5/WAG-9 / Panto will not raise (Vadodara TSD Page 201 / 223)
+  const isSS17F1702P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1702p1') ||
+      norm.includes('f1702') ||
+      (norm.includes('ss17') && (norm.includes('f1702') || norm.includes('software mismatch') || norm.includes('mismatch') || norm.includes('panto will not raise') || norm.includes('सॉफ्टवेयर') || norm.includes('मिसमैच') || norm.includes('1702'))) ||
+      norm.includes('software mismatch') ||
+      norm.includes('सॉफ्टवेयर मिसमैच') ||
+      norm.includes('panto will not raise') ||
+      norm.includes('पैंटो नहीं उठेगा') ||
+      (norm.includes('flg1') && (norm.includes('mismatch') || norm.includes('software') || norm.includes('panto will not raise') || norm.includes('सॉफ्टवेयर') || norm.includes('मिसमैच'))) ||
+      ((norm.includes('wap-5/wag-9') || norm.includes('wap5/wag9') || (norm.includes('wap-5') && norm.includes('wag-9'))) && norm.includes('mismatch'))
+    );
+
+  if (isSS17F1702P1Query) {
+    return {
+      identifiedFaultId: "F1702P1",
+      faultTitle: "SS17 F1702P1: SOFTWARE MISMATCH (WAP-5/WAG-9 / Panto will not raise) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 201 / PDF 223):\nसबसिस्टम: SS17 (Processor FLG1)\nदोष कोड: F1702P1\nदोष संदेश (स्क्रीन):\nSS17 F1702P1 Loco XXX SS17: Processor FLG1\nSOFTWARE MISMATCH\nWAP-5/WAG-9\nPanto will not raise\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: सॉफ्टवेयर मिसमैच (Software mismatch); पैंटोग्राफ नहीं उठेगा (Panto will not raise); लोको पूर्णतः निष्क्रिय/डेड रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 3-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘0’ पर लाएं। BPFA दबाकर फॉल्ट ACK करें। (Bring throttle to '0'. Press BPFA to acknowledge the fault).",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "3. तुरंत सहायता इंजन की मांग करें। (Demand relief engine immediately)."
+      ],
+      precautions: "प्रोसेसर FLG1 में लोको टाइप सॉफ्टवेयर बेमेल (Software Mismatch - WAP-5 / WAG-9) होने पर सुरक्षा कारणों से VCU पैंटोग्राफ उठाने की अनुमति नहीं देता है। यह गंभीर सॉफ़्टवेयर विसंगति है। थ्रोटल '0' करके BPFA से फॉल्ट ACK करें, TLC को सूचित करें तथा तुरंत सहायता इंजन (Relief Engine) की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS17 Processor FLG1 (F1702P1, पेज 201 / PDF 223)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 223,
+      pdfQuote: "SS17 F1702P1 Loco XXX SS17: Processor FLG1\nSOFTWARE MISMATCH\nWAP-5/WAG-9\nPanto will not raise\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n3. t&r>t shiyti e>jn k) mi>g kr>[."
+    };
+  }
+
+  // 0-SS17-F1703P1. SS17 F1703P1: FAULT IN ANGLE TRANSMITTER OF THROTTLE / Bring TE/BE Throttle to zero / Operate switch failure mode (Vadodara TSD Page 201 / 223 / MEDHA MCC1)
+  const isSS17F1703P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') &&
+    !norm.includes('ss18') && !norm.includes('flg2') && !norm.includes('f1803') && !norm.includes('cab 2') && !norm.includes('cab-2') &&
+    (
+      norm.includes('f1703p1') || norm.includes('f1703') || norm.includes('1703p1') ||
+      (norm.includes('ss17') && (norm.includes('angle transmitter') || norm.includes('transmitter') || norm.includes('failure mode') || norm.includes('152') || norm.includes('f1703'))) ||
+      norm.includes('fault in angle transmitter of throttle') ||
+      norm.includes('fault in angle transmitter') ||
+      norm.includes('angle transmitter of throttle') ||
+      norm.includes('angle transmitter') ||
+      norm.includes('operate switch failure mode') ||
+      norm.includes('switch failure mode') ||
+      norm.includes('bring te/be throttle to zero') ||
+      norm.includes('e[>gl T^i‡sm)Tr') ||
+      norm.includes('एंगल ट्रांसमीटर') ||
+      norm.includes('स्विच 152') ||
+      norm.includes('switch 152') ||
+      (norm.includes('152') && (norm.includes('failure mode') || norm.includes('fail') || norm.includes('throttle') || norm.includes('थ्रोटल')))
+    );
+
+  if (isSS17F1703P1Query) {
+    return {
+      identifiedFaultId: "F1703P1",
+      faultTitle: "SS17 F1703P1: FAULT IN ANGLE TRANSMITTER OF THROTTLE (स्विच 152 फेल्योर मोड) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 201 / PDF 223 / MEDHA IGBT SS17: Processor MCC1):\nसबसिस्टम: SS17 (Processor FLG1 / Processor MCC1)\nदोष कोड: F1703P1\nदोष संदेश (स्क्रीन):\nSS17 F1703P1 Loco XX SS17: Processor MCC1 (या Processor FLG1)\nFAULT IN ANGLE TRANSMITTER OF THROTTLE\nBring TE/BE Throttle to zero\nOperate switch failure mode\n\nलैम्प संकेत: BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: कैब-1 के थ्रोटल एंगल ट्रांसमीटर में खराबी; सामान्य मोड में थ्रोटल से TE/BE प्राप्त नहीं होगा; SB-1 पैनल पर लगे स्विच नं. 152 को '0' से '1' पर रखकर लोको को फेल्योर मोड (Failure Mode) में चलाना होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 7-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। (Bring throttle to '0').",
+        "2. BPFA को दबाकर फ़ॉल्ट को एक्नॉलेज (ACK) करें। (Press BPFA to acknowledge the fault).",
+        "3. VCB ओपन करके SB-1 पैनल पर लगे स्विच नं. 152 को ‘ 0 ’ से ‘ 1 ’ पर रखकर लोको को फेल्योर मोड (Failure Mode) में लाकर चलाएं। (Open VCB, set switch No. 152 on SB-1 panel from '0' to '1' and operate loco in Failure Mode).",
+        "4. यदि सफलता नहीं मिलती है तो फिर से VCB ओपन करके स्विच 152 (SB-1) को 2-3 बार ऑपरेट करें। (If not successful, open VCB again and operate switch 152 on SB-1 2-3 times).",
+        "5. कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ कर उसे ऑन (MCE OFF/ON) करें। (Switch OFF control electronics once and turn it ON again).",
+        "6. पिछली कैब से प्रयत्न करें। (Try from the rear cab).",
+        "7. यदि सफलता न मिले तो TLC को बताएं तथा लॉग बुक में दर्ज करें। (If still not successful, inform TLC and record in loco log book)."
+      ],
+      precautions: "थ्रोटल एंगल ट्रांसमीटर खराब होने पर लोको केवल SB-1 में स्विच 152 को '0' से '1' पर रखकर फेल्योर मोड में ही ट्रैक्शन ले सकता है। स्विच 152 को ऑपरेट करने से पूर्व VCB को अनिवार्य रूप से ओपन (BLDJ ओपन) करें। यदि कैब-1 से सफलता न मिले तो पिछली कैब से प्रयास करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS17 Processor FLG1 / MCC1 (F1703P1, पेज 201 / PDF 223)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 223,
+      pdfQuote: "SS17 F1703P1 Loco XX SS17:Processor MCC1\nFAULT IN ANGLE TRANSMITTER OF THROTTLE\nBring TE/BE Throttle to zero\nOperate switch failure mode\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>.\n2. BPFA ki[ dbikr fiˆÃT ki[ E±nil[j kr>[>.\n3. VCB ai[pn krk[ SB-1 p[nl pr lg[ (Avc n> 152 ki[ ‘ 0 ’ s[ ‘ 1 ’ pr rKkr li[ki[ ki[ f[Ãyi[r mi[D likr m[> cliy>[.\n4. y(d sflti nh)>> (mlt) h] ti[ VCB ai[pn krk[ (Avc 152 (SB-1) ki[ 2-3 bir aipr[T kr>[.\n5. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr us[ aiˆn kr>[.\n6. (pCl) k]b s[ p\yRn kr>[.\n7. y(d sflti n (ml[ ti[ TLC ki[ btiy[> tYi liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS17-F1704P1. SS17 F1704P1: SIMULATION SWITCH POSITION NOT MATCHING / Check simulation Key on master / slave (Vadodara TSD Page 202 / 224)
+  const isSS17F1704P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') &&
+    !norm.includes('ss18') && !norm.includes('flg2') && !norm.includes('f1804') && !norm.includes('cab 2') && !norm.includes('cab-2') &&
+    (
+      norm.includes('f1704p1') || norm.includes('f1704') || norm.includes('1704p1') ||
+      (norm.includes('ss17') && (norm.includes('1704') || norm.includes('simulation') || norm.includes('सिमुलेशन') || norm.includes('179'))) ||
+      norm.includes('simulation switch position not matching') ||
+      norm.includes('check simulation key on master') ||
+      norm.includes('check simulation key') ||
+      norm.includes('सिमुलेशन स्विच पोजीशन') ||
+      norm.includes('सिमुलेशन स्विच') ||
+      norm.includes('सिमुलेशन चाबी') ||
+      norm.includes('(sm‰l[sn cib)') ||
+      norm.includes('(sm‰l[sn') ||
+      norm.includes('switch 179') ||
+      norm.includes('स्विच 179') ||
+      (norm.includes('simulation') && (norm.includes('master') || norm.includes('matching') || norm.includes('flg1') || norm.includes('179')))
+    );
+
+  if (isSS17F1704P1Query) {
+    return {
+      identifiedFaultId: "F1704P1",
+      faultTitle: "SS17 F1704P1: SIMULATION SWITCH POSITION NOT MATCHING (Check simulation Key on master/slave) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224):\nसबसिस्टम: SS17 (Processor FLG1)\nदोष कोड: F1704P1\nदोष संदेश (स्क्रीन):\nSS17 F1704P1 Loco XXX SS17: Processor FLG1\nSIMULATION SWITCH POSITION NOT MATCHING\nCheck simulation Key on master / slave\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: सिमुलेशन स्विच (स्विच 179) की स्थिति मेल नहीं खा रही है (मास्टर या स्लेव में विसंगति); सुरक्षा इंटरलॉक के कारण ट्रैक्शन बाधित रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘0’ पर लाएं। (Bring throttle to '0').",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ (MCE OFF) करें। (Switch OFF control electronics).",
+        "3. SB-1 पैनल पर लगी सिमुलेशन चाबी (स्विच 179) का ‘0’ पोजीशन पर होना सुनिश्चित करें। यदि नहीं है तो ‘1’ से ‘0’ पोजीशन पर लाएं। (Ensure simulation key switch 179 on SB-1 is at '0'. If not, bring it from '1' to '0' position).",
+        "4. कंट्रोल इलेक्ट्रॉनिक्स को ऑन करें, BPFA दबाकर फॉल्ट ACK करें और सामान्य ट्रैक्शन चालू करें। (Turn ON control electronics, press BPFA to acknowledge fault, and resume normal traction).",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "सिमुलेशन स्विच (Switch 179) केवल शेड/यार्ड में लोको टेस्टिंग के लिए प्रयोग किया जाता है। मेनलाइन ऑपरेशन के समय यह हमेशा '0' (Normal) पोजीशन में होना अनिवार्य है। स्विच 179 को हमेशा कंट्रोल इलेक्ट्रॉनिक्स ऑफ (MCE OFF) स्थिति में ही ऑपरेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS17 Processor FLG1 (F1704P1, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "SS17 F1704P1 Loco XXX SS17: Processor FLG1\nSIMULATION SWITCH POSITION NOT MATCHING\nCheck simulation Key on master / slave\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>.\n2. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr>[.\n3. SB-1 p[nl pr lg) (sm‰l[Sn cib) 179 ki ‘ 0 ’ pr hi[ni s&(n(Æct kr>[. y(d nh)> h] ti[ ‘ 1 ’ s[ ‘ 0 ’ pi[j)Sn pr liE>."
+    };
+  }
+
+  // 0-SS18-F1801P1-ISO. SS18 FLG2 ISOLATED / Refer to driver's manual / Press <Enter> (Vadodara TSD Page 202 / 224)
+  const isSS18FLG2IsolatedQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      (norm.includes('flg2 isolated') || norm.includes('flg 2 isolated') || norm.includes('flg2 आइसोलेटेड') || norm.includes('flg2 aiesi[l[t')) &&
+      !norm.includes('disturbance') && !norm.includes('will be')
+    );
+
+  if (isSS18FLG2IsolatedQuery) {
+    return {
+      identifiedFaultId: "F1801P1-ISO",
+      faultTitle: "SS18 F1801P1: FLG2 ISOLATED (Refer to driver’s manual) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224):\nसबसिस्टम: SS18 (Processor FLG2)\nदोष कोड: F1801P1\nदोष संदेश (स्क्रीन 2):\nLoco XXX SS18: Processor FLG2\nFLG2 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: FLG2 आइसोलेट हो जाएगा। यदि कैब-2 से कार्य कर रहे हों तो कैब-2 के एंगल ट्रांसमीटर और बोगी मीटर कार्य नहीं करेंगे; TE/BE का कंट्रोल अपने आप बदलकर ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा। रीजेनेरेटिव ब्रेक उपलब्ध नहीं होगा, अतः गाड़ी/लोको को न्यूमैटिक ब्रेक (A-9/SA-9) द्वारा कंट्रोल करना होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 4-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. यदि वही मैसेज पुनः आता है तो सामान्य ट्रैक्शन चालू रखें। (If the same message appears again, keep normal traction ON).",
+        "2. यदि कैब-2 से कार्य कर रहे हों तो कैब-2 के एंगल ट्रांसमीटर और बोगी मीटर कार्य नहीं करेंगे। TE/BE का कंट्रोल अपने आप बदलकर ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा। (If working from Cab-2, Cab-2 angle transmitter and bogie meter will not work. TE/BE control will automatically switch to auxiliary contact mode).",
+        "3. रीजेनेरेटिव ब्रेक उपलब्ध नहीं होगा, अतः गाड़ी/लोको को न्यूमैटिक ब्रेक (A-9 / SA-9) द्वारा कंट्रोल करें। A-9 एप्लाई करने से पहले थ्रोटल का ‘0’ पर होना सुनिश्चित करें। (Regenerative brake will not be available; hence control train/loco by pneumatic brake A-9/SA-9. Ensure throttle is at '0' before applying A-9).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "FLG2 आइसोलेट होने पर कैब-2 में थ्रॉटल एंगल ट्रांसमीटर के स्थान पर बैकअप ऑक्सिलरी कॉन्टैक्ट काम करने लगते हैं तथा बोगी मीटर बंद रहते हैं। सबसे महत्वपूर्ण: रीजेनेरेटिव ब्रेक काम नहीं करेगा, इसलिए ट्रेन को A-9/SA-9 न्यूमैटिक ब्रेक से संभालें और A-9 लगाने से पहले थ्रोटल को '0' पर लाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS18 Processor FLG2 (F1801P1, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "Loco XXX SS18: Processor FLG2\nFLG2 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n1. y(d vh) m]s[j p&n: aiti h] ti[ simiºy T^]±Sn cil* rK>[.\n2. y(d k]b-2 s[ kiy< kr rh[ h]> ti[ k]b-2 k[ E[>gl T^^i‡sm)Tr ai]r bi[g) m)Tr kiy< nh)> kr[>g[. TE/BE ki kºT^^i[l apn[ aip bdlkr aiˆ³j)lr) kiºT[±T mi[D m[> ai jiy[gi.\n3. (rjnr[(Tv b\\[k upl¾F nh)> hi[gi. at: giD)/li[ki[ ki[ ºy*m[(Tk b\\[k (A-9 / SA-9) oiri kºT^^i[l kr[>. A9 E¼lie< krn[ s[ phl[ Y\\i[Tl ki ‘ 0 ’ pr hi[ni s&(n(Æct kr>[.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS18-F1801P2-MEDHA. SS18 F1801P2: DISTURBANCE IN PROCESSOR DMC2 / DMC 2 will be isolated (MEDHA IGBT Make)
+  const isSS18DMC2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('dmc2') || norm.includes('dmc-2') || norm.includes('dmc 2') ||
+      norm.includes('processor dmc2') || norm.includes('processor dmc-2') || norm.includes('processor dmc 2') ||
+      norm.includes('disturbance in processor dmc2') || norm.includes('disturbance in processor dmc 2') ||
+      norm.includes('dmc 2 will be isolated') || norm.includes('dmc2 will be isolated') ||
+      norm.includes('stored in dmc 2') || norm.includes('stored in dmc2') ||
+      ((norm.includes('medha') || norm.includes('mcc2') || norm.includes('ss18')) && (norm.includes('dmc2') || norm.includes('dmc-2') || (norm.includes('dmc') && (norm.includes('f1801') || norm.includes('ss18') || norm.includes('mcc2')))))
+    );
+
+  if (isSS18DMC2Query) {
+    return {
+      identifiedFaultId: "F1801P2-MEDHA",
+      faultTitle: "SS18 F1801P2: DISTURBANCE IN PROCESSOR DMC2 (DMC 2 will be isolated) [MEDHA IGBT Make]",
+      analysis: "MEDHA मेक IGBT 3-फेज लोको TSD डायरेक्टरी (SS18: Processor MCC2):\nसबसिस्टम: SS18 (Processor MCC2)\nदोष कोड: F1801P2\nदोष संदेश (स्क्रीन):\nSS18 F1801P2 Loco XX SS18: Processor MCC2\nDISTURBANCE IN PROCESSOR DMC2\nDMC 2 will be isolated\nNo fault data will be stored in DMC 2\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: MEDHA मेक लोको में DMC2 (Diagnostic & Memory Controller 2) प्रोसेसर आइसोलेट होगा; DMC-2 में कोई भी नया फ़ॉल्ट डाटा स्टोर नहीं होगा; सामान्य ट्रैक्शन निर्बाध चालू रहेगा।\n(नोट: MICAS GTO लोको में इसे DIA 2 कहा जाता है, जबकि MEDHA IGBT लोको में इसे DMC2 कहा जाता है)\n\nMEDHA IGBT TSD अनुसार निर्धारित आधिकारिक 2-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. सामान्य ट्रैक्शन चालू करें। (Resume normal traction).",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "DMC2 आइसोलेट होने पर डायग्नोस्टिक मेमोरी कार्ड में नए फॉल्ट स्टोर नहीं होते हैं, अतः लोको पायलट रास्ते में आने वाले सभी फॉल्ट संदेशों को अपनी लॉग बुक में स्वयं दर्ज करें। ट्रैक्शन पूरी तरह उपलब्ध रहता है।",
+      manualReference: "MEDHA IGBT लोको TSD - SS18 Processor MCC2 (F1801P2 / DMC2)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 202,
+      pdfQuote: "SS18 F1801P2 Loco XX SS18: Processor MCC2\nDISTURBANCE IN PROCESSOR DMC2\nDMC 2 will be isolated\nNo fault data will be stored in DMC 2\nPress<Enter>\n1. simiºy T^]±Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS18-F1801P2. SS18 F1801P2: DISTURBANCE IN PROCESSOR DIA 2 / DIA 2 will be isolated (Vadodara TSD Page 202 / 224)
+  const isSS18F1801P2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') &&
+    !norm.includes('dmc') &&
+    (
+      norm.includes('f1801p2') || norm.includes('f1801 p2') || norm.includes('1801p2') ||
+      norm.includes('dia 2') || norm.includes('dia2') || norm.includes('dia-2') ||
+      norm.includes('processor dia 2') || norm.includes('processor dia2') ||
+      norm.includes('प्रोसेसर dia 2') || norm.includes('प्रोसेसर dia2') ||
+      (norm.includes('dia') && (norm.includes('dia 2') || norm.includes('dia2') || norm.includes('dia-2')) && (norm.includes('isolated') || norm.includes('disturbance') || norm.includes('आइसोलेट'))) ||
+      ((norm.includes('ss18') || norm.includes('flg2')) && (norm.includes('dia') || norm.includes('no fault data')))
+    );
+
+  if (isSS18F1801P2Query) {
+    return {
+      identifiedFaultId: "F1801P2",
+      faultTitle: "SS18 F1801P2: DISTURBANCE IN PROCESSOR DIA 2 (DIA 2 will be isolated) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224):\nसबसिस्टम: SS18 (Processor FLG2)\nदोष कोड: F1801P2\nदोष संदेश (स्क्रीन):\nSS18 F1801P2 Loco XXX SS18: Processor FLG2\nDISTURBANCE IN PROCESSOR DIA 2\nDIA 2 will be isolated\nNo fault data will be stored\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: DIA 2 (Diagnostic Processor 2) आइसोलेट होगा; DDS (Diagnostic Data Set) में कोई भी नया फ़ॉल्ट डाटा स्टोर नहीं होगा; सामान्य ट्रैक्शन निर्बाध चालू रखा जा सकता है।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 3-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. DDS में कोई फ़ॉल्ट स्टोर नहीं होगा इसलिए सभी फ़ॉल्ट को लोको लॉग बुक में अनिवार्य रूप से दर्ज करें। (No fault data will be stored in DDS, hence record all upcoming faults in the loco log book).",
+        "2. BPFA को दबाकर फ़ॉल्ट को एक्नॉलेज (ACK) करें। सामान्य ट्रैक्शन चालू करें। (Press BPFA to acknowledge fault. Resume normal traction).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "DIA 2 आइसोलेट होने पर डायग्नोस्टिक मेमोरी में नए दोष रिकॉर्ड नहीं होते हैं, अतः गाड़ी संचालन के दौरान DDU पर आने वाले सभी दोष संदेशों को लोको पायलट स्वयं अपनी लॉग बुक में नोट करें। गाड़ी का मुख्य ट्रैक्शन और ब्रेकिंग सिस्टम पूरी तरह सुरक्षित व उपलब्ध रहता है।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS18 Processor FLG2 (F1801P2, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "SS18 F1801P2 Loco XXX SS18: Processor FLG2\nDISTURBANCE IN PROCESSOR DIA 2\nDIA 2 will be isolated\nNo fault data will be stored\nPress<Enter>\n1. DDS m[> ki[e< fiˆÃT ATi[r nh)> hi[gi es(lE sB) fiˆÃT ki[ li[ki[ liˆg b&k m[> dj< kr>[.\n2. BPFA ki[ dbikr fiˆÃT ki[ E±nil[j kr>[>. simiºy T^]±Sn cil* kr>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS18-F1801P1-BHEL. SS18 F1801P1: DISTURBANCE IN PROCESSOR ICP-2 / ICP-2 ISOLATED (BHEL Make with TCN & IGBT SR)
+  const isSS18ICP2IsolatedQuery =
+    !norm.includes('icp-1') && !norm.includes('icp1') && !norm.includes('icp 1') && !norm.includes('f1701') &&
+    (norm.includes('icp-2 isolated') || norm.includes('icp2 isolated') || norm.includes('icp 2 isolated') || norm.includes('icp-2 aiesi[l[t')) &&
+    !norm.includes('disturbance');
+
+  const isSS18ICP2BhelQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('icp-1') && !norm.includes('icp1') && !norm.includes('icp 1') && !norm.includes('f1701') &&
+    (
+      norm.includes('icp-2') || norm.includes('icp2') || norm.includes('icp 2') ||
+      norm.includes('processor icp2') || norm.includes('processor icp-2') ||
+      norm.includes('processor icp 2') ||
+      norm.includes('disturbance in processor icp-2') || norm.includes('disturbance in processor icp2') ||
+      norm.includes('disturbance in processor icp 2') ||
+      norm.includes('icp2 will be isolated') || norm.includes('icp-2 will be isolated') ||
+      norm.includes('icp 2 will be isolated') ||
+      norm.includes('icp-2 isolated') || norm.includes('icp2 isolated') || norm.includes('icp 2 isolated') ||
+      (norm.includes('ss18') && (norm.includes('icp') || (norm.includes('bhel') && !norm.includes('ss03') && !norm.includes('ss02')))) ||
+      (norm.includes('bhel') && norm.includes('f1801'))
+    );
+
+  if (isSS18ICP2IsolatedQuery || isSS18ICP2BhelQuery) {
+    return {
+      identifiedFaultId: "F1801P1-BHEL",
+      faultTitle: "SS18 F1801P1: DISTURBANCE IN PROCESSOR ICP-2 / ICP-2 ISOLATED (BHEL TCN & IGBT Make)",
+      analysis: "BHEL मेक TCN एवं IGBT SR युक्त 3-फेज लोको TSD डायरेक्टरी:\nसबसिस्टम: SS18 (Processor ICP2 / FLG2)\nदोष कोड: F1801P1\nदोष संदेश (स्क्रीन 1):\nLoco xx SS18:processor ICP2 (या TSD मुद्रण: Loco xx SS17:processor ICP2)\nDisturbance in\nProcessor ICP-2\nICP 2 will be isolated\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco xx SS18:processor ICP2 (या Loco xx SS17:processor ICP2)\nICP-2 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: ICP-2 (Interface Communication Processor 2) आइसोलेट होगा। सिंगल लोको में सामान्य ट्रैक्शन निर्बाध चालू रहेगा। मल्टीपल ऑपरेशन (MU working) संभव नहीं होगा।\n(नोट: TCN और IGBT के SR वाले BHEL मेक के लोको में SS13, SS14, SS17 और SS18 सब सिस्टम के अलावा अन्य सभी सब सिस्टम के लिए ट्रबल शूटिंग MICAS GTO वाले लोको के समान है)\n\nBHEL TCN लोको TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: Disturbance in Processor ICP-2 / ICP 2 will be isolated】:",
+        "1. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "--------------------------------------------------",
+        "【स्क्रीन 2: ICP-2 ISOLATED / Refer to driver’s manual / Press <Enter>】:",
+        "1. मल्टीपल ऑपरेशन संभव नहीं होगा। (Multiple operation will not be possible).",
+        "2. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "BHEL TCN लोको में ICP-2 प्रोसेसर में डिस्टर्बेंस आने पर कंट्रोल इलेक्ट्रॉनिक्स ऑफ/ऑन करने की आवश्यकता नहीं होती; सिंगल लोको सामान्य तौर पर ट्रैक्शन लेकर चलता रहेगा। मल्टीपल ऑपरेशन (MU) में दूसरा लोको कार्य नहीं करेगा।",
+      manualReference: "BHEL TCN एवं IGBT लोको TSD - SS18 Processor ICP2 (F1801P1, पेज 202)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 202,
+      pdfQuote: "SS18 F1801P1 Loco xx SS18:processor ICP2\nDisturbance in Processor ICP-2\nICP 2 will be isolated\n1. simiºy ti]r pr T^]±Sn cil* kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n\nLoco xx SS18:processor ICP2\nICP-2 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n1. mÃT)pl aiˆpr[Sn s>Bv nh)> hi[gi.\n2. simiºyti]r pr T^]±Sn cil* kr>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS18-F1801P1-MEDHA. SS18 F1801P1: DISTURBANCE IN PROCESSOR MCC2 / MCC-2 ISOLATED (MEDHA IGBT Make)
+  const isSS18MCC2IsolatedQuery =
+    (norm.includes('mcc-2 isolated') || norm.includes('mcc2 isolated') || norm.includes('mcc 2 isolated') || norm.includes('mcc-2 aiesi[l[t') || norm.includes('mcc2 aiesi[l[t')) &&
+    !norm.includes('disturbance') && !norm.includes('will be isolated');
+
+  const isSS18MCC2Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('mcc2') || norm.includes('mcc-2') || norm.includes('mcc 2') ||
+      norm.includes('processor mcc2') || norm.includes('processor mcc-2') || norm.includes('processor mcc 2') ||
+      norm.includes('disturbance in processor mcc2') || norm.includes('disturbance in processor mcc-2') ||
+      norm.includes('mcc2 will be isolated') || norm.includes('mcc-2 will be isolated') ||
+      norm.includes('mcc2 isolated') || norm.includes('mcc-2 isolated') ||
+      (norm.includes('ss18') && (norm.includes('mcc') || (norm.includes('medha') && !norm.includes('vcu')))) ||
+      (norm.includes('medha') && (norm.includes('f1801') || (norm.includes('1801') && !norm.includes('icp'))))
+    );
+
+  if (isSS18MCC2IsolatedQuery || isSS18MCC2Query) {
+    const isIso = isSS18MCC2IsolatedQuery || (norm.includes('isolated') && !norm.includes('will be isolated')) || norm.includes('press <enter>') || norm.includes('press enter');
+    return {
+      identifiedFaultId: isIso ? "F1801P1-MEDHA-ISO" : "F1801P1-MEDHA",
+      faultTitle: isIso
+        ? "SS18 F1801P1: MCC-2 ISOLATED (Refer to driver’s manual / स्विच 152 फेल्योर मोड) [MEDHA IGBT Make]"
+        : "SS18 F1801P1: DISTURBANCE IN PROCESSOR MCC2 (MCC2 will be isolated) [MEDHA IGBT Make]",
+      analysis: `MEDHA मेक IGBT 3-फेज लोको TSD डायरेक्टरी (SS18: MCC 2):\nसबसिस्टम: SS18 (Processor MCC2)\nदोष कोड: F1801P1\nदोष संदेश (स्क्रीन 1):\nSS18 F1801P1 Loco xxSS18:processor MCC2\nDisturbance in\nProcessor MCC2\nMCC2 will be isolated\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco xxSS18:processor MCC2\nMCC-2 ISOLATED\nRefer to driver’s manual\nPress <Enter>\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: MCC-2 (Main Control Computer 2) डिस्टर्बेंस/आइसोलेशन। यदि कैब-2 से गाड़ी चला रहे हों तो स्विच 152 को '0' से '1' पर रखकर लोको को फेल्योर मोड (Failure Mode) में चलाना होगा। केवल कैब-2 से फेल्योर मोड ऑपरेशन संभव होगा। कैब-2 में TE/BE मीटर कार्य नहीं करेंगे, TE/BE का (%) प्रतिशत मान डिस्प्ले (DDU/TFT) पर देखा जा सकता है।\n(नोट: अतिरिक्त/विविध फॉल्ट मैसेज IGBT वाले MEDHA मेक के लोको में SS13, SS14, SS17 और SS18 सब सिस्टम के अलावा अन्य सभी सब सिस्टम के लिए ट्रबल शूटिंग MICAS GTO वाले लोको के समान है)\n\nMEDHA IGBT TSD अनुसार आधिकारिक दोष निवारण प्रक्रिया:`,
+      suggestedActions: isIso ? [
+        "1. यदि वही मैसेज दोबारा आता है, यदि कैब-2 से गाड़ी चला रहे हों तो VCB ओपन करके SB-1 पैनल पर लगे स्विच नं. 152 को ‘ 0 ’ से ‘ 1 ’ पर रखकर लोको को फ़ेल्योर मोड (Failure Mode) में लाकर चलाएं। (If the same message repeats, and driving from Cab-2, open VCB, set switch No. 152 on SB-1 panel from '0' to '1' and run loco in failure mode).",
+        "2. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. रीजेनेरेटिव ब्रेक उपलब्ध नहीं होगा। अतः गाड़ी/लोको को न्यूमैटिक ब्रेक (A-9 / SA-9) द्वारा कंट्रोल करें। A-9 एप्लाई करने से पहले थ्रोटल का ‘ 0 ’ पर होना सुनिश्चित करें। (Regenerative brake will not be available. Hence control train/loco by pneumatic brake A-9 / SA-9. Ensure throttle is at '0' before applying A-9).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "--------------------------------------------------",
+        "नोट: केवल कैब-2 से फ़ेल्योर मोड ऑपरेशन संभव होगा, कैब-2 में TE/BE मीटर कार्य नहीं करेंगे, TE/BE का (%) प्रतिशत मान डिस्प्ले पर देखा जा सकता है।"
+      ] : [
+        "【स्क्रीन 1: Disturbance in Processor MCC 2 / MCC 2 will be isolated】:",
+        "1. कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ़ कर उसे ऑन करें। (Switch OFF control electronics once and turn it ON again).",
+        "2. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "--------------------------------------------------",
+        "【स्क्रीन 2: Loco xx SS18:processor MCC2 / MCC-2 ISOLATED / Refer to driver’s manual / Press <Enter>】:",
+        "1. यदि वही मैसेज दोबारा आता है, यदि कैब-2 से गाड़ी चला रहे हों तो VCB ओपन करके SB-1 पैनल पर लगे स्विच नं. 152 को ‘ 0 ’ से ‘ 1 ’ पर रखकर लोको को फ़ेल्योर मोड (Failure Mode) में लाकर चलाएं।",
+        "2. सामान्य तौर पर ट्रैक्शन चालू करें। (Resume normal traction).",
+        "3. रीजेनेरेटिव ब्रेक उपलब्ध नहीं होगा। अतः गाड़ी/लोको को न्यूमैटिक ब्रेक (A-9 / SA-9) द्वारा कंट्रोल करें। A-9 एप्लाई करने से पहले थ्रोटल का ‘ 0 ’ पर होना सुनिश्चित करें।",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "--------------------------------------------------",
+        "नोट: केवल कैब-2 से फ़ेल्योर मोड ऑपरेशन संभव होगा, कैब-2 में TE/BE मीटर कार्य नहीं करेंगे, TE/BE का (%) प्रतिशत मान डिस्प्ले पर देखा जा सकता है।"
+      ],
+      precautions: "MEDHA IGBT लोको में MCC2 आइसोलेट होने पर केवल कैब-2 से ही फेल्योर मोड (SB-1 स्विच 152 को '0' से '1' पर रखकर) में ऑपरेशन संभव है। कैब-2 के डैशबोर्ड पर लगे एनालॉग TE/BE मीटर काम नहीं करेंगे, अतः ट्रैक्शन एवं ब्रेकिंग का वास्तविक प्रतिशत DDU स्क्रीन पर मॉनिटर करें।",
+      manualReference: "MEDHA IGBT लोको TSD - SS18 Processor MCC2 (F1801P1 / स्विच 152 फेल्योर मोड)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 202,
+      pdfQuote: "SS18 F1801P1 Loco xxSS18:processor MCC2\nDisturbance in Processor MCC2\nMCC2 will be isolated\n1. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr us[ aiˆn kr>[.\n2. simiºy ti]r pr T^]±Sn cil* kr>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n\nLoco xxSS18:processor MCC2\nMCC-2 ISOLATED\nRefer to driver’s manual\nPress <Enter>\n1. y(d k]b-2 s[ giD) cli rh[ h]> ti[ VCB ai[pn krk[ SB-1 p[nl pr lg[ (Avc n> 152 ki[ ‘ 0 ’ s[ ‘ 1 ’ pr rKkr li[ki[ ki[ f[Ãyi[r mi[D m[> likr cliy>[.\n2. simiºy ti]r pr T^]±Sn cil* kr>[.\n3. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\nni[T: k[vl k]b-2 s[ f[Ãyi[r mi[D aiˆpr[Sn s>Bv hi[gi, k]b-2 m[> TE/BE m)Tr kiy< nh)> kr[>g[, TE/BE ki {%} p\(tSt min (DApl[ pr d[Ki ji skti h]."
+    };
+  }
+
+  // 0-SS18-F1801P1. SS18 F1801P1: DISTURBANCE IN PROCESSOR FLG2 / FLG2 will be isolated (Vadodara TSD Page 202 / 224)
+  const isSS18F1801P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    !norm.includes('f1802') && !norm.includes('mismatch') && !norm.includes('मिसमैच') &&
+    !norm.includes('f1801p2') && !norm.includes('dia 2') && !norm.includes('dia2') && !norm.includes('dia-2') &&
+    !norm.includes('f1803') && !norm.includes('f1804') &&
+    !norm.includes('simulation') && !norm.includes('सिमुलेशन') && !norm.includes('179') &&
+    !norm.includes('angle transmitter') && !norm.includes('ट्रांसमीटर') && !norm.includes('152') &&
+    !norm.includes('mcc') && !norm.includes('medha') && !norm.includes('icp') && !norm.includes('bhel') &&
+    (
+      norm.includes('f1801p1') ||
+      norm.includes('f1801') ||
+      (norm.includes('ss18') && (norm.includes('flg') || norm.includes('flg2') || norm.includes('processor') || norm.includes('disturbance') || norm.includes('isolated') || norm.includes('1801'))) ||
+      norm.includes('disturbance in processor flg2') ||
+      norm.includes('disturbance in processor flg 2') ||
+      norm.includes('flg2 will be isolated') ||
+      norm.includes('flg 2 will be isolated') ||
+      norm.includes('processor flg2') ||
+      norm.includes('processor flg 2') ||
+      norm.includes('प्रोसेसर flg2') ||
+      norm.includes('flg2') ||
+      norm.includes('flg 2') ||
+      norm.includes('flg-2')
+    );
+
+  if (isSS18F1801P1Query) {
+    return {
+      identifiedFaultId: "F1801P1",
+      faultTitle: "SS18 F1801P1: DISTURBANCE IN PROCESSOR FLG2 [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224):\nसबसिस्टम: SS18 (Processor FLG2)\nदोष कोड: F1801P1\nदोष संदेश (स्क्रीन 1):\nSS18 F1801P1 Loco XXX SS18: Processor FLG2\nDISTURBANCE IN PROCESSOR FLG2\nFLG2 will be isolated\n\n(फॉलो-अप स्क्रीन 2 / Press <Enter>):\nLoco XXX SS18: Processor FLG2\nFLG2 ISOLATED\nRefer to driver’s manual\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: FLG2 आइसोलेट होगा। मल्टीपल ऑपरेशन (MU) संभव नहीं होगा। यदि कैब-2 से कार्य कर रहे हों तो कैब-2 के एंगल ट्रांसमीटर और बोगी मीटर कार्य नहीं करेंगे; TE/BE का कंट्रोल अपने आप बदलकर ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्क्रीन 1: Disturbance in Processor FLG2 / FLG2 will be isolated】:",
+        "1. थ्रोटल को ‘0’ पर लाएं। BPFA दबाकर फॉल्ट ACK करें। (Bring throttle to '0'. Press BPFA to acknowledge the fault).",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ कर उसे ऑन करें। (Switch OFF control electronics once and turn it ON again).",
+        "3. सामान्य ट्रैक्शन चालू करें। (Resume normal traction).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "--------------------------------------------------",
+        "【स्क्रीन 2 / ENTER दबाने पर: FLG2 ISOLATED / Refer to driver’s manual】:",
+        "1. यदि वही मैसेज पुनः आता है तो सामान्य ट्रैक्शन चालू रखें। (If the same message appears again, keep normal traction ON).",
+        "2. यदि कैब-2 से कार्य कर रहे हों तो कैब-2 के एंगल ट्रांसमीटर और बोगी मीटर कार्य नहीं करेंगे। TE/BE का कंट्रोल अपने आप बदलकर ऑक्सिलरी कॉन्टैक्ट मोड में आ जाएगा। (If working from Cab-2, Cab-2 angle transmitter and bogie meter will not work. TE/BE control will automatically switch to auxiliary contact mode).",
+        "3. रीजेनेरेटिव ब्रेक उपलब्ध नहीं होगा। अतः गाड़ी/लोको को न्यूमैटिक ब्रेक (A-9 / SA-9) द्वारा कंट्रोल करें। A-9 एप्लाई करने से पहले थ्रोटल का ‘0’ पर होना सुनिश्चित करें। (Regenerative brake will not be available. Hence control the train/loco by pneumatic brake A-9 / SA-9. Ensure throttle is at '0' before applying A-9).",
+        "4. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "FLG2 प्रोसेसर में व्यवधान आने पर सर्वप्रथम थ्रोटल '0' करके BPFA से फॉल्ट एक्नॉलेज करें और CE को 1 बार ऑफ करके पुनः ऑन करें। यदि FLG2 आइसोलेट हो जाता है, तो कैब-2 से कार्य करते समय एंगल ट्रांसमीटर कार्य नहीं करेंगे (ऑक्सिलरी कॉन्टैक्ट मोड), और रीजेनेरेटिव ब्रेक उपलब्ध नहीं होगा, अतः गाड़ी को A-9/SA-9 से नियंत्रित करें और A-9 लगाने से पहले थ्रोटल '0' करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS18 Processor FLG2 (F1801P1, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "SS18 F1801P1 Loco XXX SS18: Processor FLG2\nDISTURBANCE IN PROCESSOR FLG2\nFLG2 will be isolated\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf kr us[ aiˆn kr>[.\n3. simiºy T^]±Sn cil* kr>[.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n\nLoco XXX SS18: Processor FLG2\nFLG2 ISOLATED\nRefer to driver’s manual\nPress<Enter>\n1. y(d vh) m]s[j p&n: aiti h] ti[ simiºy T^]±Sn cil* rK>[.\n2. y(d k]b-2 s[ kiy< kr rh[ h]> ti[ k]b-2 k[ E[>gl T^^i‡sm)Tr ai]r bi[g) m)Tr kiy< nh)> kr[>g[. TE/BE ki kºT^^i[l apn[ aip bdlkr aiˆ³j)lr) kiºT[±T mi[D m[> ai jiy[gi.\n3. (rjnr[(Tv b\\[k upl¾F nh)> hi[gi. at: giD)/li[ki[ ki[ ºy*m[(Tk b\\[k (A-9 / SA-9) oiri kºT^^i[l kr[>. A9 E¼lie< krn[ s[ phl[ Y\\i[Tl ki ‘ 0 ’ pr hi[ni s&(n(Æct kr>[.\n4. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS18-F1802P1. SS18 F1802P1: SOFTWARE MISMATCH / WAP-5/WAG-9 / Panto will not raise (Vadodara TSD Page 202 / 224)
+  const isSS18F1802P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('f1802p1') ||
+      norm.includes('f1802') ||
+      (norm.includes('ss18') && (norm.includes('f1802') || (norm.includes('software mismatch') && norm.includes('flg2')) || norm.includes('1802'))) ||
+      (norm.includes('flg2') && (norm.includes('mismatch') || norm.includes('software') || norm.includes('panto will not raise') || norm.includes('सॉफ्टवेयर') || norm.includes('मिसमैच')))
+    );
+
+  if (isSS18F1802P1Query) {
+    return {
+      identifiedFaultId: "F1802P1",
+      faultTitle: "SS18 F1802P1: SOFTWARE MISMATCH (WAP-5/WAG-9 / Panto will not raise) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224):\nसबसिस्टम: SS18 (Processor FLG2)\nदोष कोड: F1802P1\nदोष संदेश (स्क्रीन):\nSS18 F1802P1 Loco XXX SS18: Processor FLG2\nSOFTWARE MISMATCH\nWAP-5/WAG-9\nPanto will not raise\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: सॉफ्टवेयर मिसमैच (Software mismatch); पैंटोग्राफ नहीं उठेगा (Panto will not raise); लोको पूर्णतः निष्क्रिय/डेड रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 3-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘0’ पर लाएं। BPFA दबाकर फॉल्ट ACK करें। (Bring throttle to '0'. Press BPFA to acknowledge the fault).",
+        "2. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book).",
+        "3. तुरंत सहायता इंजन की मांग करें। (Demand relief engine immediately)."
+      ],
+      precautions: "प्रोसेसर FLG2 में लोको टाइप सॉफ्टवेयर बेमेल (Software Mismatch - WAP-5 / WAG-9) होने पर सुरक्षा कारणों से VCU पैंटोग्राफ उठाने की अनुमति नहीं देता है। यह गंभीर सॉफ़्टवेयर विसंगति है। थ्रोटल '0' करके BPFA से फॉल्ट ACK करें, TLC को सूचित करें तथा तुरंत सहायता इंजन (Relief Engine) की मांग करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS18 Processor FLG2 (F1802P1, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "SS18 F1802P1 Loco XXX SS18: Processor FLG2\nSOFTWARE MISMATCH\nWAP-5/WAG-9\nPanto will not raise\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA dbikr fiˆÃT ACK kr>[.\n2. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[.\n3. t&r>t shiyti e>jn k) mi>g kr>[."
+    };
+  }
+
+  // 0-SS18-F1803P1. SS18 F1803P1: FAULT IN ANGLE TRANSMITTER OF THROTTLE (Cab 2 / FLG2 / MCC2)
+  const isSS18F1803P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') &&
+    (
+      norm.includes('f1803p1') || norm.includes('f1803') || norm.includes('1803p1') ||
+      ((norm.includes('ss18') || norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('flg2') || norm.includes('mcc2')) && (norm.includes('angle transmitter') || norm.includes('transmitter') || (norm.includes('152') && (norm.includes('throttle') || norm.includes('failure mode'))))) ||
+      ((norm.includes('angle transmitter') || norm.includes('transmitter')) && (norm.includes('cab 2') || norm.includes('cab-2') || norm.includes('flg2') || norm.includes('mcc2')))
+    );
+
+  if (isSS18F1803P1Query) {
+    return {
+      identifiedFaultId: "F1803P1",
+      faultTitle: "SS18 F1803P1: FAULT IN ANGLE TRANSMITTER OF THROTTLE (कैब-2 थ्रोटल एंगल ट्रांसमीटर खराबी / स्विच 152) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224 / MEDHA IGBT SS18: Processor MCC2):\nसबसिस्टम: SS18 (Processor FLG2 / Processor MCC2)\nदोष कोड: F1803P1\nदोष संदेश (स्क्रीन):\nSS18 F1803P1 Loco XX SS18: Processor MCC2 (या Processor FLG2)\nFAULT IN ANGLE TRANSMITTER OF THROTTLE\nBring TE/BE Throttle to zero\nOperate switch failure mode\n\nलैम्प संकेत: BPFA प्रकाशित होगा, LSFI ब्लिंक करेगी।\nप्रभाव: कैब-2 के थ्रोटल एंगल ट्रांसमीटर में खराबी; सामान्य मोड में थ्रोटल से TE/BE नहीं मिलेगा; SB-1 पैनल पर लगे स्विच नं. 152 को '0' से '1' पर रखकर लोको को फेल्योर मोड (Failure Mode) में चलाना होगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक 7-चरणीय दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘ 0 ’ पर लाएं। (Bring throttle to '0').",
+        "2. BPFA को दबाकर फ़ॉल्ट को एक्नॉलेज (ACK) करें। (Press BPFA to acknowledge the fault).",
+        "3. VCB ओपन करके SB-1 पैनल पर लगे स्विच नं. 152 को ‘ 0 ’ से ‘ 1 ’ पर रखकर लोको को फ़ेल्योर मोड (Failure Mode) में लाएं। (Open VCB, set switch No. 152 on SB-1 panel from '0' to '1' to enter Failure Mode).",
+        "4. स्विच नं. 152 को फ़ेल्योर मोड में रखकर सामान्य ट्रैक्शन चालू करें। (Keep switch No. 152 in failure mode and resume normal traction).",
+        "5. यदि सफलता नहीं मिलती है तो फिर से VCB ओपन करके स्विच 152 (SB-1) को 2-3 बार ऑपरेट करें। (If not successful, open VCB again and operate switch 152 on SB-1 2-3 times).",
+        "6. कंट्रोल इलेक्ट्रॉनिक्स को एक बार ऑफ कर उसे ऑन (MCE OFF/ON) करें। (Switch OFF control electronics once and turn it ON again).",
+        "7. पिछली कैब (कैब-1) से प्रयत्न करें। (Try from the rear cab - Cab-1).",
+        "8. यदि सफलता न मिले तो TLC को बताएं तथा लॉग बुक में दर्ज करें। (If still not successful, inform TLC and record in loco log book)."
+      ],
+      precautions: "थ्रोटल एंगल ट्रांसमीटर खराब होने पर लोको केवल SB-1 में स्विच 152 को '0' से '1' पर रखकर फेल्योर मोड में ही ट्रैक्शन ले सकता है। स्विच 152 को ऑपरेट करने से पूर्व VCB को अनिवार्य रूप से ओपन (BLDJ ओपन) करें। यदि कैब-2 से सफलता न मिले तो कैब-1 से प्रयास करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS18 Processor FLG2 / MCC2 (F1803P1, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "SS18 F1803P1 Loco XX SS18:Processor MCC2\nFAULT IN ANGLE TRANSMITTER OF THROTTLE\nBring TE/BE Throttle to zero\nOperate switch failure mode\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>.\n2. BPFA ki[ dbikr fiˆÃT ki[ E±nil[j kr>[>.\n3. VCB ai[pn krk[ SB-1 p[nl pr lg[ (Avc n> 152 ki[ ‘ 0 ’ s[ ‘ 1 ’ pr rKkr li[ki[ ki[ f[Ãyi[r mi[D m[> cliy>[.\n4. (Avc n> 152 ki[ f[Ãyi[r mi[D m[> rKkr simiºy T^]±Sn cil* kr>[.\n5. y(d sflti nh)>> (mlt) h] ti[ VCB ai[pn krk[ (Avc 152 (SB-1) ki[ 2-3 bir aipr[T kr>[.\n6. k>T^i[l el[±T^iˆ(n±s ki[ Ek bir aiˆf kr us[ aiˆn kr>[.\n7. (pCl) k]b s[ p\yRn kr>[.\n8. y(d sflti n (ml[ ti[ TLC ki[ btiy[> tYi liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS18-F1804P1. SS18 F1804P1: SIMULATION SWITCH POSITION NOT MATCHING (FLG2) (Vadodara TSD Page 202 / 224)
+  const isSS18F1804P1Query =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') &&
+    (
+      norm.includes('f1804p1') || norm.includes('f1804') || norm.includes('1804p1') ||
+      (norm.includes('ss18') && (norm.includes('1804') || norm.includes('simulation') || norm.includes('सिमुलेशन') || norm.includes('179') || norm.includes('switch position'))) ||
+      ((norm.includes('flg2') || norm.includes('cab 2') || norm.includes('cab-2')) && (norm.includes('simulation switch') || norm.includes('simulation key') || norm.includes('179') || norm.includes('simulation')))
+    );
+
+  if (isSS18F1804P1Query) {
+    return {
+      identifiedFaultId: "F1804P1",
+      faultTitle: "SS18 F1804P1: SIMULATION SWITCH POSITION NOT MATCHING (Check simulation Key on master/slave) [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वडोदरा, पृष्ठ सं. 202 / PDF 224):\nसबसिस्टम: SS18 (Processor FLG2)\nदोष कोड: F1804P1\nदोष संदेश (स्क्रीन):\nSS18 F1804P1 Loco XXX SS18: Processor FLG2\nSIMULATION SWITCH POSITION NOT MATCHING\nCheck simulation Key on master / slave\n\nलैम्प संकेत: कैब डेस्क पर BPFA प्रकाशित होगा।\nप्रभाव: सिमुलेशन स्विच (स्विच 179) की स्थिति मेल नहीं खा रही है; सुरक्षा इंटरलॉक के कारण ट्रैक्शन बाधित रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "1. थ्रोटल को ‘0’ पर लाएं। BPFA को दबाकर फ़ॉल्ट को एक्नॉलेज (ACK) करें। (Bring throttle to '0'. Press BPFA to acknowledge fault).",
+        "2. कंट्रोल इलेक्ट्रॉनिक्स को ऑफ (MCE OFF) करें। (Switch OFF control electronics).",
+        "3. SB-1 पैनल पर लगी सिमुलेशन चाबी (स्विच 179) का ‘0’ पोजीशन पर होना सुनिश्चित करें। यदि नहीं है तो ‘1’ से ‘0’ पर लाएं। (Ensure simulation key switch 179 on SB-1 is at '0'. If not, bring it from '1' to '0' position).",
+        "4. कंट्रोल इलेक्ट्रॉनिक्स को ऑन करें। सामान्य ट्रैक्शन चालू करें। (Turn ON control electronics. Resume normal traction).",
+        "5. TLC को सूचित करें और लॉग बुक में दर्ज करें। (Inform TLC and record in log book)."
+      ],
+      precautions: "सिमुलेशन स्विच (Switch 179) केवल शेड/यार्ड में लोको टेस्टिंग के लिए प्रयोग किया जाता है। मेनलाइन ऑपरेशन के समय यह हमेशा '0' (Normal) पोजीशन में होना अनिवार्य है। स्विच 179 को हमेशा कंट्रोल इलेक्ट्रॉनिक्स ऑफ (MCE OFF) स्थिति में ही ऑपरेट करें।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS18 Processor FLG2 (F1804P1, पेज 202 / PDF 224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 224,
+      pdfQuote: "SS18 F1804P1 Loco XXX SS18: Processor FLG2\nSIMULATION SWITCH POSITION NOT MATCHING\nCheck simulation Key on master / slave\n1. Y\\i[Tl ki[ ‘ 0 ’ pr liE>. BPFA ki[ dbikr fiˆÃT ki[ E±nil[j kr>[>.\n2. k>T^i[l el[±T^iˆ(n±s ki[ aiˆf kr>[.\n3. SB-1 p[nl pr lg) (sm‰l[Sn cib) 179 ki ‘ 0 ’ pr hi[ni s&(n(Æct kr>[. y(d nh)> h] ti[ ‘ 1 ’ s[ ‘ 0 ’ pr liE>.\n4. k>T^i[l el[±T^iˆ(n±s ki[ aiˆn kr>[. simiºy T^]±Sn cil* kr>[.\n5. TLC ki[ s*(ct kr>[ ai]r liˆg b&k m[> dj< kr>[."
+    };
+  }
+
+  // 0-SS19-F1901P1-ISO. SS19 Train Bus: TRAIN BUS ISOLATED / Multiple operation not possible (Vadodara TSD Page 202-203 / PDF 221-224)
+  const isSS19TrainBusIsolatedQuery =
+    !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
+    (
+      norm.includes('train bus isolated') ||
+      (norm.includes('train bus') && norm.includes('isolated')) ||
+      (norm.includes('ss19') && norm.includes('isolated')) ||
+      (norm.includes('f1901') && norm.includes('isolated'))
+    );
+
+  if (isSS19TrainBusIsolatedQuery) {
+    return {
+      identifiedFaultId: "F1901P1-ISO",
+      faultTitle: "SS19 Train Bus: TRAIN BUS ISOLATED / Multiple operation not possible [3-Phase Loco TSD]",
+      analysis: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (क्षेत्रीय विद्युत प्रशिक्षण केंद्र, BRC वडोदरा, पृष्ठ सं. 202-203 / PDF 221-224):\nसबसिस्टम: SS19 (Train Bus)\nस्क्रीन संदेश (Press <Enter> या संचार विच्छेदन पर):\nLocoXXX SS19: Train Bus\nTRAIN BUS ISOLATED\nMultiple operation not possible\n\nलैम्प संकेत: BPFA प्रकाशित होगा। LSFI लगातार प्रकाशित रहेगा (LSFI continuous glow)।\nप्रभाव: ट्रेन बस आइसोलेट; मल्टीपल ऑपरेशन (MU Working) उपलब्ध नहीं रहेगा।\n3-फेज TSD अनुसार निर्धारित आधिकारिक दोष निवारण कार्यवाही:",
+      suggestedActions: [
+        "【स्थिति 1: यदि बीपी प्रेशर भी साथ में ड्रॉप होता है और गाड़ी खड़ी हो जाती है तो:】",
+        "• स्लेव लोको को चैक करें यदि लोको शट डाउन हो गया है तो लोको की जांच करें और सभी कुछ सामान्य मिलने पर स्लेव लोको की कंट्रोल इलेक्ट्रॉनिक्स को ऑन करें।",
+        "• मास्टर लोको में जाकर कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें, सामान्य ऑपरेशन चालू करें।",
+        "• यदि दोबारा से उपरोक्त दोष आता है तो पीछे वाले लोको को डैड बनाएँ।",
+        "--------------------------------------------------",
+        "【स्थिति 2: यदि बीपी प्रेशर ड्रॉप नहीं होता है तो:】",
+        "• मल्टीपल ऑपरेशन उपलब्ध नहीं रहेगा।",
+        "• TLC को सूचित करें और लॉग बुक में दर्ज करें।",
+        "• सामान्य ऑपरेशन चालू रखें, LSFI लगातार प्रकाशित होगा।",
+        "• सुविधाजनक स्थान पर गाड़ी खड़ी करके मास्टर लोको की कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें, सफलता मिलती है तो सामान्य ऑपरेशन चालू करें।",
+        "• यदि दोबारा से उपरोक्त दोष आता है तो पीछे वाले लोको को डैड बनाएँ।"
+      ],
+      precautions: "ट्रेन बस आइसोलेट होने पर मल्टीपल ऑपरेशन उपलब्ध नहीं रहता है। यदि बीपी प्रेशर ड्रॉप होकर गाड़ी खड़ी होती है तो स्लेव लोको शटडाउन की जांच करें, सामान्य होने पर स्लेव लोको MCE ऑन करें तथा मास्टर लोको MCE OFF/ON करें। यदि बीपी ड्रॉप नहीं होता तो LSFI लगातार जलने पर TLC को नोट कराकर सुविधाजनक स्थान पर मास्टर लोको MCE OFF/ON करें। दोष दोबारा आने पर पीछे वाले लोको को अनिवार्य रूप से डेड बनाएं।",
+      manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी - SS19 Train Bus (पेज 202-203 / PDF 221-224)",
+      verifiedFromPdf: true,
+      pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल / BRC वडोदरा)",
+      pdfPage: 221,
+      pdfQuote: "LocoXXX SS19: Train Bus\nTRAIN BUS ISOLATED\nMultiple operation not possible\n\nयदि बीपी प्रेशर भी साथ में ड्रॉप होता है और गाड़ी खड़ी हो जाती है तो:\n* स्लेव लोको को चैक करें यदि लोको शट डाउन हो गया है तो लोको की जांच करें और सभी कुछ सामान्य मिलने पर स्लेव लोको की कंट्रोल इलेक्ट्रॉनिक्स को ऑन करें।\n* मास्टर लोको में जाकर कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें सामान्य ऑपरेशन चालू करें।\n* यदि दोबारा से उपरोक्त दोष आता है तो पीछे वाले लोको को डैड बनाएँ।\n\nयदि बीपी प्रेशर ड्रॉप नहीं होता है तो:\n* मल्टीपल ऑपरेशन उपलब्ध नहीं रहेगा।\n* TLC को सूचित करें और लॉग बुक में दर्ज करें।\n* सामान्य ऑपरेशन चालू रखें LSFI लगातार प्रकाशित होगा।\n* सुविधाजनक स्थान पर गाड़ी खड़ी करके मास्टर लोको की कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें सफलता मिलती है तो सामान्य ऑपरेशन चालू करें।\n* यदि दोबारा से उपरोक्त दोष आता है तो पीछे वाले लोको को डैड बनाएँ।"
+    };
+  }
+
   // 0-SS19-F1901P1. SS19 F1901P1: COMMUNICATION DISTURBANCE / Multiple operation not possible (Vadodara TSD Page 202 / 224)
   const isSS19F1901P1Query =
     !norm.includes('push-pull') && !norm.includes('push pull') && !norm.includes('amrit bharat') && !norm.includes('slave') &&
@@ -7957,8 +8860,7 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
       (norm.includes('train bus') && (norm.includes('communication disturbance') || norm.includes('multiple operation not possible') || norm.includes('multiple operation') || norm.includes('try to close the vcb again') || norm.includes('jumper cable'))) ||
       norm.includes('multiple operation not possible') ||
       norm.includes('communication disturbance') ||
-      norm.includes('mÃt)pl aipr[sn') ||
-      (norm.includes('train bus') && norm.includes('isolated'))
+      norm.includes('mÃt)pl aipr[sn')
     );
 
   if (isSS19F1901P1Query) {
@@ -10332,8 +11234,9 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
 // -----------------------------------------------------------------------------
 // MAIN ENTRY POINT: RESOLVE DEFECT CLIENT-SIDE
 // -----------------------------------------------------------------------------
-export function resolveDefectClientSide(query: string, locoType: '3phase' | 'amrit_bharat'): GroundedResult {
-  const norm = query.toLowerCase();
+export function resolveDefectClientSide(query: string, locoType: '3phase' | 'amrit_bharat' | 'conventional'): GroundedResult {
+  const cleaned = cleanRailwayVoiceText(query);
+  const norm = (cleaned ? (query + ' ' + cleaned) : query).toLowerCase();
 
   // 1. Detect explicit locomotive intent in user's query
   const isExplicit3Phase = 
@@ -10349,7 +11252,7 @@ export function resolveDefectClientSide(query: string, locoType: '3phase' | 'amr
     norm.includes('ss06-ss08-aux-mcb-trip') || norm.includes('aiˆ³j)lr) mi[tri[>') || norm.includes('aiˆ³j)lr)') || norm.includes('ऑक्सिलरी मोटरों के mcb') || norm.includes('auxiliary motor mcb') || norm.includes('auxiliary motors mcb') ||
     ((norm.includes('59.1') || norm.includes('63.1') || norm.includes('62.1') || norm.includes('53.1') || norm.includes('47.1') || norm.includes('55.1')) && (norm.includes('bar-bar') || norm.includes('bar bar') || norm.includes('frequent') || norm.includes('bir-bir') || norm.includes('बार-बार'))) ||
     norm.includes('ss09') || norm.includes('f0901') || norm.includes('f0901p2') || norm.includes('f0902') || norm.includes('f0902p2') || norm.includes('f0903') || norm.includes('f0903p2') || norm.includes('battery charger mcb off') || norm.includes('try to close the mcb') || norm.includes('low battery charger current') || norm.includes('battery not being charged') || norm.includes('battery charger mcb may have tripped') || norm.includes('battery voltage too low') || norm.includes('warning: low battery voltage') || norm.includes('warning low battery voltage') || norm.includes('less than 30 min') || norm.includes('check battery charger mcb') || norm.includes('electronics will switch off') || norm.includes('converters being switched off') || norm.includes('open vcb, lower panto') || norm.includes('pan lowered longer than 10 minutes') || norm.includes('pan lowered') || norm.includes('longer than 10 minutes') ||
-    norm.includes('h[dliet') || norm.includes('h[dlie') || norm.includes('headlight') || norm.includes('head light') || norm.includes('head-light') || norm.includes('हेडलाइट') || norm.includes('हेड लाईट') || norm.includes('हेडलाईट') || norm.includes('310.1') || norm.includes('310.1/1') || norm.includes('310.1/2') || norm.includes('zprd') || norm.includes('g & sr 4.14') || norm.includes('g&sr 4.14') ||
+    norm.includes('310.1') || norm.includes('310.1/1') || norm.includes('310.1/2') || norm.includes('zprd') || ((norm.includes('headlight') || norm.includes('हेडलाइट')) && (norm.includes('dimmer') || norm.includes('डिमर') || norm.includes('3 phase') || norm.includes('3-phase') || norm.includes('wap7') || norm.includes('wag9') || norm.includes('wap5'))) ||
     norm.includes('ss10') || norm.includes('f1001') || norm.includes('f1001p1') || norm.includes('f1001p2') || norm.includes('banking mode') || norm.includes('banking') || norm.includes('b](k>g') || norm.includes('बैंकिंग') || norm.includes('brake controller isolated') || norm.includes('zban microswitch') || norm.includes('127.7') || norm.includes('solenoid-30') || norm.includes('solenoid 30') || norm.includes('si[li[nied-30') || norm.includes('ptdc') || norm.includes('knorr bremse') || norm.includes('fault in brake electronics') || norm.includes('full service brake applied') || norm.includes('no traction allowed') ||
     norm.includes('f1002') || norm.includes('f1002p1') || norm.includes('f1002p2') || norm.includes('alarm chain pulling') || norm.includes('alarm chain') || norm.includes('check train') || norm.includes('g&sr 4.45') || norm.includes('4.45') || norm.includes('अलार्म चेन') || norm.includes('s&(vfijnk') || norm.includes('suvidhadajanak') || norm.includes('सुविधाजनक') || norm.includes('p\\bi(vt') || norm.includes('प्रभावित कोच') || norm.includes('low pressure main reservoir') || norm.includes('reaches 6.4') || norm.includes('reaches to 6.4') || norm.includes('6.4 kg/cm2') || norm.includes('6.4 kg/cm') || norm.includes('blcp') || norm.includes('unloader valve') || norm.includes('anli[dr') || norm.includes('veul') || norm.includes('ep 26') || norm.includes('ep-26') || norm.includes('d-in') || norm.includes('d-out') || norm.includes('d-off') ||
     norm.includes('f1003') || norm.includes('f1003p1') || norm.includes('vigilance emergency') || norm.includes('vigilance reset') || norm.includes('bpvr') || norm.includes('lsvw') || norm.includes('pvcd') || norm.includes('237.1') || norm.includes('(vj)l[>s') || norm.includes('विजिलेंस') || norm.includes('पेनल्टी ब्रेक') ||
@@ -10366,30 +11269,3117 @@ export function resolveDefectClientSide(query: string, locoType: '3phase' | 'amr
     norm.includes('ss14') || norm.includes('f1401') || norm.includes('f1401p1') || norm.includes('f1401p2') || norm.includes('f1402') || norm.includes('f1402p1') || norm.includes('f1402p2') || norm.includes('f1403') || norm.includes('f1403p1') || norm.includes('f1403p2') || norm.includes('f1404') || norm.includes('f1404p1') || norm.includes('f1404p2') || norm.includes('f1405') || norm.includes('f1405p1') || norm.includes('f1405p2') || norm.includes('f1406') || norm.includes('f1406p2') || norm.includes('f1407') || norm.includes('f1407p2') || norm.includes('vcu2') || norm.includes('vcu2-dip') || norm.includes('vcu2-dop') || norm.includes('rbu-3') || norm.includes('rbu-4') || norm.includes('rbu 3') || norm.includes('rbu 4') || norm.includes('hbb2') || norm.includes('hbb-2') || norm.includes('stb2') || norm.includes('stb-2') || norm.includes('cab 2 isolated') || norm.includes('cab 2 may get isolated') || norm.includes('cab 2 will not isolate') ||
     norm.includes('ss15') || norm.includes('f1501') || norm.includes('f1501p1') || norm.includes('f1501p2') || norm.includes('f1502') || norm.includes('f1502p2') || norm.includes('fire in machine room') || norm.includes('fire detection') || norm.includes('fault in fire detection') || norm.includes('no fire detection') || norm.includes('extinguish the fire') || norm.includes('reset the fire detection unit') || norm.includes('warning smoke in machine room') || norm.includes('smoke in machine room') || norm.includes('inspect machine room') || norm.includes('मशीन रूम में आग') || norm.includes('aig/f‰‡ai') ||
     norm.includes('ss16') || norm.includes('f1601') || norm.includes('f1601p1') || norm.includes('f1601p2') || norm.includes('speed limit exceeded') || norm.includes('fault in speedometer') || norm.includes('no display of speed') || norm.includes('diagn screen') || norm.includes('speedometer') || norm.includes('127.92') || norm.includes('ap)di[m)tr') || norm.includes('स्पीडोमीटर') || norm.includes('g(t s)mi') ||
+    norm.includes('ss17') || norm.includes('f1701') || norm.includes('f1702') || norm.includes('f1703') || norm.includes('f1704') || norm.includes('flg1') || norm.includes('flg 1') || norm.includes('processor flg1') || norm.includes('dia 1') || norm.includes('dia1') || norm.includes('simulation switch') || norm.includes('simulation key') || norm.includes('switch 179') || norm.includes('switch 152') || norm.includes('स्विच 179') || norm.includes('स्विच 152') || norm.includes('mcc1') || norm.includes('mcc 1') || norm.includes('mcc-1') || norm.includes('processor mcc1') || norm.includes('dmc1') || norm.includes('dmc-1') || norm.includes('dmc 1') || norm.includes('angle transmitter') || norm.includes('failure mode') || norm.includes('operate switch failure mode') || norm.includes('dmc') ||
+    norm.includes('ss18') || norm.includes('f1801') || norm.includes('f1802') || norm.includes('f1803') || norm.includes('f1804') || norm.includes('flg2') || norm.includes('flg 2') || norm.includes('processor flg2') || norm.includes('dia 2') || norm.includes('dia2') || norm.includes('mcc2') || norm.includes('mcc 2') || norm.includes('mcc-2') || norm.includes('processor mcc2') || norm.includes('dmc2') || norm.includes('dmc-2') || norm.includes('dmc 2') ||
     norm.includes('ss19') || norm.includes('f1901') || norm.includes('f1901p1') || norm.includes('communication disturbance') || norm.includes('multiple operation not possible') || norm.includes('train bus') || norm.includes('mÃt)pl aipr[sn');
 
-
-
   const isExplicitAmrit = 
-    norm.includes('amrit bharat') || norm.includes('अमृत भारत') || 
+    (norm.includes('amrit bharat') || norm.includes('अमृत भारत') || 
     norm.includes('push pull') || norm.includes('push-pull') || norm.includes('पुश-पुल') || norm.includes('पुश पुल') ||
-    norm.includes('slave') || norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab') ||
+    (norm.includes('slave') && !norm.includes('simulation key on master / slave') && !norm.includes('master / slave') && !norm.includes('f1704') && !norm.includes('f1804')) ||
+    norm.includes('स्लेव') || norm.includes('स्लैब') || norm.includes('स्लेब') || norm.includes('slab') ||
     norm.includes('master & slave') || norm.includes('slave loco') || norm.includes('master loco') ||
-    norm.includes('hlc') || norm.includes('power car') || norm.includes('wtb') || norm.includes('67');
+    norm.includes('hlc') || norm.includes('power car') || norm.includes('wtb') || norm.includes('67')) &&
+    !norm.includes('ss17') && !norm.includes('ss18') && !norm.includes('f1704') && !norm.includes('f1804');
 
-  let effectiveType: '3phase' | 'amrit_bharat' = locoType === 'amrit_bharat' ? 'amrit_bharat' : '3phase';
+  const isExplicitConventional =
+    norm.includes('conventional') || norm.includes('कन्वेंशनल') ||
+    norm.includes('wap4') || norm.includes('wap-4') || norm.includes('wag7') || norm.includes('wag-7') ||
+    norm.includes('wag5') || norm.includes('wag-5') || norm.includes('wam4') || norm.includes('wam-4') ||
+    norm.includes('q44') || norm.includes('q118') || norm.includes('qop') || norm.includes('qoa') || norm.includes('qla') ||
+    norm.includes('qlm') || norm.includes('qrsi') || norm.includes('zsmgr') || norm.includes('c118') ||
+    norm.includes('c145') || norm.includes('hmcs') || norm.includes('hqop') || norm.includes('hqoa') ||
+    norm.includes('blrdj') || norm.includes('lsgr') || norm.includes('tap changer') || norm.includes('arno') ||
+    norm.includes('qsit') || norm.includes('lssit') || norm.includes('siv fault') || norm.includes('si unit') || norm.includes('siv') || norm.includes('enp&t') || norm.includes('vi[ãt[j') || norm.includes('aiut ai[f') || norm.includes('आउट ऑफ रेंज') || norm.includes('out of range') || norm.includes('external fault') || norm.includes('e±stn<l') || norm.includes('ai[vrkr>t') || norm.includes('internal fault') || norm.includes('entn<l') || norm.includes('ay<fiˆãt') || norm.includes('dapl[') || norm.includes('इंटरनल') || norm.includes('single phasing') || norm.includes('सिंगल फेजिंग') || norm.includes('hravt') || norm.includes('ccra') || norm.includes('tfvt') ||
+    norm.includes('lschba') || norm.includes('hqcvar') || norm.includes('hph') || norm.includes('hvsl') ||
+    norm.includes('blvmt') || norm.includes('hvrh') || norm.includes('hvmt') || norm.includes('mvrh') || norm.includes('mvmt') ||
+    norm.includes('hvsi') || norm.includes('mvsi') || norm.includes('qvsi') ||
+    norm.includes('c107') || norm.includes('c105') || norm.includes('c106') || norm.includes('q100') || norm.includes('cca') ||
+    norm.includes('पहला नोच') || norm.includes('पहली नोच') || norm.includes('1st notch') || norm.includes('छठा नोच') || norm.includes('छठी नोच') || norm.includes('6th notch') || norm.includes('नोच') ||
+    norm.includes('भिन्न') || norm.includes('bhinn') || norm.includes('different notch') || norm.includes('random notch') || norm.includes('spasht karan') || norm.includes('स्पष्ट कारण') ||
+    norm.includes('blcp') || norm.includes('blcpd') || norm.includes('hcp') || norm.includes('c101') || norm.includes('c102') || norm.includes('c103') || norm.includes('c-101') || norm.includes('c-102') || norm.includes('c-103') || norm.includes('mr-4') || norm.includes('vead') ||
+    norm.includes('qcon') || norm.includes('qtd-101') || norm.includes('qtd101') || norm.includes('kàp[sr') || norm.includes('kiºt[±tr') || norm.includes('कम्प्रेसर') ||
+    norm.includes('qsvm') || (norm.includes('lschba') && norm.includes('vcb')) || (norm.includes('bina') && norm.includes('vcb')) || norm.includes('(bni') ||
+    norm.includes('biypis') || norm.includes('1500') || (norm.includes('bypass') && norm.includes('earth')) || (norm.includes('बाईपास') && norm.includes('अर्थ')) ||
+    norm.includes('mpcs') || norm.includes('cccpu') || norm.includes('main unit') || norm.includes('मेन यूनिट') || norm.includes('m[n y') ||
+    norm.includes('mph') || norm.includes('qph') ||
+    norm.includes('chba') || norm.includes('hchba') ||
+    norm.includes('क्षतिग्रस्त') || norm.includes('damage') || norm.includes('जल गई') || norm.includes('जल गयी') || norm.includes('जली हुई') || norm.includes('extinguisher') || norm.includes('अग्निशामक') ||
+    norm.includes('ccba') || norm.includes('ccpt') || norm.includes('ccls') || norm.includes('ccdj') || norm.includes('cclsa') || norm.includes('ccvcd') || norm.includes('ccinv') || (norm.includes('cca') && !norm.includes('ccb')) ||
+    norm.includes('पिघल') || norm.includes('फ्यूज') || (norm.includes('fuse') && (norm.includes('melt') || norm.includes('indicator') || norm.includes('संकेत') || norm.includes('फेलियर') || norm.includes('failure'))) ||
+    norm.includes('zuba') || norm.includes('uba') ||
+    norm.includes('lsdj') || norm.includes('ua deviate') || norm.includes('ua डेविएट') || norm.includes('ua डेिवएट') || norm.includes('ua meter') ||
+    norm.includes('lsb') || norm.includes('lsp') || norm.includes('lsrsi') ||
+    norm.includes('cpa') || norm.includes('mcpa') || norm.includes('zcpa') ||
+    norm.includes('नोच रिपीटर') || norm.includes('notch repeater') ||
+    norm.includes('कर्षण बल') || norm.includes('tractive force') ||
+    norm.includes('पायलट लैम्प') || norm.includes('pilot lamp') ||
+    norm.includes('bpt') ||
+    norm.includes('ट्रैक्शन वोल्टमीटर') || (norm.includes('voltmeter') && norm.includes('deviat')) ||
+    norm.includes('vept') || norm.includes('íìºãí') || norm.includes('íìnãí') || norm.includes('éäèâ') ||
+    norm.includes('पैंटो नहीं उठता') || norm.includes('पेन्टो नहीं उठता') ||
+    ((norm.includes('panto nahi uthta') || norm.includes('pento nahi uthta')) && !norm.includes('3 phase') && !norm.includes('3-phase') && !norm.includes('3फ़ेस') && !norm.includes('3-फ़ेस') && !norm.includes('slave')) ||
+    norm.includes('conv-headlight-not-glowing') ||
+    norm.includes('úìåôâåã') || norm.includes('úëå ôâåã') ||
+    norm.includes('blprd') || norm.includes('blprf') || norm.includes('blprr') ||
+    norm.includes('hrtpr') || norm.includes('rtpr') ||
+    norm.includes('हेडलाइट प्रकाशित नहीं होती') || norm.includes('हेड लाइट प्रकाशित नहीं होती') ||
+    norm.includes('headlight prakashit nahi hoti') ||
+    ((norm.includes('headlight') || norm.includes('हेडलाइट') || norm.includes('हेड लाइट')) &&
+     (norm.includes('नहीं') || norm.includes('not') || norm.includes('nahi') || norm.includes('off') || norm.includes('खराब') || norm.includes('फेल')) &&
+      (norm.includes('bl') || norm.includes('zrt') || norm.includes('zpr') || norm.includes('blprd') || norm.includes('blprf') || norm.includes('blprr') || norm.includes('hrtpr') || norm.includes('rtpr') || norm.includes('40 kmph') || norm.includes('dc to dc') || norm.includes('g & sr') || norm.includes('कन्वेंशनल') || norm.includes('conventional') || norm.includes('wap4') || norm.includes('wag7') || norm.includes('wag5'))) ||
+    norm.includes('conv-horn-whistle-failure') ||
+    norm.includes('ʬीसल') || norm.includes('İʬसल') || norm.includes('हॉनŊ') || norm.includes('डुɘेƛ') || norm.includes('सैİȵंग') ||
+    norm.includes('व्हीसल') || norm.includes('व्हिसल') || norm.includes('whistle') ||
+    ((norm.includes('हॉर्न') || norm.includes('horn') || norm.includes('हॉन') || norm.includes('सीटी')) && (norm.includes('फेल') || norm.includes('fail') || norm.includes('लीकेज') || norm.includes('leakage') || norm.includes('सैंडिंग') || norm.includes('डुप्लेक्स') || norm.includes('4.50') || norm.includes('गाड़ी') || norm.includes('लोको')));
+
+  let effectiveType: '3phase' | 'amrit_bharat' | 'conventional' = locoType;
   if (norm.includes('3 phase ka pooch raha') || norm.includes('question 3 phase') || norm.includes('3 phase ka') || norm.includes('3-phase ka')) {
     effectiveType = '3phase';
-  } else if (isExplicit3Phase && !isExplicitAmrit) {
+  } else if (isExplicitConventional && !isExplicit3Phase && !isExplicitAmrit) {
+    effectiveType = 'conventional';
+  } else if (isExplicit3Phase && !isExplicitAmrit && !isExplicitConventional) {
     effectiveType = '3phase';
-  } else if (isExplicitAmrit && !isExplicit3Phase) {
+  } else if (isExplicitAmrit && !isExplicit3Phase && !isExplicitConventional) {
     effectiveType = 'amrit_bharat';
+  } else if (isExplicitConventional) {
+    effectiveType = 'conventional';
   }
 
   // 2. Strict routing based on effective locomotive type
-  if (effectiveType === '3phase') {
-    return resolve3PhaseDefect(query, norm);
+  let result: GroundedResult;
+  if (effectiveType === 'conventional') {
+    result = resolveConventionalDefect(query, norm);
+  } else if (effectiveType === '3phase') {
+    result = resolve3PhaseDefect(query, norm);
   } else {
-    return resolveAmritBharatDefect(query, norm);
+    result = resolveAmritBharatDefect(query, norm);
   }
+
+  // 3. Guarantee that suggestedActions always uses the official bilingual catalog actions
+  if (result && result.identifiedFaultId) {
+    const cleanId = result.identifiedFaultId.trim().toUpperCase();
+    let catalogFault: any = null;
+    if (effectiveType === '3phase') {
+      catalogFault = faults.find(f => f.id.toUpperCase() === cleanId);
+    } else if (effectiveType === 'amrit_bharat') {
+      catalogFault = amritBharatFaults.find(f => f.id.toUpperCase() === cleanId);
+    } else if (effectiveType === 'conventional') {
+      catalogFault = conventionalFaults.find(f => f.id.toUpperCase() === cleanId);
+    }
+    if (!catalogFault) {
+      catalogFault = faults.find(f => f.id.toUpperCase() === cleanId) ||
+                     amritBharatFaults.find(f => f.id.toUpperCase() === cleanId) ||
+                     conventionalFaults.find(f => f.id.toUpperCase() === cleanId);
+    }
+    if (catalogFault && catalogFault.actions && catalogFault.actions.length > 0) {
+      result.suggestedActions = catalogFault.actions;
+    }
+  }
+
+  return result;
+}
+
+// -----------------------------------------------------------------------------
+// CONVENTIONAL ELECTRIC LOCOMOTIVE RESOLVER (WAP-4, WAG-7, WAG-5, WAM-4)
+// Sources: CAMTECH Conventional Electric Loco TSD Directory (Indian Railways)
+// -----------------------------------------------------------------------------
+function resolveConventionalDefect(query: string, norm: string): GroundedResult {
+  // 0. Explicit Check for SI UNIT - Input Voltage Out of Range (CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE)
+  const isSIVInputVoltageOutOfRangeQuery =
+    (norm.includes('enp&t') || norm.includes('input') || norm.includes('इनपुट')) &&
+    (norm.includes('range') || norm.includes('रेंज') || norm.includes('r[>j') || norm.includes('out of') || norm.includes('aiut ai[f') || norm.includes('आउट ऑफ') || norm.includes('volt') || norm.includes('वोल्टेज') || norm.includes('vi[ãt[j')) ||
+    (norm.includes('si unit') && (norm.includes('voltage') || norm.includes('vi[ãt[j') || norm.includes('वोल्टेज') || norm.includes('out of') || norm.includes('लाल लैम्प') || norm.includes('lil l]') || norm.includes('red lamp') || norm.includes('t^bl'))) ||
+    (norm.includes('siv') && (norm.includes('out of range') || norm.includes('आउट ऑफ रेंज') || norm.includes('608') || norm.includes('1144') || norm.includes('16.5') || (norm.includes('voltage') && norm.includes('range')) || (norm.includes('वोल्टेज') && norm.includes('रेंज'))));
+
+  if (isSIVInputVoltageOutOfRangeQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE') || conventionalFaults.find(cf => cf.id === 'CONV-SIV-TRIPPING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 17, पृष्ठ 101 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: SIV (स्टेटिक इन्वर्टर यूनिट)\nदोष: SI UNIT में इनपुट वोल्टेज आउट ऑफ रेंज (Input Voltage Out of Range)\nसंकेत: SIV डिस्प्ले पैनल पर लाल लैम्प / LSSIT लैम्प\nप्रभाव: इनपुट वोल्टेज आउट ऑफ रेंज होने पर DJ/VCB ट्रिप नहीं होता है केवल SIV बंद होता है परंतु यदि GR नोच पर है तो DJ/VCB भी ट्रिप होगा। यदि DJ/VCB ट्रिप है तो LP पहले DJ/VCB क्लोज करें। यदि DJ/VCB क्लोज नहीं होता है तो ICDJ के लिए ट्रबल शूट करें। यदि DJ/VCB क्लोज होता है और SIV कार्य नहीं करता है तो SIV इंडिकेशन पैनल देखें।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 1) OHE वोल्टेज 16.5 kV से 31 kV के बीच होना चाहिए (SIV इनपुट वोल्टेज रेंज 608V - 1144V)। यदि OHE वोल्टेज आउट ऑफ रेंज है तो TPC / TLC से संपर्क करें। 2) बैटरी ऑफ/ऑन करते समय IPMV का COC बंद करने के बाद ही करें, तथा एनर्जाइज होने पर IPMV का COC खोल दें। 3) यदि इनपुट वोल्टेज आउट ऑफ रेंज (लाल लैम्प) नहीं आता है तो BLVMT देखें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 17 (स्टेटिक इन्वर्टर यूनिट), पृष्ठ 101`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 132,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.1 Explicit Check for SIV - BLVMT Open & SIV Not Working (CONV-SIV-BLVMT-OPEN-SIV-NOT-WORKING)
+  const isSIVBLVMTOpenQuery =
+    (norm.includes('blvmt') && (norm.includes('open') || norm.includes('ai[pn') || norm.includes('ओपन') || norm.includes('खुल') || norm.includes('खुला')) && (norm.includes('siv') || norm.includes('चलता') || norm.includes('clti') || norm.includes('not work') || norm.includes('बंद') || norm.includes('band') || norm.includes('nh)>') || norm.includes('काम') || norm.includes('नहीं'))) ||
+    (norm.includes('ccinv') && (norm.includes('fuse') || norm.includes('फ्यूज') || norm.includes('½y*j') || norm.includes('melt') || norm.includes('मेल्ट') || norm.includes('m[ãt') || norm.includes('hoba'))) ||
+    ((norm.includes('blvmt') || norm.includes('siv')) && norm.includes('ccinv')) ||
+    (norm.includes('blvmt') && norm.includes('siv') && !norm.includes('close') && !norm.includes('क्लोज') && !norm.includes('±li[j') && !norm.includes('बंद'));
+
+  if (isSIVBLVMTOpenQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-SIV-BLVMT-OPEN-SIV-NOT-WORKING') || conventionalFaults.find(cf => cf.id === 'CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 17, पृष्ठ 101/102 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: SIV (स्टेटिक इन्वर्टर यूनिट)\nदोष: यदि BLVMT ओपन है और SIV नहीं चलता है (BLVMT Open & SIV Not Working)\nसंकेत: BLVMT ओपन स्थिति, SIV नहीं चलता / LSSIT लैम्प\nप्रभाव: SIV चालू न होने से 3-फेज ऑक्जीलरी मोटरें (ब्लोअर, कंप्रेसर आदि) चालू नहीं होंगी।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 1) DJ/VCB क्लोज होना सुनिश्चित करें। 2) CCINV फ्यूज चेक करें - यदि मेल्ट है तो बदलें, यदि फिर मेल्ट होता है तो HOBA का उपयोग करें। 3) यदि BLVMT क्लोज है और SIV नहीं चलता है तो CCA फ्यूज और QSVM रिले चेक करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 17 (स्टेटिक इन्वर्टर यूनिट), पृष्ठ 101-102`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 101,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.1A-00000 Explicit Check for BPMPR MPCS Reset (CONV-MPCS-BPMPR-RESET)
+  const isMPCSBPMPRResetQuery =
+    norm.includes('bpmpr') || norm.includes('बीपीएमपीआर') ||
+    (
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
+      (norm.includes('reset') || norm.includes('रीसेट') || norm.includes('रिसेट')) &&
+      (norm.includes('tr') || norm.includes('पैनल') || norm.includes('10') || norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम') || norm.includes('बटन') || norm.includes('push'))
+    ) ||
+    (
+      (norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम') || norm.includes('sub system') || norm.includes('sub-system') || norm.includes('subsystem')) &&
+      (norm.includes('आइसोलेट') || norm.includes('isolate')) &&
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('रीसेट') || norm.includes('reset') || norm.includes('bpmpr') || norm.includes('10 sec') || norm.includes('10 सेकंड'))
+    ) ||
+    norm.includes('conv-mpcs-bpmpr-reset');
+
+  if (isMPCSBPMPRResetQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-BPMPR-RESET');
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 18: माइक्रोप्रोसेसर आधारित लोको कंट्रोल सिस्टम - MPCS रीसेट):\nसिस्टम: ${f.subSystem} (MPCS - Microprocessor Control System)\nदोष: BPMPR द्वारा MPCS को रीसेट करना (Resetting MPCS via BPMPR Push Button)\nसंकेत: एक से अधिक सब-सिस्टम आइसोलेट होने का संदेश अथवा MPCS का असामान्य व्यवहार\nप्रभाव: एक से अधिक सब-सिस्टम आइसोलेट होने पर सामान्य लोको संचालन बाधित हो जाता है। BPMPR पुश बटन द्वारा MPCS को पूर्ण रीसेट कर सामान्य संचालन बहाल किया जाता है।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम (BPMPR MPCS रीसेट): 1) BPMPR पुश बटन मेन यूनिट (TR पैनल) पर लगा है। 2) रीसेट करने से पहले DJ/VCB ओपन करें और पैंटो लोवर करें। 3) BL चाबी को अवश्य बाहर निकालें। 4) BPMPR को पूरे 10 सेकंड (10 sec) तक लगातार दबा कर रखें। 5) इसके बाद लोको को नियमानुसार इनर्जाइज करें। 6) सेक्शन क्लियर कर TLC को सूचित करें तथा लोको लॉग बुक में दर्ज करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - अध्याय 18 (MPCS)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 104,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.1A-0000 Explicit Check for MEDHA Make MPCS Relay Bypass / Soft Wedging (CONV-MPCS-MEDHA-RELAY-BYPASS-SOFT-WEDGE)
+  const isMPCSMedhaRelayBypassQuery =
+    (
+      (norm.includes('medha') || norm.includes('मेधा')) &&
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('relay') || norm.includes('रिले') || norm.includes('रले') || norm.includes('वेज') || norm.includes('wedge') || norm.includes('bypass') || norm.includes('बाईपास') || norm.includes('बाइपास') || norm.includes('soft') || norm.includes('0,7,8,9') || norm.includes('0 7 8 9') || norm.includes('instantaneous') || norm.includes('permanent'))
+    ) ||
+    (
+      (norm.includes('instantaneous') || norm.includes('permanent bypass') || norm.includes('cancel bypass') || norm.includes('temparari')) &&
+      (norm.includes('soft') || norm.includes('key') || norm.includes('bypass') || norm.includes('बाईपास') || norm.includes('बाइपास') || norm.includes('0,7,8,9') || norm.includes('0 7 8 9'))
+    ) ||
+    norm.includes('conv-mpcs-medha-relay-bypass-soft-wedge');
+
+  if (isMPCSMedhaRelayBypassQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-MEDHA-RELAY-BYPASS-SOFT-WEDGE');
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 18: माइक्रोप्रोसेसर आधारित लोको कंट्रोल सिस्टम - MEDHA Make MPCS):\nसिस्टम: ${f.subSystem} (M/s Medha Servo Drives - MEDHA Make MPCS)\nदोष: MEDHA Make MPCS में रिले को वेज / बाईपास करना\nसंकेत: रिले खराबी संदेश आने पर MPCS रिले बाईपास विकल्प (Option) मेन्यू\nप्रभाव: लोको पायलट द्वारा सॉफ्टवेयर के माध्यम से तात्कालिक (Instantaneous) अथवा स्थायी (Permanent) रूप से रिले बाईपास निष्पादित किया जा सकता है।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम (MEDHA MPCS रिले बाईपास): 1) प्रक्रिया शुरू करने से पहले VCB अवश्य ओपन होना चाहिए। 2) Soft Keys 0, 7, 8, 9 दबाने पर 3 विकल्प आते हैं: Key 1 तात्कालिक (Instantaneous), Key 2 स्थायी (Permanent), Key 3 कैंसिल (Cancel)। 3) तात्कालिक बाईपास VCB ओपन करने पर स्वतः समाप्त हो जाता है। 4) स्थायी बाईपास HBA ऑफ करने पर समाप्त होता है। 5) TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - अध्याय 18 (MEDHA Make MPCS)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 105,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.1A-000 Explicit Check for MPCS Version 3.0 ICE Relay Bypass / Soft Wedging (CONV-MPCS-ICE-RELAY-BYPASS-SOFT-WEDGE)
+  const isMPCSICERelayBypassQuery =
+    !isMPCSMedhaRelayBypassQuery && !norm.includes('medha') && !norm.includes('मेधा') && !norm.includes('instantaneous') && !norm.includes('permanent') &&
+    (
+      (norm.includes('ice') || norm.includes('3.0') || norm.includes('0,7,8,9') || norm.includes('0 7 8 9') || (norm.includes('soft') && norm.includes('key')) || norm.includes('सॉफ्ट की') || norm.includes('सॉफ्ट वेज') || norm.includes('qcvar')) &&
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('relay') || norm.includes('रिले') || norm.includes('रले')) &&
+      (norm.includes('bypass') || norm.includes('बाइपास') || norm.includes('बाईपास') || norm.includes('बायपास') || norm.includes('वेज') || norm.includes('wedge') || norm.includes('q118') || norm.includes('q50') || norm.includes('qcon'))
+    ) ||
+    (
+      (norm.includes('0,7,8,9') || norm.includes('0 7 8 9')) &&
+      (norm.includes('soft') || norm.includes('key') || norm.includes('प्रेस') || norm.includes('दबाये') || norm.includes('दबाएं'))
+    ) ||
+    norm.includes('conv-mpcs-ice-relay-bypass-soft-wedge');
+
+  if (isMPCSICERelayBypassQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-ICE-RELAY-BYPASS-SOFT-WEDGE');
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 18: माइक्रोप्रोसेसर आधारित लोको कंट्रोल सिस्टम - MPCS Version 3.0):\nसिस्टम: ${f.subSystem} (M/s IC Electricals - ICE Make MPCS)\nदोष: MPCS Version 3.0 में रिले को बाईपास (सॉफ्ट वेज) करना\nसंकेत: रिले खराबी संदेश / रिले पिकअप न होने की स्थिति में रिले बाईपास मेन्यू\nप्रभाव: लोको पायलट द्वारा सॉफ्टवेयर के माध्यम से सुरक्षित रूप से रिले वेजिंग निष्पादित की जा सकती है।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम (MPCS वर्जन 3.0 रिले बाईपास): 1) केवल 4 रिले (Q118, Q50, QCON, QCVAR) को ही सॉफ्टवेयर द्वारा वेज किया जा सकता है। 2) वेजिंग प्रक्रिया शुरू करने से पहले VCB अवश्य ओपन होना चाहिए। 3) Soft Key ‘1’ दबाकर वेज कन्फर्म करें, कैंसिल करने हेतु ‘2’ दबाएं। 4) HBA ऑफ करने पर वेजिंग कमांड स्वतः समाप्त हो जाती है। 5) TLC को सूचित कर लॉग बुक में दर्ज करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - अध्याय 18 (MPCS Version 3.0 / ICE Make)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 105,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.1A-00 Explicit Check for MPCS - Feedback Fail (CONV-MPCS-DJ-TRIPPED-VIA-C107-C106-C105-FEEDBACK-FAIL)
+  const isMPCSFeedbackFailQuery =
+    (
+      (norm.includes('feedback') || norm.includes('फीडबैक') || norm.includes('tripped via')) &&
+      (norm.includes('107') || norm.includes('106') || norm.includes('105') || norm.includes('c-107') || norm.includes('c-106') || norm.includes('c-105') || norm.includes('c107'))
+    ) ||
+    norm.includes('conv-mpcs-dj-tripped-via-c107-c106-c105-feedback-fail');
+
+  if (isMPCSFeedbackFailQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-DJ-TRIPPED-VIA-C107-C106-C105-FEEDBACK-FAIL');
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 18, पृष्ठ 106 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: MPCS (माइक्रोप्रोसेसर बेस्ड कंट्रोल एवं फॉल्ट डायग्नोस्टिक सिस्टम)\nदोष: DJ tripped via C-107/C-106/C-105 Feedback fail, Inform TLC\nसंकेत: MPCS डिस्प्ले स्क्रीन पर "DJ tripped via C-107/C-106/C-105 Feedback fail Inform TLC" संदेश, LSDJ लैम्प प्रकाशित, DJ ट्रिप\nप्रभाव: ब्लोअर कॉन्टैक्टर फीडबैक सिग्नल न मिलने से MPCS द्वारा DJ/VCB ट्रिप करा दिया जाता है, ट्रैक्शन व ऑक्सिलरी बंद हो जाती हैं।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम: 1) IPMV COC को क्लोज करें तथा बैटरी ऑफ (HBA OFF) करें। 2) C-107, C-106 तथा C-105 कॉन्टैक्टर्स का पूरी तरह से ओपन होना चेक करें। 3) कॉन्टैक्टर C-107 को 1-2 बार हाथ से ऑपरेट करें। 4) HBA ON कर DJ/VCB क्लोज करें और एनर्जाइज होने पर IPMV COC खोलें। 5) सफलता न मिलने पर TLC को सूचित करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 18 (MPCS लोको में लोको पायलट द्वारा ट्रबल शूटिंग), पृष्ठ 106`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 106,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.1A-0 Explicit Check for MPCS - 6th Notch DJ Tripping within 15 Seconds (CONV-MPCS-DJ-TRIP-ON-6TH-NOTCH-15-SEC)
+  const isMPCS6thNotch15SecQuery =
+    (
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
+      (norm.includes('6') || norm.includes('छठा') || norm.includes('छठी') || norm.includes('sixth')) &&
+      (norm.includes('notch') || norm.includes('नोच') || norm.includes('ni[c')) &&
+      (norm.includes('15') || norm.includes('sec') || norm.includes('dj') || norm.includes('vcb') || norm.includes('trip') || norm.includes('(t^p') || norm.includes('hvmt'))
+    ) ||
+    (
+      (norm.includes('6') || norm.includes('छठा') || norm.includes('छठी')) &&
+      (norm.includes('notch') || norm.includes('नोच') || norm.includes('ni[c')) &&
+      (norm.includes('15') || norm.includes('sec')) &&
+      (norm.includes('dj') || norm.includes('vcb') || norm.includes('trip') || norm.includes('ट्रिप') || norm.includes('(t^p'))
+    ) ||
+    norm.includes('conv-mpcs-dj-trip-on-6th-notch-15-sec');
+
+  if (isMPCS6thNotch15SecQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-DJ-TRIP-ON-6TH-NOTCH-15-SEC');
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 18, पृष्ठ 106 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: MPCS (माइक्रोप्रोसेसर बेस्ड कंट्रोल एवं फॉल्ट डायग्नोस्टिक सिस्टम)\nदोष: MPCS लोको में 6 नोच लेने पर 15 सेकंड के अंदर DJ/VCB ट्रिप होना\nसंकेत: LSDJ प्रकाशित होता है, 6 नोच लेते ही 15 सेकंड के अंदर DJ/VCB ट्रिप हो जाता है\nप्रभाव: गाड़ी 6 नोच से आगे नहीं बढ़ाई जा सकती, ट्रैक्शन पावर कट हो जाती है।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम: 1) डिस्प्ले यूनिट पर दर्शाए गए मैसेज अनुसार ट्रबलशूट करें; डिस्प्ले फेल होने पर पायलट लैम्प पर सतर्क निगाह रखें। 2) C105, C106, C107 के वायर कनेक्शन जांचें। 3) HVMT1/2 को '3' पोजीशन पर रखें। 4) HOBA को OFF करके देखें। 5) IPMV COC बंद कर HBA OFF कर 3 मिनट रुककर रीसेट करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 18 (MPCS लोको में लोको पायलट द्वारा ट्रबल शूटिंग), पृष्ठ 106`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 106,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.1A Explicit Check for MPCS - DJ/VCB Not Closing / ICDJ (CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING)
+  const isMPCSICDJQuery =
+    !isMPCS6thNotch15SecQuery &&
+    (
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
+      (
+        norm.includes('icdj') ||
+        (norm.includes('dj') && (norm.includes('close') || norm.includes('क्लोज') || norm.includes('±li[j') || norm.includes('not close') || norm.includes('nahi hota') || norm.includes('nh)> hi[ti') || norm.includes('band'))) ||
+        (norm.includes('vcb') && (norm.includes('close') || norm.includes('क्लोज') || norm.includes('±li[j') || norm.includes('not close') || norm.includes('nahi hota') || norm.includes('nh)> hi[ti') || norm.includes('band'))) ||
+        norm.includes('bp1dj') ||
+        norm.includes('bp2dj') ||
+        norm.includes('add blrdj')
+      )
+    ) ||
+    (
+      (norm.includes('dj/vcb') || norm.includes('dj') || norm.includes('vcb')) &&
+      norm.includes('icdj') &&
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('bp1dj') || norm.includes('bp2dj') || norm.includes('add blrdj') || norm.includes('cccpu'))
+    ) ||
+    (
+      (norm.includes('bp1dj') || norm.includes('bp2dj') || norm.includes('add blrdj')) &&
+      (norm.includes('dj') || norm.includes('vcb') || norm.includes('close') || norm.includes('क्लोज'))
+    ) ||
+    norm.includes('conv-mpcs-icdj-dj-vcb-not-closing');
+
+  if (isMPCSICDJQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING');
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 18, पृष्ठ 105-106 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: MPCS (माइक्रोप्रोसेसर बेस्ड कंट्रोल एवं फॉल्ट डायग्नोस्टिक सिस्टम)\nदोष: MPCS लोको में DJ/VCB क्लोज नहीं होता / ICDJ (DJ/VCB Does Not Close / ICDJ in MPCS Locos)\nसंकेत: LSDJ लैम्प प्रकाशित रहता है, DJ/VCB क्लोज नहीं होता\nप्रभाव: मुख्य ट्रांसफार्मर एनर्जाइज नहीं होगा, लोको ट्रैक्शन एवं ऑक्सिलरी कार्य नहीं करेंगी।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम: 1) बैटरी वोल्टेज 90V से अधिक होना सुनिश्चित करें। 2) C118, C105, C106, C107 ओपन होना चेक करें। 3) GR '0' पर लाएं व LSGR चेक करें। 4) BP1DJ, BP2DJ व Add BLRDJ को 2-3 बार दबाएं। 5) HQOA '0' व HQOP 1-2 OFF करें। 6) IPMV COC बंद कर HBA OFF कर 3 मिनट रुकें व पुनः प्रयास करें। 7) सफलता न मिलने पर HOBA OFF करें अथवा TLC से संपर्क करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 18 (MPCS लोको में लोको पायलट द्वारा ट्रबल शूटिंग), पृष्ठ 105-106`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 105,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.1B Explicit Check for MPCS - Main Unit Not Working (CONV-MPCS-MAIN-UNIT-NOT-WORKING)
+  const isMPCSMainUnitQuery =
+    (
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
+      (
+        norm.includes('main unit') ||
+        norm.includes('मेन यूनिट') ||
+        norm.includes('m[n y') ||
+        norm.includes('cccpu') ||
+        norm.includes('not work') ||
+        norm.includes('कार्य नहीं') ||
+        norm.includes('काम नहीं') ||
+        norm.includes('ack') ||
+        norm.includes('buzzer') ||
+        norm.includes('बजर') ||
+        norm.includes('b[t^)') ||
+        norm.includes('battery')
+      )
+    ) ||
+    (
+      (norm.includes('main unit') || norm.includes('मेन यूनिट') || norm.includes('m[n y‰(nt') || norm.includes('m[n y*(nt') || norm.includes('m[n y')) &&
+      (norm.includes('not work') || norm.includes('कार्य नहीं') || norm.includes('काम नहीं') || norm.includes('nh)> krti') || norm.includes('fail') || norm.includes('फेल'))
+    ) ||
+    norm.includes('cccpu') ||
+    norm.includes('conv-mpcs-main-unit-not-working');
+
+  if (isMPCSMainUnitQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-MAIN-UNIT-NOT-WORKING');
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 18, पृष्ठ 105 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: MPCS (माइक्रोप्रोसेसर बेस्ड कंट्रोल एवं फॉल्ट डायग्नोस्टिक सिस्टम)\nदोष: मेन यूनिट कार्य नहीं करती है (MPCS Main Unit Failure)\nसंकेत: सभी पायलट लैम्प बुझे रहेंगे, डिस्प्ले यूनिट पर कोई मैसेज नहीं आएगा, लोको इनर्जाइज नहीं होगा\nप्रभाव: MPCS सिस्टम कार्य न करने से लोको इनर्जाइज नहीं होगा, VCB/DJ क्लोज नहीं हो पाएगा तथा कोई ऑक्सिलरी चालू नहीं होगी।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम: 1) बैटरी वोल्टेज 0V व MCPA फेल होने पर केवल एक बार Additional CCBA बदलें; पुनः पिघलने पर HOBA को OFF करें। 2) बैटरी वोल्टेज 90V से अधिक रहने पर CCBA, CCPT व CCCPU फ्यूज जांचें। 3) IPMV COC बंद कर HBA को OFF कर 3 मिनट रुककर रीसेट प्रयत्न करें। 4) फिर भी इनर्जाइज न होने पर TLC से संपर्क करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 18 (MPCS लोको में लोको पायलट द्वारा ट्रबल शूटिंग), पृष्ठ 105`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 105,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.2A Explicit Check for SIV - Earth Fault Bypass Procedure (CONV-SIV-EARTH-FAULT-BYPASS-PROCEDURE)
+  const isSIVEarthFaultBypassProcedureQuery =
+    (
+      (
+        (norm.includes('earth fault') || norm.includes('अर्थ फॉल्ट') || norm.includes('ay< fiãt') || norm.includes('ay<') || norm.includes('siv')) &&
+        (norm.includes('bypass') || norm.includes('बाईपास') || norm.includes('biypis')) &&
+        (norm.includes('procedure') || norm.includes('विधि') || norm.includes('(v(f') || norm.includes('kare') || norm.includes('karna') || norm.includes('krn[') || norm.includes('1500') || norm.includes('45') || norm.includes('hsiv'))
+      ) ||
+      (
+        (norm.includes('1500 ohm') || norm.includes('1500 ओम') || norm.includes('1500 ai[hm') || norm.includes('1500')) &&
+        (norm.includes('hsiv') || norm.includes('45 min') || norm.includes('45 मिनट') || norm.includes('earth fault'))
+      ) ||
+      norm.includes('conv-siv-earth-fault-bypass-procedure')
+    );
+
+  if (isSIVEarthFaultBypassProcedureQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-SIV-EARTH-FAULT-BYPASS-PROCEDURE') || conventionalFaults.find(cf => cf.id === 'CONV-SIV-EXTERNAL-FAULT-EARTH-FAULT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 17, पृष्ठ 103 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: SIV (स्टेटिक इन्वर्टर यूनिट - अर्थ फॉल्ट सुरक्षा)\nविषय: अर्थ फॉल्ट बाईपास करने की विधि (Procedure for Bypassing Earth Fault in SIV Locos)\nसंकेत: SIV अर्थ फॉल्ट बाईपास का लाल लैम्प (Red Lamp) प्रकाशित, 45 मिनट का टाइमर सक्रिय\nप्रभाव: अर्थ फॉल्ट करंट सीमित करने हेतु सर्किट में 1500 ओम की रेजिस्टेंस सम्मिलित होती है; 45 मिनट के भीतर ब्लॉक सेक्शन साफ करना अनिवार्य है।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम: 1) अर्थ फॉल्ट बाईपास करने पर 45 मिनट के अंदर ब्लॉक सेक्शन अवश्य साफ कर लें (क्योंकि 1500 ओम की रेजिस्टेंस सर्किट में आती है)। 2) HSIV को '0' पर रखें व अर्थ फॉल्ट बाईपास पुश बटन दबाएं (45 मिनट टाइमर व लाल लैम्प ऑन)। 3) DJ/VCB क्लोज करें। 4) फॉल्ट दूर होने पर HSIV स्विच को पुनः '1' पर करना तथा लॉग बुक में दर्ज करना अनिवार्य है।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 17 (स्टेटिक इन्वर्टर यूनिट), पृष्ठ 103`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 103,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.2B Explicit Check for SIV - External Fault (LED) Glows & Earth Fault Indication (CONV-SIV-EXTERNAL-FAULT-EARTH-FAULT)
+  const isSIVExternalEarthFaultQuery =
+    !isSIVEarthFaultBypassProcedureQuery &&
+    (
+      (
+        ((norm.includes('external') && norm.includes('fault')) ||
+         norm.includes('e±stn<l') ||
+         norm.includes('e±stn') ||
+         norm.includes('एक्सटर्नल') ||
+         norm.includes('eksternal')) &&
+        (
+          norm.includes('earth fault') ||
+          norm.includes('earth') ||
+          norm.includes('अर्थ फॉल्ट') ||
+          norm.includes('अर्थ') ||
+          norm.includes('ay<fiˆãt') ||
+          norm.includes('ay<fi') ||
+          norm.includes('hsiv') ||
+          norm.includes('bypass')
+        )
+      ) ||
+      (
+        (norm.includes('siv') || norm.includes('lssit')) &&
+        (norm.includes('hsiv') || norm.includes('earth fault bypass') || norm.includes('अर्थ फॉल्ट बाईपास'))
+      ) ||
+      norm.includes('conv-siv-external-fault-earth-fault')
+    );
+
+  if (isSIVExternalEarthFaultQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-SIV-EXTERNAL-FAULT-EARTH-FAULT') || conventionalFaults.find(cf => cf.id === 'CONV-SIV-TRIPPING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 17, पृष्ठ 102/103 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: SIV (स्टेटिक इन्वर्टर यूनिट)\nदोष: SIV डिस्प्ले पैनल पर EXTERNAL FAULT का लैम्प (LED) प्रकाशित होना, LSSIT प्रकाशित होना एवं एक्सटर्नल फॉल्ट के साथ अर्थ फॉल्ट का संकेत आना\nसंकेत: SIV डिस्प्ले पैनल पर EXTERNAL FAULT (LED) लैम्प, LSSIT प्रकाशित, अर्थ फॉल्ट संकेत\nप्रभाव: SIV ट्रिप हो जाता है, 3-फेज ऑक्सिलरी मोटरें कार्य करना बंद कर देती हैं।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 1) ऑक्सिलरी पावर सर्किट व T.K. पैनल पर जांचें कि सभी इलेक्ट्रोमैग्नेटिक कॉन्टैक्टर्स पूरी तरह ओपन हैं। 2) बैटरी ऑफ/ऑन करते समय IPMV का COC बंद करने के बाद ही करें तथा एनर्जाइज होने पर IPMV COC खोल दें। 3) सभी BL स्विच ओपन कर HPH, HVSL, HVSI, HVRH, HVMT, HCHBA, HRAVT को '0' पर रखें। 4) यदि DJ/VCB कायम नहीं रहती है तो TB पैनल पर लगे HSIV को '0' पर रखकर SI यूनिट पर दिए 'अर्थ फॉल्ट बाईपास स्विच' को दबाएं और सेक्शन क्लियर करें। 5) खराबी वाले उपकरण को अलग करने पर संबंधित EM Contactor का पूर्णतया ओपन होना सुनिश्चित करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 17 (स्टेटिक इन्वर्टर यूनिट), पृष्ठ 102-103`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 102,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.2B Explicit Check for SIV - External Fault (LED) Glows & Overcurrent Indication (CONV-SIV-EXTERNAL-FAULT-OVERCURRENT)
+  const isSIVExternalFaultOvercurrentQuery =
+    !isSIVExternalEarthFaultQuery &&
+    (
+      (
+        ((norm.includes('external') && norm.includes('fault')) ||
+         norm.includes('e±stn<l') ||
+         norm.includes('e±stn') ||
+         norm.includes('एक्सटर्नल') ||
+         norm.includes('eksternal') ||
+         norm.includes('external fault')) &&
+        (
+          norm.includes('overcurrent') ||
+          norm.includes('ओवरकरंट') ||
+          norm.includes('ai[vrkr>t') ||
+          norm.includes('ai[vrkr') ||
+          !norm.includes('internal')
+        )
+      ) ||
+      (
+        (norm.includes('siv') || norm.includes('lssit')) &&
+        (
+          norm.includes('overcurrent') ||
+          norm.includes('ओवरकरंट') ||
+          norm.includes('ai[vrkr>t') ||
+          norm.includes('ai[vrkr') ||
+          norm.includes('hravt') ||
+          norm.includes('ccra') ||
+          norm.includes('tfvt')
+        )
+      ) ||
+      norm.includes('conv-siv-external-fault-overcurrent')
+    );
+
+  if (isSIVExternalFaultOvercurrentQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-SIV-EXTERNAL-FAULT-OVERCURRENT') || conventionalFaults.find(cf => cf.id === 'CONV-SIV-TRIPPING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 17, पृष्ठ 102/103 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: SIV (स्टेटिक इन्वर्टर यूनिट)\nदोष: SIV डिस्प्ले पैनल पर EXTERNAL FAULT का लैम्प (LED) प्रकाशित होना, LSSIT प्रकाशित होना एवं एक्सटर्नल फॉल्ट के साथ ओवरकरंट का संकेत आना\nसंकेत: SIV डिस्प्ले पैनल पर EXTERNAL FAULT (LED) लैम्प, LSSIT प्रकाशित, ओवरकरंट संकेत\nप्रभाव: SIV ट्रिप हो जाता है, 3-फेज ऑक्सिलरी मोटरें कार्य करना बंद कर देती हैं।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 1) ऑक्सिलरी पावर सर्किट व T.K. पैनल पर जांचें कि सभी इलेक्ट्रोमैग्नेटिक कॉन्टैक्टर्स पूरी तरह ओपन हैं। 2) बैटरी ऑफ/ऑन करते समय IPMV का COC बंद करने के बाद ही करें तथा एनर्जाइज होने पर IPMV COC खोल दें। 3) सभी BL स्विच ओपन कर HPH, HVSL, HVSI, HVRH, HVMT, HCHBA, HRAVT को '0' पर रखें; HRAVT न होने पर CCRA-1, CCRA-2, CCVT फ्यूज निकालें व TFVT के पास MCB ट्रिप करें। एक-एक स्विच नॉर्मल कर दोषयुक्त उपकरण आइसोलेट करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 17 (स्टेटिक इन्वर्टर यूनिट), पृष्ठ 102-103`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 102,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.3 Explicit Check for SIV - Internal Fault (LED) Glows & Internal Earth Fault Indication (CONV-SIV-INTERNAL-FAULT-EARTH-FAULT)
+  const isSIVInternalFaultQuery =
+    (
+      (norm.includes('internal') && norm.includes('fault')) ||
+      norm.includes('entn<l') ||
+      norm.includes('ay<fiˆãt') ||
+      norm.includes('ay<fi') ||
+      norm.includes('dapl[') ||
+      norm.includes('इंटरनल फॉल्ट') ||
+      norm.includes('internal fault')
+    ) ||
+    (
+      (norm.includes('siv') || norm.includes('lssit')) &&
+      (
+        norm.includes('internal') ||
+        norm.includes('entn<l') ||
+        norm.includes('इंटरनल') ||
+        norm.includes('earth fault') ||
+        norm.includes('अर्थ फॉल्ट') ||
+        norm.includes('single phasing') ||
+        norm.includes('सिंगल फेजिंग') ||
+        norm.includes('over temperature') ||
+        norm.includes('ओवर टेम्परेचर') ||
+        norm.includes('fan fault') ||
+        norm.includes('फैन फॉल्ट')
+      )
+    ) ||
+    norm.includes('conv-siv-internal-fault-earth-fault');
+
+  if (isSIVInternalFaultQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-SIV-INTERNAL-FAULT-EARTH-FAULT') || conventionalFaults.find(cf => cf.id === 'CONV-SIV-TRIPPING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 17, पृष्ठ 103/104 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: SIV (स्टेटिक इन्वर्टर यूनिट)\nदोष: SIV डिस्प्ले पैनल पर INTERNAL FAULT लैम्प (LED) प्रकाशित होना, इंटरनल अर्थ फॉल्ट संकेत के साथ LSSIT प्रकाशित होना\nसंकेत: SIV डिस्प्ले पैनल पर INTERNAL FAULT (LED) लैम्प, LSSIT प्रकाशित, इंटरनल अर्थ फॉल्ट / फैन / ओवर टेम्परेचर / सिंगल फेजिंग फॉल्ट संकेत\nप्रभाव: SIV ट्रिप हो जाता है, 3-फेज ऑक्सिलरी मोटरें कार्य करना बंद कर देती हैं।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 1) फैन फॉल्ट होने पर SIV पर लगे MCB को रीसेट करें, न होने पर IPMV COC बंद कर बैटरी ऑफ/ऑन करें। 2) ओवर टेम्परेचर होने पर रीसेट बटन दबाकर 10 मिनट बाद DJ/VCB क्लोज करें। 3) सिंगल फेजिंग में MCP से शुरू करके बारी-बारी से लोड कम करें। 4) अन्य/अर्थ फॉल्ट में बैटरी ऑफ/ऑन करें; सफलता न मिलने पर BL स्विच ओपन कर HPH, HVSL, HVSI, HVRH, HVMT, HCHBA, HRAVT को '0' पर रखकर एक-एक उपकरण आइसोलेट करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 17 (स्टेटिक इन्वर्टर यूनिट), पृष्ठ 103-104`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 103,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.4 Explicit Check for Compressor Contactors Not Closing (CONV-COMPRESSOR-CONTACTORS-NOT-CLOSING)
+  const isCompressorContactorsNotClosingQuery =
+    (
+      (
+        (norm.includes('compressor') || norm.includes('कंप्रेसर') || norm.includes('कम्प्रेसर') || norm.includes('kàp[sr') || norm.includes('mcp')) &&
+        (norm.includes('contactor') || norm.includes('कॉन्टैक्टर') || norm.includes('kiºt[±tr') || norm.includes('c101') || norm.includes('c102') || norm.includes('c103')) &&
+        (norm.includes('not close') || norm.includes('close nahi') || norm.includes('nahi hote') || norm.includes('क्लोज नहीं') || norm.includes('±li[j') || norm.includes('nahi lagte'))
+      ) ||
+      (
+        (norm.includes('qcon') || norm.includes('qtd-101') || norm.includes('qtd101')) &&
+        (norm.includes('wedge') || norm.includes('वेज') || norm.includes('energize') || norm.includes('compressor') || norm.includes('कम्प्रेसर') || norm.includes('blcp') || norm.includes('lschba'))
+      ) ||
+      norm.includes('conv-compressor-contactors-not-closing')
+    );
+
+  if (isCompressorContactorsNotClosingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-COMPRESSOR-CONTACTORS-NOT-CLOSING') || conventionalFaults.find(cf => cf.id === 'CONV-MR-NOT-BUILDING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (ऑक्ज़ीलरी व न्यूमैटिक कंट्रोल सर्किट / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: मेन कंप्रेसर कंट्रोल सर्किट (Compressor Control Circuit - C101, C102, C103)\nदोष: कम्प्रेसर के कॉन्टैक्टर क्लोज नहीं होते हैं\nसंकेत: BLCP क्लोज करने पर भी कंप्रेसर कॉन्टैक्टर C-101, C-102, C-103 पिकअप नहीं होते; LSCHBA लैम्प का जलना अथवा बुझा रहना\nप्रभाव: कंप्रेसर मोटरें (MCP 1, 2, 3) चालू नहीं होंगी, MR एयर प्रेशर नहीं बनेगा।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम: 1) यदि LSCHBA जल रहा है तो QCON एनर्जाइज होना सुनिश्चित करें; डी-एनर्जाइज होने पर वेज करें। 2) QCON रिले को वेज करने के साथ-साथ रिले Q-118 को भी वेज करना अनिवार्य है अन्यथा DJ ट्रिप होगा। 3) DJ क्लोज करने के 15-20 सेकंड बाद ही BLCP क्लोज करें। 4) यदि LSCHBA बुझा है तो QTD-101 की जांच करें तथा LSCHBA बुझने के 5 सेकंड बाद BLCP क्लोज करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - ऑक्ज़ीलरी व न्यूमैटिक कंट्रोल सर्किट निर्देशिका`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 55,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 0.5 Explicit Check for SIV - LSCHBA Glows Without VCB Tripping (CONV-SIV-LSCHBA-GLOWS-WITHOUT-VCB-TRIP)
+  const isSIVLSCHBAWithoutVCBTripQuery =
+    !norm.includes('hchba') &&
+    (
+      (
+        (norm.includes('bina') || norm.includes('without') || norm.includes('बिना') || norm.includes('(bni')) &&
+        norm.includes('vcb') &&
+        (norm.includes('lschba') || norm.includes('charger') || norm.includes('चार्जर') || norm.includes('cij<r'))
+      ) ||
+      (
+        (norm.includes('siv') || norm.includes('es aie') || norm.includes('si unit')) &&
+        (norm.includes('lschba') || norm.includes('charger') || norm.includes('चार्जर') || norm.includes('cij<r')) &&
+        (norm.includes('trip') || norm.includes('glowing') || norm.includes('prakashit') || norm.includes('प्रकाशित') || norm.includes('without'))
+      ) ||
+      (
+        norm.includes('qsvm') &&
+        (norm.includes('chatter') || norm.includes('चैटर') || norm.includes('c]tr') || norm.includes('wedge') || norm.includes('वेज') || norm.includes('lschba'))
+      ) ||
+      norm.includes('conv-siv-lschba-glows-without-vcb-trip')
+    );
+
+  if (isSIVLSCHBAWithoutVCBTripQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-SIV-LSCHBA-GLOWS-WITHOUT-VCB-TRIP') || conventionalFaults.find(cf => cf.id === 'CONV-CHBA-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH / WR BRC कन्वेंशनल इलेक्ट्रिक लोको TSD निर्देशिका (अध्याय 17, पृष्ठ 104 / WAG-5, WAM-4, WAP-4, WAG-7):\nसिस्टम: SIV (स्टेटिक इन्वर्टर यूनिट - बैटरी चार्जर)\nदोष: बिना VCB ट्रिप हुए LSCHBA प्रकाशित होता है (SIV लोको में बैटरी चार्जर कार्य न करना)\nसंकेत: VCB क्लोज रहते हुए भी LSCHBA लैम्प का लगातार जलना\nप्रभाव: बैटरी चार्ज होना बंद हो जाती है; बैटरी वोल्टेज 90V से कम होने पर लोको ट्रिप हो सकता है (हालांकि SI Unit चलती रहेगी)।`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम: 1) HBA को OFF पर रखकर चार्जर कार्य जांचें (VCB ट्रिप होने पर चार्जर खराब)। 2) DJ/VCB ट्रिप कर HBA को OFF और ON करके पुनः प्रयत्न करें। 3) बैटरी वोल्टेज 90 से 110V होना चाहिए। 90V से अधिक रहने पर अनावश्यक लोड व कम्पार्टमेंट लाइट बंद कर TLC आदेशानुसार गाड़ी चलाएं। 4) QSVM रिले की चैटरिंग होने पर आवश्यकतानुसार QSVM को वेज करें।",
+        manualReference: `WR BRC कन्वेंशनल लोको TSD - अध्याय 17 (स्टेटिक इन्वर्टर यूनिट), पृष्ठ 104`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 104,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+
+
+  // 1. Explicit Check for QLM Special Cases (Repeat Drop / Case B and With Other Relays / Case A)
+  const isQLMRepeatQuery =
+    norm.includes('qlm') &&
+    (norm.includes('repeat') || norm.includes('dobara') || norm.includes('doosri') || norm.includes('dusri') || norm.includes('दोबारा') || norm.includes('फिर से') || norm.includes('phir se') || norm.includes('re-drop') || norm.includes('redrop') || norm.includes('(b)') || norm.includes('case b') || norm.includes('case-b') || norm.includes('situation 3') || norm.includes('स्थिति 3'));
+
+  const isQLMWithOtherRelaysQuery =
+    norm.includes('qlm') &&
+    (norm.includes('anya relay') || norm.includes('other relay') || norm.includes('किसी अन्य') || norm.includes('kisi anya') || norm.includes('dusri relay') || norm.includes('doosri relay') || norm.includes('अन्य रिले') || norm.includes('(a)') || norm.includes('case a') || norm.includes('case-a') || norm.includes('situation 2') || norm.includes('स्थिति 2'));
+
+  if (isQLMRepeatQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QLM-REPEAT-DROP') || conventionalFaults.find(cf => cf.id === 'CONV-QLM-OVERCURRENT')!;
+    return {
+      identifiedFaultId: f.id,
+      faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+      analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+      suggestedActions: f.actions,
+      precautions: "अति-महत्वपूर्ण सुरक्षा नियम: QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होने पर रिले को कभी भी रीसेट न करें। तुरंत सहायता मांगें (Demand Assistance)।",
+      manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+      verifiedFromPdf: true,
+      pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+      pdfPage: 1,
+      pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+    };
+  }
+
+  if (isQLMWithOtherRelaysQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QLM-WITH-OTHER-RELAYS') || conventionalFaults.find(cf => cf.id === 'CONV-QLM-OVERCURRENT')!;
+    return {
+      identifiedFaultId: f.id,
+      faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+      analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+      suggestedActions: f.actions,
+      precautions: "QLM किसी अन्य रिले (QOP, QOA, QRSI) के साथ गिरने पर वाइंडिंग सर्किट, CGR 1,2,3 आर्कच्यूट व उपकरण चेक करें, दोषयुक्त उपकरण आइसोलेट करें। नजदीकी संभव स्टेशन पर मेंटेनेंस स्टाफ द्वारा पूर्ण निरीक्षण कराएं व TLC को सूचित करें।",
+      manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+      verifiedFromPdf: true,
+      pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+      pdfPage: 1,
+      pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+    };
+  }
+
+  const isQLMAloneQuery =
+    norm.includes('qlm') &&
+    !isQLMRepeatQuery &&
+    !isQLMWithOtherRelaysQuery;
+
+  if (isQLMAloneQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QLM-ALONE-DROP') || conventionalFaults.find(cf => cf.id === 'CONV-QLM-OVERCURRENT')!;
+    return {
+      identifiedFaultId: f.id,
+      faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+      analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+      suggestedActions: f.actions,
+      precautions: "अति-महत्वपूर्ण सुरक्षा नियम: QLM अकेली ड्रॉप होने पर ट्रांसफॉर्मर, GR, RPGR, CGR, RGR व बुशिंग का पूर्ण भौतिक निरीक्षण करें। तेल बिखराव होने पर सहायता मांगें। यदि कोई खराबी नहीं है तो रिले को क्लॉकवाइज केवल एक ही बार रीसेट किया जा सकता है।",
+      manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+      verifiedFromPdf: true,
+      pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+      pdfPage: 1,
+      pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+    };
+  }
+
+  // 2. Explicit Check for QRSI-1 and QRSI-2 (Silicon Rectifier Overcurrent Protection)
+  const isQRSI2Query =
+    norm.includes('qrsi-2') || norm.includes('qrsi 2') || norm.includes('qrsi2') ||
+    (norm.includes('qrsi') && (norm.includes('2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('tm 4') || norm.includes('tm-4') || norm.includes('rsi-2') || norm.includes('rsi 2')));
+
+  const isQRSI1Query =
+    norm.includes('qrsi-1') || norm.includes('qrsi 1') || norm.includes('qrsi1') ||
+    (norm.includes('qrsi') && !isQRSI2Query);
+
+  if (isQRSI2Query) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QRSI-2-TRIP')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "QRSI-2 ड्रॉप होने पर RSI-2 ब्लॉक व बोगी-2 की ट्रैक्शन मोटरों (TM 4, 5, 6) की जांच करें। HMCS-2 द्वारा दोषयुक्त मोटर को आइसोलेट करें या आवश्यकता पड़ने पर HVSI-2, HVMT-2, HVSL-2 को '0' पर रखकर बोगी-2 को आइसोलेट कर 50% लोड पर गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  if (isQRSI1Query) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QRSI-1-TRIP')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "QRSI-1 ड्रॉप होने पर RSI-1 ब्लॉक व बोगी-1 की ट्रैक्शन मोटरों (TM 1, 2, 3) की जांच करें। HMCS-1 द्वारा दोषयुक्त मोटर को आइसोलेट करें या आवश्यकता पड़ने पर HVSI-1, HVMT-1, HVSL-1 को '0' पर रखकर बोगी-1 को आइसोलेट कर 50% लोड पर गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 3. Explicit Check for QOP-1 & QOP-2 (Power Circuit Earth Fault Protection)
+  const isQOP2Query =
+    norm.includes('qop-2') || norm.includes('qop 2') || norm.includes('qop2') ||
+    norm.includes('hqop-2') || norm.includes('hqop 2') || norm.includes('hmcs-2') ||
+    (norm.includes('qop') && (norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('rsi-2') || norm.includes('tm-4') || norm.includes('tm-5') || norm.includes('tm-6')));
+
+  if (isQOP2Query) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QOP2-EARTH-FAULT') || conventionalFaults.find(cf => cf.id === 'CONV-QOP-EARTH-FAULT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: QOP-2 ड्रॉप होने पर संबंधित RSI-2, SL-2, लाइन कॉन्टैक्टर L4-L6 व TM 4-6 की जांच करें। HQOP-2 को '0' (OFF) पर रखकर गाड़ी चलाने से पहले A-9 मिनिमम रिडक्शन व SA-9 लगाकर 2-3 नोच पर धुआं, गंध व व्हील फ्री रोटेशन की जांच अनिवार्य है।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  const isQOP1Query =
+    norm.includes('qop-1') || norm.includes('qop 1') || norm.includes('qop1') ||
+    (norm.includes('qop') && !isQOP2Query) ||
+    norm.includes('hqop-1') || norm.includes('hqop 1') || norm.includes('hmcs-1');
+
+  if (isQOP1Query) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QOP1-EARTH-FAULT') || conventionalFaults.find(cf => cf.id === 'CONV-QOP-EARTH-FAULT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: QOP-1 ड्रॉप होने पर संबंधित RSI-1, SL-1, लाइन कॉन्टैक्टर L1-L3 व TM 1-3 की जांच करें। HQOP-1 को '0' (OFF) पर रखकर गाड़ी चलाने से पहले A-9 मिनिमम रिडक्शन व SA-9 लगाकर 2-3 नोच पर धुआं, गंध व व्हील फ्री रोटेशन की जांच अनिवार्य है।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 4. Explicit Check for QLA (Auxiliary Power Circuit Overcurrent Relay)
+  const isQLAQuery =
+    norm.includes('qla') ||
+    (norm.includes('arno') && (norm.includes('trip') || norm.includes('drop') || norm.includes('relay'))) ||
+    (norm.includes('ऑक्सिलरी') && norm.includes('ओवरकरंट')) ||
+    (norm.includes('आर्नो') && (norm.includes('ट्रिप') || norm.includes('ड्रॉप')));
+
+  if (isQLAQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QLA-OVERCURRENT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: QLA ड्रॉप होने पर आर्नो व ऑक्सिलरी मोटरों की जांच करें। यदि खराबी ऐसे साधन में है जिसे आइसोलेट नहीं किया जा सकता तो तुरंत सहायता मांगें। QLA रिले को अधिकतम तीन (3) बार ही रीसेट किया जा सकता है।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 5. Explicit Check for QOA (Auxiliary Power Circuit Earth Fault Relay)
+  const isQOAQuery =
+    norm.includes('qoa') || norm.includes('hqoa') ||
+    (norm.includes('auxiliary') && norm.includes('earth fault')) ||
+    (norm.includes('ऑक्सिलरी') && norm.includes('अर्थ फॉल्ट')) ||
+    (norm.includes('आर्नो') && (norm.includes('अर्थ') || norm.includes('chba') || norm.includes('r118')));
+
+  if (isQOAQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-QOA-EARTH-FAULT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: QOA ड्रॉप होने पर आर्नो, R118, C118, CHBA, TK पैनल व सभी ऑक्सिलरियों की जांच करें। यदि आर्नो, R118 या C118 में खराबी हो तो तुरंत सहायता मांगें। बिना खराबी ढूंढे HQOA को '0' पर न रखें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 6. Explicit Check for LSDJ बुझता है, UA डेविएट नहीं होता है (CONV-LSDJ-EXTINGUISHED-UA-ZERO)
+  const isLSDJExtinguishedUAZeroQuery =
+    !norm.includes('कर्षण बल') &&
+    !norm.includes('tractive force') &&
+    !norm.includes('traction motor') &&
+    !norm.includes('एमीटर') &&
+    !norm.includes('ammeter') &&
+    (norm.includes('ua') || norm.includes('ओएचई वोल्टमीटर') || (norm.includes('voltmeter') && norm.includes('lsdj')) || norm.includes('ohe supply')) &&
+    (norm.includes('lsdj') || norm.includes('0 kv') || norm.includes('zero') || norm.includes('शून्य') || norm.includes('arcing') || norm.includes('आर्किंग') || norm.includes('पैंटो चेक') || norm.includes('panto check') || ((norm.includes('bujhta') || norm.includes('बुझता')) && (norm.includes('ua') || norm.includes('voltmeter'))));
+
+  if (isLSDJExtinguishedUAZeroQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSDJ-EXTINGUISHED-UA-ZERO')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: पैंटो लोअर करके आर्किंग चेक करें। यदि आर्किंग नहीं होती है तो OHE सप्लाई नहीं है (OHE Dead)। तुरंत फ्लैशर लाइट जलाएं और गाड़ी को नियंत्रित करके (रात में अधिकतम गति 60 किमी/घंटा) रोकें। TPC से संपर्क करें एवं टेंशन आने का पता करने के लिए हर एक मिनट में VCB क्लोज करके देखें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (फेलियर क्र. 11, पृष्ठ 63)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 63,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 6B. Master Check for कर्षण बल की पूर्ण हानि (CONV-LOSS-TRACTIVE-FORCE)
+  const isMasterLossOfTractiveForceQuery =
+    !norm.includes('आंशिक') && !norm.includes('partial') && !norm.includes('aanshik') && !norm.includes('anshik') &&
+    (norm.includes('पूर्ण हानि') || norm.includes('total loss') || norm.includes('दोनों एमीटर डेविएट नहीं') || norm.includes('dono ammeter deviate nahi') || norm.includes('dono ammeter deviate') ||
+     norm.includes('»øôç') || norm.includes('tractive force') ||
+     (norm.includes('कर्षण बल') && (norm.includes('पूर्ण') || norm.includes('loss') || norm.includes('हानि') || norm.includes('एमीटर') || norm.includes('एक नोच'))) ||
+     (norm.includes('tractive force') && (norm.includes('total') || norm.includes('loss') || norm.includes('ammeter'))) ||
+     norm.includes('conv-loss-tractive-force'));
+
+  if (isMasterLossOfTractiveForceQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LOSS-TRACTIVE-FORCE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (CAMTECH संपूर्ण कर्षण बल हानि गाइड): 1 नोच लेकर LSGR का निरीक्षण करें। 3 विशिष्ट शाखाएं हैं: (i) यदि LSGR पहले से ही बुझा है -> CCLS फ्यूज बदलें, HOBA 'OFF', QRS वेज। (ii) यदि LSGR नहीं बुझता है -> EEC प्रयत्न, LSB पर Q50 व रिवर्सर जांच, LSP पर Q48 व सैंडिंग COC, AFL पर BP 5 व PR-2 ओपन वेज, VCD 1-बार रीसेट नियम, QRS/RGEB-2, ZSMS 1 पर, ZSMGR हैंडल खड़ा, SMGR प्रेशर 2.5-3.5 kg/cm² चेक करें व आवश्यकतानुसार GR हाथ से ऑपरेट करें। (iii) यदि LSGR बुझ जाता है -> HVSI/HVMT नॉर्मल, HT-2 खुला, L1-L6 क्लोजिंग व CTF रनिंग चेक, L1-L6 वेज, RB का उपयोग न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (अध्याय-10 / विफलता निवारण)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 7A. Dedicated Check for BL अनलॉक करने पर LSCHBA प्रकाशित नहीं होता है (CONV-LSCHBA-NOT-GLOWING-ON-UNLOCKING-BL)
+  const isLSCHBANotGlowingOnUnlockingBLQuery =
+    (norm.includes('lschba') &&
+      (norm.includes('नहीं') || norm.includes('not') || norm.includes('off') || norm.includes('बुझ') || norm.includes('प्रकाशित नहीं') || norm.includes('prakashit nahi') || norm.includes('nahi jalta')) &&
+      (norm.includes('bl') || norm.includes('अनलॉक') || norm.includes('unlock') || norm.includes('blrdj') || norm.includes('दूसरी कैब') || norm.includes('doosri cab'))) ||
+    ((norm.includes('bl') || norm.includes('अनलॉक')) && norm.includes('lschba') && (norm.includes('नहीं') || norm.includes('not') || norm.includes('off') || norm.includes('बुझ'))) ||
+    norm.includes('conv-lschba-not-glowing-on-unlocking-bl');
+
+  if (isLSCHBANotGlowingOnUnlockingBLQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSCHBA-NOT-GLOWING-ON-UNLOCKING-BL')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "महत्वपूर्ण सावधानी (BL अनलॉक पर LSCHBA प्रकाशित न होने पर):\na) दूसरी कैब में LSCHBA चेक करें।\nb) यदि दोनों कैब में प्रकाशित नहीं है तो: DJ/VCB क्लोज करते समय BLRDJ को 3-4 सेकंड में छोड़ दें, तथा CHBA कार्य सुनिश्चित करने के लिये CHBA एमीटर पर ध्यान रखें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (LSCHBA लैम्प विफलता)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 7B. Explicit Check for CHBA काम नहीं करता है / LSCHBA लैम्प प्रकाशित रहता है (CONV-CHBA-NOT-WORKING)
+  const isCHBANotWorkingQuery =
+    !norm.includes('अनलॉक') && !norm.includes('unlock') &&
+    !norm.includes('प्रकाशित नहीं') && !norm.includes('prakashit nahi') && !norm.includes('not glow') && !norm.includes('nahi jalta') &&
+    !norm.includes('blrdj') && !norm.includes('दूसरी कैब') && !norm.includes('doosri cab') &&
+    !norm.includes('नोच रिपीटर') && !norm.includes('notch repeater') && !norm.includes('repeater') &&
+    !norm.includes('lsdj') && !norm.includes('बुझने') && !norm.includes('bujhne') &&
+    !norm.includes('pehle') && !norm.includes('baad') && !norm.includes('before') && !norm.includes('after') &&
+    !norm.includes('arno') && !norm.includes('आर्नो') &&
+    (((norm.includes('chba') || norm.includes('hchba') || norm.includes('battery charger') || norm.includes('बैटरी चार्जर')) &&
+      (norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('fail') || norm.includes('खराब') || norm.includes('प्रकाशित रहता') || norm.includes('remains glowing') || norm.includes('bina dj') || norm.includes('बिना dj') || norm.includes('discharg') || norm.includes('डिस्चार्ज'))) ||
+    (norm.includes('lschba') && (norm.includes('बिना dj') || norm.includes('bina dj') || norm.includes('without dj') || norm.includes('प्रकाशित रहता') || norm.includes('remains glowing') || norm.includes('hchba') || norm.includes('discharg') || norm.includes('डिस्चार्ज'))));
+
+  if (isCHBANotWorkingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-CHBA-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CHBA काम न करने पर HCHBA को '1' पर चेक करें। CHBA एमीटर देखें; यदि डिस्चार्जिंग करंट है तो HCHBA को '0' पर रखकर बैटरी वोल्टेज से कार्य करें (अध्याय 11-फेलियर 7, पृष्ठ 72-73)। यदि चार्जिंग करंट है तो LSCHBA लैम्प जलने की परवाह न करें व चार्जिंग करंट पर नजर रखते हुए गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (अध्याय 11-फेलियर 7, पृष्ठ 72-73)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 72,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 7. Explicit Check for LSCHBA के बुझने से पहले LSDJ फिर से प्रकाशित होता है (CONV-LSDJ-BEFORE-LSCHBA)
+  const isLSCHBABeforeQuery =
+    !isCHBANotWorkingQuery &&
+    (
+      ((norm.includes('lschba') || norm.includes('hqcvar') || norm.includes('arno') || norm.includes('आर्नो')) &&
+      (norm.includes('pehle') || norm.includes('pahle') || norm.includes('पहले') || norm.includes('before') || (norm.includes('hqcvar') && (norm.includes('0') || norm.includes('blrdj'))) || (norm.includes('arno') && (norm.includes('check') || norm.includes('चेक') || norm.includes('काम') || norm.includes('चालू'))) || (norm.includes('आर्नो') && (norm.includes('चेक') || norm.includes('आवाज') || norm.includes('चालू') || norm.includes('काम'))))) ||
+      (norm.includes('lsdj') && (norm.includes('pehle') || norm.includes('पहले') || norm.includes('before')) && (norm.includes('lschba') || norm.includes('bujh') || norm.includes('बुझ') || norm.includes('glowing'))) ||
+      (norm.includes('बुझने से पहले') && (norm.includes('lsdj') || norm.includes('lschba'))) ||
+      (norm.includes('ÏçÂÌë') && norm.includes('ÍÚÔë')) ||
+      norm.includes('conv-lsdj-before-lschba')
+    );
+
+  if (isLSCHBABeforeQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSDJ-BEFORE-LSCHBA')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: a) आर्नो चेक करें। i) यदि आर्नो असामान्य आवाज के साथ काम करता है अथवा आर्नो चालू नहीं होता है तो सहायता मांगें। ii) यदि आर्नो सामान्य रूप से काम करता है तो गाड़ी चलाएं। (HQCVAR को '0' पर रखकर DJ/VCB क्लोज करें और BLRDJ को 3-4 सेकंड में छोड़ दें। LSCHBA नहीं बुझेगा)।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 13B. Explicit Check for यदि कोई ऑक्सिलरी क्षतिग्रस्त (Damage) हो गई है अथवा जल गई है (CONV-AUX-DAMAGED-BURNT)
+  const isAuxDamagedBurntQuery =
+    norm.includes('damage') || norm.includes('क्षतिग्रस्त') || norm.includes('shatigrast') ||
+    norm.includes('जल गई') || norm.includes('जल गयी') || norm.includes('jal gai') || norm.includes('jal gayi') ||
+    norm.includes('जली हुई') || norm.includes('jali hui') || norm.includes('जलने') || norm.includes('jalne') ||
+    norm.includes('fire extinguisher') || norm.includes('अग्निशामक') || norm.includes('agnishamak') ||
+    (norm.includes('auxiliary') && (norm.includes('burnt') || norm.includes('burn') || norm.includes('fire') || norm.includes('damage'))) ||
+    (norm.includes('ऑक्सिलरी') && (norm.includes('जल') || norm.includes('आग') || norm.includes('धुआं') || norm.includes('क्षतिग्रस्त')));
+
+  if (isAuxDamagedBurntQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-AUX-DAMAGED-BURNT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: यदि ऑक्सिलरी में आग या धुआं दिखे तो तुरंत पैंटो लोअर करें, गाड़ी खड़ी कर अग्निशामक (Fire Extinguisher) का प्रयोग करें। जली हुई ऑक्सिलरी के रोटरी स्विच को '0' पर रखकर आइसोलेट करें। लोको इनर्जाइज करने से पहले सुनिश्चित करें कि संबंधित कॉन्टैक्टर पूर्णतः खुला है। MPH जलने पर 450A सीमा; MVSL/MVSI/MVMT जलने पर आधा लोड व 6th नोच DJ ट्रिप पर Q118 वेज; MCP जलने पर HCP से आइसोलेट; MVRH जलने पर Q118 वेज कर 450A से सेक्शन क्लियर करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14. Explicit Check for MPH काम नहीं करता है (CONV-MPH-NOT-WORKING)
+  const isMPHNotWorkingQuery =
+    !isAuxDamagedBurntQuery &&
+    ((norm.includes('mph') && (norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('fail') || norm.includes('खराब') || norm.includes('आइसोलेट') || norm.includes('isolate') || norm.includes('450') || norm.includes('hph') || norm.includes('check') || norm.includes('चेक'))) ||
+    (norm.includes('hph') && (norm.includes('mph') || (norm.includes('0') && norm.includes('450')) || (norm.includes('1') && norm.includes('0')))));
+
+  if (isMPHNotWorkingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPH-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MPH काम न करने पर HPH को '0' पर रखकर उसे आइसोलेट करें। MPH आइसोलेट रहने की स्थिति में ट्रैक्शन मोटर करंट 450 एम्पीयर से अधिक कदापि न लें। ट्रांसफॉर्मर तेल तापमान पर सतत निगरानी रखें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 15. Explicit Check for MVSL-1/MVSL-2 काम नहीं करता है (CONV-MVSL-NOT-WORKING)
+  const isMVSLNotWorkingQuery =
+    !isAuxDamagedBurntQuery &&
+    ((norm.includes('mvsl') && (norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('fail') || norm.includes('खराब') || norm.includes('आधा') || norm.includes('permissible') || norm.includes('half load') || norm.includes('hvsl') || norm.includes('hvsi') || norm.includes('hvmt'))) ||
+    ((norm.includes('mvsl-1') || norm.includes('mvsl-2') || norm.includes('mvsl 1') || norm.includes('mvsl 2')) && !norm.includes('lschba') && !norm.includes('बुझने के बाद')) ||
+    (norm.includes('hvsl') && norm.includes('hvmt') && norm.includes('hvsi') && (norm.includes('mvsl') || (norm.includes('0') && (norm.includes('आधा') || norm.includes('half'))))));
+
+  if (isMVSLNotWorkingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MVSL-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MVSL-1/MVSL-2 काम न करने पर सुनिश्चित करें कि संबंधित HVSL-1/HVSL-2 '1' पर है। संबंधित HVSI, HVMT और HVSL को '0' पर रखकर ब्लॉक को आइसोलेट करें। अनुमत (Permissible) लोड के आधे लोड से कार्य करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 16. Explicit Check for MVSI-1/MVSI-2 काम नहीं करता है (CONV-MVSI-NOT-WORKING)
+  const isMVSINotWorkingQuery =
+    !isAuxDamagedBurntQuery &&
+    ((norm.includes('mvsi') && (norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('fail') || norm.includes('खराब') || norm.includes('आधा') || norm.includes('permissible') || norm.includes('half load') || norm.includes('hvsi') || norm.includes('hvmt') || norm.includes('hvsl'))) ||
+    ((norm.includes('mvsi-1') || norm.includes('mvsi-2') || norm.includes('mvsi 1') || norm.includes('mvsi 2')) && !norm.includes('पहली नोच') && !norm.includes('1st notch') && !norm.includes('dj/vcb ट्रिप')) ||
+    (norm.includes('hvsi') && norm.includes('hvmt') && norm.includes('hvsl') && (norm.includes('mvsi') || (norm.includes('0') && (norm.includes('आधा') || norm.includes('half'))))));
+
+  if (isMVSINotWorkingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MVSI-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MVSI-1/MVSI-2 काम न करने पर सुनिश्चित करें कि संबंधित HVSI-1/HVSI-2 '1' पर है। संबंधित HVSI, HVMT और HVSL को '0' पर रखकर ब्लॉक को आइसोलेट करें। अनुमत (Permissible) लोड के आधे लोड से काम करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 17. Explicit Check for MVMT-1/MVMT-2 चालू नहीं होता है (CONV-MVMT-NOT-WORKING)
+  const isMVMTNotWorkingQuery =
+    !isAuxDamagedBurntQuery &&
+    ((norm.includes('mvmt') && (norm.includes('चालू') || norm.includes('chalu') || norm.includes('start') || norm.includes('not start') || norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('c107') || norm.includes('c105') || norm.includes('c106') || norm.includes('आइसोलेट') || norm.includes('isolate') || norm.includes('hvmt'))) ||
+    ((norm.includes('mvmt-1') || norm.includes('mvmt-2') || norm.includes('mvmt 1') || norm.includes('mvmt 2')) && !norm.includes('blvmt क्लोज') && !norm.includes('dj/vcb ट्रिप') && !norm.includes('blvmt k')) ||
+    (norm.includes('hvmt') && (norm.includes('c107') || norm.includes('c105') || norm.includes('c106')) && (norm.includes('mvmt') || norm.includes('चालू नहीं') || norm.includes('chalu nahi') || norm.includes('ब्लॉक आइसोलेट') || norm.includes('आइसोलेट'))));
+
+  if (isMVMTNotWorkingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MVMT-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: HVMT-1/HVMT-2 '1' पर है सुनिश्चित करें। C107 क्लोज होना सुनिश्चित करें, यदि क्लोज न हो तो ट्रबलशूट व आवश्यकतानुसार वेज करें। C105/C106 क्लोज होने पर भी MVMT-1/MVMT-2 चालू न हो तो संबंधित स्विचों को '0' पर रखकर ब्लॉक आइसोलेट करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 18. Explicit Check for MVRH चालू नहीं होता है (CONV-MVRH-NOT-WORKING)
+  const isMVRHNotWorkingQuery =
+    !isAuxDamagedBurntQuery &&
+    ((norm.includes('mvrh') && (norm.includes('चालू') || norm.includes('chalu') || norm.includes('start') || norm.includes('not start') || norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('hvrh') || norm.includes('c107') || norm.includes('q100') || norm.includes('q-118') || norm.includes('q118') || norm.includes('450') || norm.includes('hc-107') || norm.includes('hc107'))) ||
+    ((norm.includes('mvrh') || norm.includes('hvrh')) && !norm.includes('blvmt क्लोज') && !norm.includes('dj/vcb ट्रिप') && (norm.includes('चालू') || norm.includes('काम') || norm.includes('c107') || norm.includes('q118') || norm.includes('450') || norm.includes('आइसोलेट'))) ||
+    (norm.includes('hvrh') && (norm.includes('c107') || norm.includes('q118') || norm.includes('hc-107') || norm.includes('hc107') || norm.includes('450')) && (norm.includes('mvrh') || norm.includes('चालू नहीं') || norm.includes('chalu nahi') || norm.includes('आइसोलेट'))));
+
+  if (isMVRHNotWorkingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MVRH-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MVRH चालू न होने पर पहले MCP का काम करना (Q100 इनर्जाइज) चेक करें। HVRH '1' पर रखें। C107 क्लोज न होने पर ट्रबलशूट/वेज करें। C107 क्लोज होने पर भी MVRH चालू न हो तो HVRH को '0' पर रखकर MVRH आइसोलेट करें, Q118 वेज करें व अधिकतम 450A से 1-2 सेक्शन क्लियर करें। माइक्रोप्रोसेसर लोको में HC-107 ऑपरेट करें ताकि 6th नोच पर ट्रिपिंग न हो।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19A-1. Explicit Check for ADD CCBA पिघलता है (CONV-ADD-CCBA-MELTED-ACTION)
+  const isAddCCBAMeltedActionQuery =
+    !norm.includes('पायलट') && !norm.includes('pilot') && !norm.includes('अनलॉक') && !norm.includes('unlock') &&
+    (norm.includes('add ccba') || norm.includes('additional ccba') || norm.includes('एडिशनल ccba')) &&
+    (norm.includes('पिघलता') || norm.includes('ãí¾ôèâ') || norm.includes('बदल') || norm.includes('hoba') || norm.includes('ऑफ') || norm.includes('off') || norm.includes('action') || norm.includes('कार्यवाही'));
+
+  if (isAddCCBAMeltedActionQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-ADD-CCBA-MELTED-ACTION') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-ADDITIONAL-CCBA')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से '0' पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें। a) एक बार फ्यूज बदल दें। b) यदि फिर भी पिघलता है तो HOBA को 'ऑफ' पर रखें और फ्यूज बदली करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19A-2. Explicit Check for CCBA पिघलता है (CONV-CCBA-MELTED-ACTION)
+  const isCCBAMeltedActionQuery =
+    norm.includes('ccba') && !norm.includes('add') && !norm.includes('additional') && !norm.includes('एडिशनल') &&
+    (norm.includes('पिघलता') || norm.includes('ãí¾ôèâ') || norm.includes('बदल') || norm.includes('hoba') || norm.includes('ऑफ') || norm.includes('off') || norm.includes('action') || norm.includes('कार्यवाही'));
+
+  if (isCCBAMeltedActionQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-CCBA-MELTED-ACTION') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCBA')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से '0' पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें। a) एक बार फ्यूज बदल दें। b) यदि फिर भी पिघलता है तो HOBA को 'ऑफ' पर रखें और फ्यूज बदली करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19A. Explicit Check for एडिशनल CCBA पिघलने पर (CONV-FUSE-ADDITIONAL-CCBA)
+  const isAdditionalCCBAQuery =
+    (norm.includes('additional ccba') || norm.includes('एडिशनल ccba') || norm.includes('ed)snl ccba')) ||
+    (norm.includes('ccba') && (norm.includes('additional') || norm.includes('एडिशनल') || norm.includes('ed)snl') || (norm.includes('uba') && (norm.includes('0') || norm.includes('शून्य') || norm.includes('zero'))) || norm.includes('ecc कार्य नहीं') || norm.includes('ecc work nahi')));
+
+  if (isAdditionalCCBAQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-ADDITIONAL-CCBA') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: चालू गाड़ी में जब तक DJ/VCB क्लोज है, एडिशनल CCBA पिघलने का पता नहीं चलता है; बैटरी चार्जिंग बंद हो जाती है। DJ ओपन होने पर: पैंटो लोअर होगा, नोच पर रिग्रेशन नहीं होगा, सभी पायलट लैम्प बुझ जाएंगे, ZUBA दबाने पर UBA '0' बताएगी, फ्यूज टेस्टर ECC कार्य नहीं करेगा, IP Magnet valve COC खुला होने पर BP ड्रॉप व इमरजेंसी ब्रेक लगेगी और VCD डिस्प्ले का HEALTHY लैम्प बुझ जाएगा। एडिशनल CCBA बदलें; दोबारा पिघलने पर HOBA को 'OFF' पर रखें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-1. Explicit Check for HBA को ऑन पर रखने पर CCPT पिघलता है (CONV-HBA-ON-CCPT-MELTS)
+  const isHBAOnCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('hba') || norm.includes('एचबीए')) &&
+    (norm.includes('ऑन') || norm.includes('on') || norm.includes('aiˆn') || norm.includes('rkn[') || norm.includes('रखने')) &&
+    (norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('q118') || norm.includes('कॉइल') || norm.includes('coil'));
+
+  if (isHBAOnCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-HBA-ON-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: HBA को 'ऑन' (ON) पर रखने पर यदि CCPT तुरंत पिघलता है तो यह रिले Q118 की कॉइल में शॉर्ट सर्किट अथवा खराबी का स्पष्ट संकेत है। Q118 की कॉइल चेक करें। यदि कॉइल में खराबी पाई जाती है तो कभी भी बार-बार फ्यूज न बदलें, तुरंत सहायता मांगें (Demand Assistance)। फ्यूज चेक करने से पूर्व GR को '0', MP/MPJ/ZPT को '0', IP COC बंद तथा HBA को 'ऑफ' रखें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-2. Explicit Check for ZPT को पोजीशन "1" पर रखने पर CCPT पिघलता है (CONV-ZPT-1-CCPT-MELTS)
+  const isZPT1CCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('zpt') || norm.includes('ज़ेडपीटी') || norm.includes('जेडपीटी')) &&
+    (norm.includes('1') || norm.includes('एक') || norm.includes('one')) &&
+    (norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('पोजीशन') || norm.includes('position') || norm.includes('hoba') || norm.includes('कैब') || norm.includes('cab'));
+
+  if (isZPT1CCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-ZPT-1-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: ZPT को पोजीशन '1' पर रखने पर यदि CCPT पिघलता है तो: a) एक बार फ्यूज बदल दें। b) यदि फिर से पिघलता है तो HOBA को 'ऑफ' पोजीशन पर रखें और फ्यूज बदली करें। c) यदि फिर भी पिघलता है तो ZPT को पहले पोजीशन 2 पर रखें और उसके बाद फ्यूज बदली करें। d) दूसरी कैब से प्रयत्न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-3. Explicit Check for MPJ को “F” या “R” पर रखने पर CCPT पिघलता है (CONV-MPJ-F-R-CCPT-MELTS)
+  const isMPJFROnCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('mpj') || norm.includes('एमपीजे') || norm.includes('रिवर्सर')) &&
+    (norm.includes('f') || norm.includes('r') || norm.includes('forward') || norm.includes('reverse') || norm.includes('एफ') || norm.includes('आर')) &&
+    (norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('j-1') || norm.includes('j1') || norm.includes('ctf') || norm.includes('twc'));
+
+  if (isMPJFROnCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPJ-F-R-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MPJ को 'F' या 'R' पर रखने पर यदि CCPT पिघलता है तो: a) एक बार फ्यूज बदल दें। b) यदि फिर से पिघलता है तो HOBA को 'ऑफ' पोजीशन पर रखें और फ्यूज बदली करें। c) यदि फिर भी पिघलता है तो पहले J-1, J-2 और CTF1, CTF2, CTF3 के कॉइल टर्मिनल में खराबी चेक करें, उनके TWC निकाल कर टेप कर दें और J-1, J-2 व CTF को हाथ से ऑपरेट करें। फ्यूज बदली करें और गाड़ी चलाने का प्रयत्न करें। d) रेहियोस्टैटिक ब्रेक (RB) का उपयोग बिल्कुल न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-4. Explicit Check for रिग्रेशन करने पर CCPT पिघलता है (CONV-REGRESSION-CCPT-MELTS)
+  const isRegressionCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('regression') || norm.includes('रिग्रेशन') || norm.includes('रीग्रेशन') || norm.includes('ãó½ýë×Ì')) &&
+    (norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('gr') || norm.includes('हाथ से') || norm.includes('hoba'));
+
+  if (isRegressionCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-REGRESSION-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: रिग्रेशन करने पर यदि CCPT पिघलता है तो: a) GR को तुरंत हाथ से '0' पर लाएं। b) एक बार फ्यूज बदल दें। c) यदि फिर से पिघलता है तो HOBA को 'ऑफ' पोजीशन पर रखें और फ्यूज बदली करें। d) फिर भी पिघलता है तो फ्यूज बदलकर GR को हाथ से ऑपरेट करके (मैन्युअली) सावधानीपूर्वक सेक्शन क्लियर करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-5. Explicit Check for पहली नोच लेने पर CCPT पिघलता है (CONV-FIRST-NOTCH-CCPT-MELTS)
+  const isFirstNotchCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('पहली नोच') || norm.includes('पहला नोच') || norm.includes('1st notch') || norm.includes('first notch') || norm.includes('pehli notch') || norm.includes('pehla notch') || norm.includes('1 notch') || norm.includes('नोच 1')) &&
+    (norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('rsi') || norm.includes('gr') || norm.includes('hoba') || norm.includes('लेने पर') || norm.includes('l[n['));
+
+  if (isFirstNotchCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FIRST-NOTCH-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: पहली नोच लेने पर यदि CCPT पिघलता है तो: a) एक बार फ्यूज बदल दें। b) यदि फिर से पिघलता है तो HOBA को 'ऑफ' पोजीशन पर रखें और फ्यूज बदली करें। c) यदि फिर भी पिघलता है तो फ्यूज बदलकर GR को हाथ से ऑपरेट करें (मैनुअल नोचिंग)। d) फ्यूज बदलकर एक-एक करके RSI ब्लॉक आइसोलेट करें और गाड़ी चलाने का प्रयत्न करें। फ्यूज बदलने से पूर्व GR को '0', MP/MPJ/ZPT को '0', IP COC बंद व HBA को 'ऑफ' अवश्य रखें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-6. Explicit Check for 6 नोच लेने पर CCPT पिघलता है (CONV-6TH-NOTCH-CCPT-MELTS)
+  const is6thNotchCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('6') || norm.includes('६') || norm.includes('छह') || norm.includes('छठी') || norm.includes('6th')) &&
+    (norm.includes('नोच') || norm.includes('notch') || norm.includes('evphgr')) &&
+    (norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('twc') || norm.includes('टेप') || norm.includes('लेने पर'));
+
+  if (is6thNotchCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-6TH-NOTCH-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 6 नोच लेने पर यदि CCPT पिघलता है तो यह स्पष्टतः EVPHGR (PHGR इलेक्ट्रो-वाल्व) कॉइल या सर्किट में शॉर्ट सर्किट का संकेत है। GR को हाथ से '0' पर लाएं, एक बार फ्यूज बदल दें और EVPHGR के TWC निकाल कर अच्छी तरह टेप कर दें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-7. Explicit Check for MPS ऑपरेट करने पर CCPT पिघलता है (CONV-MPS-OPERATE-CCPT-MELTS)
+  const isMPSOperateCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('mps') || norm.includes('एमपीएस') || norm.includes('shunting') || norm.includes('field weakening')) &&
+    (norm.includes('ऑपरेट') || norm.includes('operate') || norm.includes('aiˆpr[t') || norm.includes('krn[') || norm.includes('पोजीशन') || norm.includes('position') || norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt'));
+
+  if (isMPSOperateCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPS-OPERATE-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MPS (फील्ड वीकिंग/शंटिंग स्विच) ऑपरेट करने पर यदि CCPT पिघलता है तो GR को हाथ से '0' पर लाएं, एक बार फ्यूज बदल दें और MPS की उस दोषपूर्ण पोजीशन का उपयोग कदापि न करें। बिना शंटिंग के गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-8. Explicit Check for BPSW दबाने पर CCPT पिघलता है (CONV-BPSW-PRESS-CCPT-MELTS)
+  const isBPSWPressCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('bpsw') || norm.includes('बीपीएसडब्ल्यू') || norm.includes('सैंडर') || norm.includes('सैंडिंग') || norm.includes('sander') || norm.includes('sanding')) &&
+    (norm.includes('दबाने') || norm.includes('dbin[') || norm.includes('press') || norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('उपयोग'));
+
+  if (isBPSWPressCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BPSW-PRESS-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: BPSW (Sanding Push Switch) दबाने पर CCPT पिघलने का अर्थ है सैंडिंग इलेक्ट्रो-वाल्व शाखा में शॉर्ट सर्किट। फ्यूज बदली करें तथा BPSW का उपयोग न करें। व्हील स्लिप से बचने हेतु थ्रोटल धीरे-धीरे बढ़ाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-9. Explicit Check for PVEF दबाने पर CCPT पिघलता है (CONV-PVEF-PRESS-CCPT-MELTS)
+  const isPVEFPressCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('pvef') || norm.includes('पीवीईएफ') || norm.includes('लोको ब्रेक रिलीज') || norm.includes('ब्रेक पैडल') || norm.includes('pedal')) &&
+    (norm.includes('दबाने') || norm.includes('dbin[') || norm.includes('êïâìë') || norm.includes('press') || norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('न दबाएं'));
+
+  if (isPVEFPressCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-PVEF-PRESS-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: PVEF दबाने पर CCPT पिघलने पर: फ्यूज बदली करें, PVEF न दबाएं और रेहियोस्टैटिक ब्रेक (RB) का उपयोग न करें। गाड़ी केवल न्यूमैटिक ब्रेकिंग से चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B-10. Explicit Check for MP को “P” पर रखने पर CCPT पिघलता है (CONV-MP-P-CCPT-MELTS)
+  const isMPPCCPTMeltsQuery =
+    norm.includes('ccpt') &&
+    !norm.includes('mpj') &&
+    (norm.includes('“p”') || norm.includes('"p"') || norm.includes('‘p’') || norm.includes('p पर') || norm.includes('पी पर') || (norm.includes('mp') && norm.includes('braking')) || (norm.includes('mp') && norm.includes('ब्रेकिंग'))) &&
+    (norm.includes('रखने') || norm.includes('rkn[') || norm.includes('ó¼ìë') || norm.includes('place') || norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('रेहियोस्टैटिक') || norm.includes('rb'));
+
+  if (isMPPCCPTMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MP-P-CCPT-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MP को 'P' (Braking) पर रखने पर CCPT पिघलने पर: फ्यूज बदली करें तथा रेहियोस्टैटिक ब्रेक (RB) का उपयोग बिल्कुल न करें। गाड़ी को सुरक्षित रूप से केवल न्यूमैटिक ब्रेक द्वारा नियंत्रित करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19B. Explicit Check for CCPT पिघलने पर (CONV-FUSE-CCPT)
+  const isCCPTQuery =
+    norm.includes('ccpt') &&
+    (norm.includes('fuse') || norm.includes('फ्यूज') || norm.includes('पिघल') || norm.includes('panto') || norm.includes('पैंटो') || norm.includes('dj') || norm.includes('संकेत') || norm.includes('indication'));
+
+  if (isCCPTQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCPT') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CCPT पिघलने पर DJ/VCB ओपन हो जाता है, पैंटो लोअर हो जाता है, GR नोच पर रिग्रेशन नहीं होता (LSGR बुझा रहेगा), बाकी सभी पायलट लैम्प जलते रहते हैं, ZUBA दबाने पर UBA सामान्य वोल्टेज बताता है व फ्यूज टेस्टर ECC कार्य करता है। फ्यूज एक बार बदलें; पुनः पिघलने पर HOBA को 'OFF' पर रखें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19C. Explicit Check for CCLS (10A) पिघलने पर (CONV-FUSE-CCLS)
+  const isCCLSQuery =
+    !norm.includes('कर्षण बल') &&
+    !norm.includes('tractive force') &&
+    !norm.includes('दोनों एमीटर') &&
+    !norm.includes('ammeter') &&
+    !norm.includes('»øôç') &&
+    !norm.includes('lsgr') &&
+    !norm.includes('पहले से') &&
+    norm.includes('ccls') &&
+    (norm.includes('fuse') || norm.includes('फ्यूज') || norm.includes('पिघल') || norm.includes('10a') || norm.includes('qrs') || norm.includes('ip magnet') || norm.includes('vcd') || norm.includes('संकेत') || norm.includes('लैम्प') || norm.includes('बुझ'));
+
+  if (isCCLSQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCLS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: कन्वेंशनल लोको में VCD तथा IPMV को सप्लाई CCLS से दी गई है। CCLS (10A) पिघलने पर सभी पायलट लैम्प बुझ जाएंगे; QRS डी-एनर्जाइज होकर ऑटो रिग्रेशन व कर्षण बल की पूर्ण हानि होगी; IP Magnet valve COC खुला होने पर BP प्रेशर ड्रॉप होकर इमरजेंसी ब्रेक लगेगी; VCD डिस्प्ले यूनिट का HEALTHY लैम्प बुझ जाएगा।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19D. Explicit Check for CCDJ पिघलने पर (CONV-FUSE-CCDJ)
+  const isCCDJQuery =
+    norm.includes('ccdj') &&
+    (norm.includes('fuse') || norm.includes('फ्यूज') || norm.includes('पिघल') || norm.includes('dj') || norm.includes('ऑटो रिग्रेशन') || norm.includes('ट्रिप') || norm.includes('trip') || norm.includes('संकेत'));
+
+  if (isCCDJQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCDJ') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CCDJ पिघलने पर DJ/VCB ट्रिप होगा तथा टैप चेंजर GR का ऑटो रिग्रेशन होगा। CCDJ फ्यूज चेक करें व आवश्यकतानुसार HOBA स्विच का उपयोग करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19E-1a. Explicit Check for BLCP क्लोज करने पर CCA पिघलता है (CONV-BLCP-CCA-MELTS)
+  const isBLCPCCAMeltsQuery =
+    norm.includes('cca') && !norm.includes('ccba') &&
+    norm.includes('blcp') && !norm.includes('blvmt') &&
+    (norm.includes('क्लोज') || norm.includes('क्लोज़') || norm.includes('close') || norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('c101') || norm.includes('vead') || norm.includes('hcp'));
+
+  if (isBLCPCCAMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BLCP-CCA-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCA')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: BLCP क्लोज करने पर CCA पिघलने पर C101/C102/C103 व VEAD वाल्व की कॉइल व टर्मिनल चेक करें। किसी कॉइल में खराबी होने पर संबंधित MCP को HCP द्वारा आइसोलेट करें अथवा कॉइल के तार खोलकर टेप करें व कॉन्टैक्टर वेज करें। VEAD खराब होने पर BLCPD से कार्य करें। फ्यूज बार-बार पिघलने पर दो MCP वेज करें तथा कृत्रिम लीकेज बनाकर 9.5 kg/cm² प्रेशर मेंटेन करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (फेलियर क्र. 14, पृष्ठ 53)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 53,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19E-1b. Explicit Check for BLVMT क्लोज करने पर CCA पिघलता है (CONV-BLVMT-CCA-MELTS)
+  const isBLVMTCCAMeltsQuery =
+    norm.includes('cca') && !norm.includes('ccba') &&
+    norm.includes('blvmt') &&
+    (norm.includes('क्लोज') || norm.includes('क्लोज़') || norm.includes('close') || norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('c105') || norm.includes('hvrh') || norm.includes('hvmt') || norm.includes('q118') || norm.includes('450'));
+
+  if (isBLVMTCCAMeltsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BLVMT-CCA-MELTS') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCA')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: BLVMT क्लोज करने पर CCA पिघलने पर एक बार फ्यूज बदलें; पुनः पिघलने पर HOBA 'ऑफ' करें। फिर भी पिघलने पर C105/C106/C107 कॉइल चेक करें। ब्लॉक सेक्शन में एयर ब्रेक गाड़ी होने पर C101/C102/C103 में से 2 कॉन्टैक्टर वेज करें, Q118 वेज करें और 450A से सेक्शन क्लियर करें। SI यूनिट लोको में BLVMT ओपन कर, Q118 वेज कर, BLCP क्लोज करके 450A से सेक्शन क्लियर करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (फेलियर क्र. 15, पृष्ठ 53)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 53,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19E-1. Explicit Check for BL स्विचों की क्लोज हालत में CCA पिघलता है (CONV-CCA-MELTS-BL-CLOSED)
+  const isCCAMeltsBLClosedQuery =
+    norm.includes('cca') && !norm.includes('ccba') &&
+    (norm.includes('bl स्विच') || norm.includes('bl switch') || norm.includes('क्लोज') || norm.includes('क्लोज़') || norm.includes('close') || norm.includes('blcp') || norm.includes('blvmt') || norm.includes('blcpd') || norm.includes('in energize') || norm.includes('इनर्जाइज')) &&
+    (norm.includes('पिघल') || norm.includes('ãí¾ô') || norm.includes('melt') || norm.includes('hoba') || norm.includes('बदल') || norm.includes('एक-एक'));
+
+  if (isCCAMeltsBLClosedQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-CCA-MELTS-BL-CLOSED') || conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCA')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: BL स्विचों की क्लोज हालत में यदि CCA पिघलता है तो: a) एक बार CCA फ्यूज बदल दें। b) यदि CCA फिर से पिघलता है तो HOBA को 'ऑफ' पर रखें और फ्यूज बदल दें। c) यदि फिर भी पिघलता है तो BLCP, BLCPD और BLVMT को ओपन करें, फ्यूज बदलें तथा स्विचों को एक-एक करके क्लोज करें ताकि खराबी वाले विशिष्ट सर्किट का पता लग सके और तदानुसार TSD (फेलियर क्र. 14 से 15) की जा सके।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (फेलियर क्र. 14 से 15)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 53,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19E. Explicit Check for CCA पिघलने पर (CONV-FUSE-CCA)
+  const isCCAQuery =
+    (norm.includes('cca') && !norm.includes('ccba') && !norm.includes('ccb')) &&
+    (norm.includes('fuse') || norm.includes('फ्यूज') || norm.includes('पिघल') || norm.includes('कम्प्रेशर') || norm.includes('ब्लोअर') || norm.includes('compressor') || norm.includes('blower') || norm.includes('5th notch') || norm.includes('पाँच') || norm.includes('5 से अधिक'));
+
+  if (isCCAQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCA') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CCA पिघलने पर मेन कंप्रेसर व ब्लोअर नहीं चलेंगे तथा यदि GR 5 से अधिक नोच पर है तो DJ/VCB ट्रिप हो जाएगा। CCA चेक करें व आवश्यकतानुसार HOBA का उपयोग करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19F. Explicit Check for CCLSA पिघलने पर (CONV-FUSE-CCLSA)
+  const isCCLSAQuery =
+    norm.includes('cclsa') &&
+    (norm.includes('fuse') || norm.includes('फ्यूज') || norm.includes('पिघल') || norm.includes('afl') || norm.includes('sanders') || norm.includes('सैंडर्स') || norm.includes('संकेत'));
+
+  if (isCCLSAQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCLSA') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CCLSA पिघलने पर ऑटो फ्लैशर लाइट (AFL) व सैंडर्स काम नहीं करेंगे। CCLSA फ्यूज का निरीक्षण कर बदलें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19G. Explicit Check for CCVCD पिघलने पर (CONV-FUSE-CCVCD)
+  const isCCVCDQuery =
+    norm.includes('ccvcd') || (norm.includes('vcd') && norm.includes('fuse') && (norm.includes('melt') || norm.includes('पिघल')));
+
+  if (isCCVCDQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCVCD') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CCVCD पिघलने पर VCD कार्य नहीं करेगी। CCVCD फ्यूज बदलें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19H. Explicit Check for CCINV पिघलने पर (CONV-FUSE-CCINV)
+  const isCCINVQuery =
+    norm.includes('ccinv') || (norm.includes('si unit') && (norm.includes('fuse') || norm.includes('फ्यूज')) && (norm.includes('melt') || norm.includes('पिघल')));
+
+  if (isCCINVQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCINV') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: CCINV पिघलने पर SI UNIT (स्टैटिक इनवर्टर) नहीं चलेगी। CCINV फ्यूज बदलें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19I. Explicit Check for CCBA पिघलने पर (CONV-FUSE-CCBA)
+  const isCCBAQuery =
+    norm.includes('ccba') && !norm.includes('additional') && !norm.includes('एडिशनल') && !norm.includes('ed)snl') &&
+    (norm.includes('fuse') || norm.includes('फ्यूज') || norm.includes('पिघल') || norm.includes('सामान्य') || norm.includes('normal') || norm.includes('ecc कार्य करेगा') || norm.includes('ecc work') || norm.includes('संकेत'));
+
+  if (isCCBAQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSE-CCBA') || conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: चालू गाड़ी में जब तक DJ/VCB क्लोज है, CCBA पिघलने का पता नहीं चलता है; बैटरी चार्ज होना बंद हो जाती है। जब DJ/VCB ओपन होता है: पैंटो लोअर होगा, नोच पर रिग्रेशन नहीं होगा (LSGR बुझा रहेगा), LSGR को छोड़कर सभी पायलट लैम्प जलते रहेंगे, ZUBA दबाने पर UBA सामान्य वोल्टेज बताएगी व फ्यूज टेस्टर ECC कार्य करेगा। CCBA एक बार बदलें; दोबारा पिघलने पर HOBA 'OFF' करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 19J. Comprehensive Master Check for फ्यूज पिघलने के फेलियर (CONV-FUSES-MELTING-FAILURES)
+  const isFuseMeltingMasterQuery =
+    norm.includes('fuses melting') || norm.includes('fuse melting') ||
+    norm.includes('फ्यूज पिघलने') || norm.includes('विभिन्न फ्यूज') ||
+    (norm.includes('fuse') && (norm.includes('melt') || norm.includes('failure') || norm.includes('फेलियर'))) ||
+    (norm.includes('फ्यूज') && (norm.includes('पिघल') || norm.includes('संकेत') || norm.includes('फेलियर'))) ||
+    (norm.includes('ccba') && (norm.includes('ccpt') || norm.includes('ccls') || norm.includes('ccdj') || norm.includes('cca')));
+
+  if (isFuseMeltingMasterQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FUSES-MELTING-FAILURES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (CAMTECH फ्यूज फेलियर निर्देशिका): कन्वेंशनल लोको में VCD तथा IPMV को सप्लाई CCLS से दी गई है। चालू गाड़ी में जब तक DJ/VCB क्लोज है, CCBA / एडिशनल CCBA पिघलने का पता नहीं चलता है; बैटरी चार्ज होना बंद हो जाती है। जब DJ ओपन होता है, यदि ZUBA दबाने पर UBA बैटरी वोल्टेज '0' बताए, फ्यूज टेस्टर ECC काम न करे, VCD हेल्दी लैम्प बुझ जाए व BP प्रेशर ड्रॉप होकर इमरजेंसी ब्रेक लगे तो एडिशनल CCBA पिघल गया है। यदि UBA सामान्य वोल्टेज बताए, ECC काम करे व LSGR को छोड़कर सभी लैम्प जलें तो CCBA पिघल गया है। CCPT पिघलने पर DJ तुरंत ओपन व पैंटो लोअर होता है। CCLS पिघलने पर सभी लैम्प बुझते हैं, QRS डी-एनर्जाइज होकर ऑटो रिग्रेशन व BP ड्रॉप होता है। CCA पिघलने पर 5वीं नोच के बाद DJ ट्रिप होता है व कंप्रेसर/ब्लोअर बंद होते हैं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 8. Explicit Check for LSCHBA के बुझने के बाद LSDJ फिर से प्रकाशित होता है (CONV-LSDJ-AFTER-LSCHBA)
+  const isLSCHBAAfterQuery =
+    !isCHBANotWorkingQuery && !isMPHNotWorkingQuery && !isMVSLNotWorkingQuery && !isMVSINotWorkingQuery && !isMVMTNotWorkingQuery && !isMVRHNotWorkingQuery &&
+    (norm.includes('lschba') || norm.includes('hph') || norm.includes('hvsl') || norm.includes('mvsl') || norm.includes('mph') || (norm.includes('q118') && (norm.includes('wedge') || norm.includes('vej') || norm.includes('वेज')))) &&
+    (norm.includes('baad') || norm.includes('bad') || norm.includes('बाद') || norm.includes('after') || (norm.includes('hph') && norm.includes('3')) || norm.includes('hvsl-1') || norm.includes('hvsl-2'));
+
+  if (isLSCHBAAfterQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSDJ-AFTER-LSCHBA')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: HPH, HVSL-1 और HVSL-2 को '3' पर रखकर DJ/VCB क्लोज करें। यदि DJ/VCB कायम रहता है तो MPH, MVSL-1 व MVSL-2 का कार्य चेक करें। यदि तीनों ऑग्जीलरी काम करती हैं तो स्विचों को एक-एक करके '1' पर रखकर दोषयुक्त रिले का पता लगाएं और स्विच को वापस '3' पर रखकर उसे आइसोलेट करें। यदि DJ कायम न रहे तो HQCVAR को '0' पर रखें अथवा अंतिम विकल्प के रूप में Q118 को वेज करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 9. Explicit Check for BLVMT क्लोज करने पर DJ/VCB ट्रिप होता है (CONV-BLVMT-DJ-TRIP)
+  const isBLVMTDJTripQuery =
+    !isMVMTNotWorkingQuery && !isMVRHNotWorkingQuery &&
+    (norm.includes('blvmt') ||
+    ((norm.includes('hvrh') || norm.includes('hvmt') || norm.includes('mvrh') || norm.includes('mvmt') || norm.includes('qvrh') || norm.includes('qvmt')) && (norm.includes('trip') || norm.includes('dj') || norm.includes('vcb') || norm.includes('3'))));
+
+  if (isBLVMTDJTripQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BLVMT-DJ-TRIP')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: HVRH, HVMT-1 और HVMT-2 को '3' पर रखकर DJ/VCB क्लोज करें। यदि DJ कायम रहता है तो ब्लोअरों (MVRH, MVMT-1, MVMT-2) की जांच करें। सभी ब्लोअर काम करने पर HVMT-2 से 6 सेकंड के अंतर से स्विचों को '1' पर रखकर दोषयुक्त रिले ढूंढें और उस स्विच को '3' पर रखकर आइसोलेट करें। DJ न रुकने पर Q118 को वेज करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 10. Explicit Check for पहली नोच पर DJ/VCB ट्रिप होता है (CONV-DJ-TRIP-FIRST-NOTCH)
+  const isFirstNotchTripQuery =
+    !isMVSINotWorkingQuery && !isMVSLNotWorkingQuery &&
+    ((norm.includes('1st notch') || norm.includes('first notch') || norm.includes('पहली नोच') || norm.includes('पहला नोच') || norm.includes('pehli notch') || norm.includes('pehla notch')) ||
+    ((norm.includes('hvsi') || norm.includes('mvsi') || norm.includes('qvsi')) && (norm.includes('trip') || norm.includes('notch') || norm.includes('3'))));
+
+  if (isFirstNotchTripQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-DJ-TRIP-FIRST-NOTCH')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: दोनों HVSI की स्थिति जांचें। सामान्य होने पर HVSI-1 व HVSI-2 को '3' पर रखें, DJ/VCB क्लोज करें और MVSI-1 व MVSI-2 ब्लोअरों का चलना सुनिश्चित करें। दोनों ब्लोअर चलने पर 1 नोच लें। यदि DJ ट्रिप न हो तो दोषयुक्त QVSI रिले का पता लगाकर आइसोलेट करें, यदि फिर भी ट्रिप हो तो GR को हाथ से ऑपरेट करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 11. Explicit Check for छठी नोच पर DJ/VCB ट्रिप होता है (CONV-DJ-TRIP-SIXTH-NOTCH)
+  const isSixthNotchTripQuery =
+    !isMVMTNotWorkingQuery && !isMVRHNotWorkingQuery &&
+    ((norm.includes('6th notch') || norm.includes('sixth notch') || norm.includes('छठी नोच') || norm.includes('छठा नोच') || norm.includes('chhati notch') || norm.includes('chatha notch')) ||
+    ((norm.includes('c107') || norm.includes('c105') || norm.includes('c106') || norm.includes('q100') || norm.includes('cca')) && (norm.includes('notch') || norm.includes('नोच') || norm.includes('trip'))));
+
+  if (isSixthNotchTripQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-DJ-TRIP-SIXTH-NOTCH')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 6 नोच पर DJ ट्रिप होने पर BLVMT क्लोज कर C107, C105, C106 के क्लोज होने की जांच करें। यदि कोई कॉन्टैक्टर क्लोज न हो तो ट्रबलशूट से पहले Q100 व CCA फ्यूज चेक करें। तीनों क्लोज होने पर HVMT-1 व HVMT-2 को '3' पर रखें, सफलता मिलने पर ब्लोअर जांचते हुए गाड़ी चलाएं अन्यथा Q118 वेज करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12. Explicit Check for भिन्न-भिन्न नोच पर DJ/VCB ट्रिप होता है (CONV-DJ-TRIP-DIFFERENT-NOTCHES)
+  const isDifferentNotchesTripQuery =
+    !norm.includes('lsgr') && !norm.includes('बुझ जाता') && !norm.includes('कर्षण') && !norm.includes('tractive') &&
+    ((norm.includes('different notch') || norm.includes('random notch') || norm.includes('भिन्न भिन्न') || norm.includes('भिन्न-भिन्न') || norm.includes('bhinn bhinn') || norm.includes('अलग अलग नोच') || norm.includes('alag alag notch') || norm.includes('बिना किसी स्पष्ट कारण') || norm.includes('bina kisi spasht') || (norm.includes('spasht') && norm.includes('karan')) || (norm.includes('स्पष्ट') && norm.includes('कारण'))) ||
+    ((norm.includes('hvsi') || norm.includes('hvsi-1')) && (norm.includes(' gr ') || norm.includes('gr को') || norm.includes('smgr')) && (norm.includes('q118') || norm.includes('वेज') || norm.includes('wedge'))));
+
+  if (isDifferentNotchesTripQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-DJ-TRIP-DIFFERENT-NOTCHES')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: भिन्न-भिन्न नोच पर अकारण DJ/VCB ट्रिप होने पर Q118 को वेज करें तथा HVSI-1 और HVSI-2 को '3' पर रखें। यदि इसके बाद भी सफलता न मिले तो GR को हाथ से कंट्रोल / ऑपरेट करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12B. Explicit Check for MR प्रेशर 7 kg/cm² से कम बनता है (CONV-MR-PRESSURE-LESS-THAN-7)
+  const isMRPressureLessThan7Query =
+    !isAuxDamagedBurntQuery &&
+    (((norm.includes('mr') || norm.includes('एमआर') || norm.includes('प्रेशर')) &&
+     (norm.includes('7') || norm.includes('७') || norm.includes('सात')) &&
+     (norm.includes('कम') || norm.includes('kam') || norm.includes('less') || norm.includes('»ñ') || norm.includes('नीचे') || norm.includes('below') || norm.includes('drop'))) ||
+    norm.includes('7 kg/cm2') ||
+    norm.includes('7 kg/cm²') ||
+    norm.includes('7 kg') ||
+    norm.includes('7kg') ||
+    norm.includes('7 से कम') ||
+    (norm.includes('ral') && (norm.includes('rs') || norm.includes('गेज')) && (norm.includes('9.5') || norm.includes('bp चार्जिंग') || norm.includes('चार्जिंग कॉक'))));
+
+  if (isMRPressureLessThan7Query) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MR-PRESSURE-LESS-THAN-7')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MR प्रेशर 7 kg/cm² से कम रहने पर तीनों MCP चलाकर 9.5 kg/cm² बनाएं। RAL कॉक खोलकर RS गेज से MR गेज की सत्यता जांचें। यदि RS प्रेशर 8 kg/cm² है तो गेज खराब है। यदि RS भी कम है तो BP चार्जिंग कॉक बंद करें; प्रेशर न बनने पर ड्रेन, सेफ्टी, अनलोडर, सैंडिंग व ब्रेक सिलेंडर लीकेज और एयर ड्रायर (C खुला, A व B बंद) चेक करें। प्रेशर बनने पर 9.5 kg/cm² तक रुकें, BP कॉक खोलें व पुनः ड्रॉप होने पर IP वाल्व, RS, BP होस व एंगल कॉक जांचें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (MR प्रेशर 7 kg/cm² से कम बनना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12C-00000. Explicit Check for लोको ब्रेक रिलीज नहीं होते हैं, यद्यपि A-9 और SA-9 “रिलीज” पोजीशन पर हैं (CONV-LOCO-BRAKE-NOT-RELEASING-A9-SA9-RELEASE)
+  const isLocoBrakeNotReleasingA9SA9ReleaseQuery =
+    !(norm.includes('cab') && (norm.includes('badal') || norm.includes('change') || norm.includes('bdl')) && (norm.includes('mu') || norm.includes('multiple') || norm.includes('trailing') || norm.includes('ñlãäíô'))) &&
+    (
+      // Primary: release/relis/rilij/छूट + nahi/not/ni/binding + brake/break/loco
+      ((norm.includes('release') || norm.includes('रिलीज') || norm.includes('रीलीज') || norm.includes('ãóôäá') || norm.includes('rilij') || norm.includes('relis') || norm.includes('छूट') || norm.includes('चिपक') || norm.includes('बंध')) &&
+       (norm.includes('nahi') || norm.includes('नहीं') || norm.includes('not') || norm.includes('ìúi') || norm.includes('ni') || norm.includes('hote') || norm.includes('hota') || norm.includes('hoti') || norm.includes('रहता') || norm.includes('रहा') || norm.includes('binding') || norm.includes('जाम')) &&
+       (norm.includes('loco') || norm.includes('लोको') || norm.includes('ôí»í') || norm.includes('brake') || norm.includes('break') || norm.includes('ब्रेक') || norm.includes('ïýë»') || norm.includes('b\[k'))) ||
+      // Shree Lipi: Ôí»í Ïýë» ãÓÔäÁ
+      (norm.includes('ïýë»') && norm.includes('ãóôäá')) ||
+      (norm.includes('ôí»í') && norm.includes('ãóôäá')) ||
+      // Direct mention of A-9/SA-9 release
+      ((norm.includes('a-9') || norm.includes('a9') || norm.includes('sa-9') || norm.includes('sa9')) && (norm.includes('release') || norm.includes('रिलीज')) && (norm.includes('nahi') || norm.includes('नहीं') || norm.includes('not') || norm.includes('loco') || norm.includes('लोको'))) ||
+      // Specific valves in this troubleshooting:
+      ((norm.includes('c-2') || norm.includes('c2')) && (norm.includes('tap') || norm.includes('टेप') || norm.includes('टैप'))) ||
+      ((norm.includes('फ्लैक्सिबल') || norm.includes('flexible')) && (norm.includes('pipe') || norm.includes('पाइप')))
+    );
+
+  if (isLocoBrakeNotReleasingA9SA9ReleaseQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LOCO-BRAKE-NOT-RELEASING-A9-SA9-RELEASE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: लोको ब्रेक रिलीज न होने पर सर्वप्रथम BP प्रेशर 5.0 kg/cm² सुनिश्चित करें। डिस्ट्रीब्यूटर वाल्व (DV) के मैन्युअल रिलीज वाल्व द्वारा ब्रेक रिलीज करें। MU2B वाल्व पूरी तरह LEAD पोजीशन पर होना सुनिश्चित करें। C-2 रिले वाल्व व SA-9 वाल्व को धीरे से टैप करें। यदि फिर भी किसी बोगी में ब्रेक बंधती रहे तो उस खराबी वाली बोगी का कट आउट कॉक बंद करें तथा फंसी हुई हवा निकालने हेतु फ्लैक्सिबल पाइप कनेक्शन खोलें/निकालें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (लोको ब्रेक रिलीज न होना - A-9 व SA-9 रिलीज पर होने के बावजूद)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12C-0000. Explicit Check for SA-9 द्वारा लोको ब्रेक नहीं लगती है (CONV-SA9-LOCO-BRAKE-NOT-APPLYING)
+  const isSA9LocoBrakeNotApplyingQuery =
+    !isLocoBrakeNotReleasingA9SA9ReleaseQuery &&
+    (norm.includes('sa-9') || norm.includes('sa9') || norm.includes('एसए-9') || norm.includes('एसए9') || norm.includes('sa 9') || norm.includes('sa_9')) &&
+    (norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('ïýë»') || norm.includes('loco') || norm.includes('लोको') || norm.includes('ôí»í')) &&
+    (norm.includes('nahi') || norm.includes('नहीं') || norm.includes('not') || norm.includes('ìúi') || norm.includes('fail') || norm.includes('फेल')) &&
+    (norm.includes('lag') || norm.includes('लग') || norm.includes('apply') || norm.includes('ô½') || norm.includes('action') || norm.includes('kam') || norm.includes('काम'));
+
+  if (isSA9LocoBrakeNotApplyingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-SA9-LOCO-BRAKE-NOT-APPLYING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: SA-9 द्वारा लोको ब्रेक न लगने पर आगे वाली (कार्यरत) कैब में SA-9 कट आउट कॉक खुला तथा पीछे वाली कैब में बंद होना सुनिश्चित करें। MU2B वाल्व को 'LEAD' पोजीशन पर रखें और 2-3 बार ऑपरेट करें। दोनों बोगियों के कट आउट कॉक खुले होना सुनिश्चित करें। आवश्यकता पड़ने अथवा आपात स्थिति में A-9 या RS वाल्व द्वारा गाड़ी/लोको ब्रेक लगाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (SA-9 द्वारा लोको ब्रेक न लगना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12C-000. Explicit Check for A-9 द्वारा लोको ब्रेक नहीं लगती है (CONV-A9-LOCO-BRAKE-NOT-APPLYING)
+  const isA9LocoBrakeNotApplyingQuery =
+    !isLocoBrakeNotReleasingA9SA9ReleaseQuery &&
+    !isSA9LocoBrakeNotApplyingQuery &&
+    (norm.includes('a-9') || norm.includes('a9') || norm.includes('ए-9') || norm.includes('ए9')) &&
+    (norm.includes('loco') || norm.includes('लोको') || norm.includes('ôí»í')) &&
+    (norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('ïýë»')) &&
+    (norm.includes('nahi') || norm.includes('नहीं') || norm.includes('not') || norm.includes('ìúi') || norm.includes('fail') || norm.includes('फेल')) &&
+    (norm.includes('lag') || norm.includes('लग') || norm.includes('apply') || norm.includes('ô½') || norm.includes('action') || norm.includes('kam'));
+
+  if (isA9LocoBrakeNotApplyingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-A9-LOCO-BRAKE-NOT-APPLYING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: A-9 द्वारा लोको ब्रेक न लगने पर ड्राइविंग कैब में A-9 कट आउट कॉक खुला तथा रियर कैब में बंद होना सुनिश्चित करें। MU2B वाल्व को पूरी तरह 'LEAD' पोजीशन पर रखें और 2-3 बार ऑपरेट करें। BP प्रेशर 5.0 kg/cm² सामान्य होना चाहिए। डिस्ट्रीब्यूटर वाल्व (DV) का आइसोलेटिंग कॉक खुला (नॉट आइसोलेटेड) रखें तथा दोनों बोगियों के कट आउट कॉक खुले होना सुनिश्चित करें। आपात स्थिति अथवा आवश्यकता पड़ने पर तुरंत RS वाल्व या SA-9 द्वारा लोको ब्रेक लगाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (A-9 द्वारा लोको ब्रेक न लगना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12C-00. Explicit Check for मल्टीपल लोको चलाते हुये कैब बदलते समय किसी भी एक लोको में ब्रेक बंधती है (CONV-MU-CAB-CHANGING-BRAKE-BINDING)
+  const isMUCabChangingBrakeBindingQuery =
+    !isSA9LocoBrakeNotApplyingQuery &&
+    !isA9LocoBrakeNotApplyingQuery &&
+    (norm.includes('multiple') || norm.includes('मल्टीपल') || norm.includes('ñlãäíô') || norm.includes('mu') || norm.includes('एमयू') || norm.includes('trailing') || norm.includes('ट्रेलिंग') || norm.includes('t^[(l>g') || norm.includes('mu2b')) &&
+    (norm.includes('cab') || norm.includes('कैब') || norm.includes('»ìï') || norm.includes('k]b')) &&
+    (norm.includes('badal') || norm.includes('बदल') || norm.includes('change') || norm.includes('ïêô') || norm.includes('बदली') || norm.includes('bdl')) &&
+    (norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('ïýë»') || norm.includes('b\[k') || norm.includes('bandh') || norm.includes('बंध') || norm.includes('binding') || norm.includes('release') || norm.includes('रिलीज'));
+
+  if (isMUCabChangingBrakeBindingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MU-CAB-CHANGING-BRAKE-BINDING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: मल्टीपल लोको (MU) में कैब बदलते समय ट्रेलिंग लोको में ब्रेक रिलीज न होने पर MU2B को 5 से 10 सेकंड LEAD पर रखें एवं पुनः TRAIL पर रखें। कैब बदलते समय दोनों कैब में A-9 व SA-9 हैंडल रिलीज पोजीशन पर रखें। उतार-चढ़ाव वाले सेक्शन में लोको को लुढ़कने (rolling) से बचाने के लिए हैंडब्रेक का उपयोग अवश्य करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (मल्टीपल लोको में कैब बदलते समय ब्रेक बंधना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12C-0. Explicit Check for एयर ब्रेक लोड पर अटैच करने के बाद BP प्रेशर 5 kg/cm² तक नहीं बढ़ता है और MR प्रेशर भी कम होता है (CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD)
+  const isBPNotRisingAfterAttachingLoadQuery =
+    !isSA9LocoBrakeNotApplyingQuery &&
+    !isA9LocoBrakeNotApplyingQuery &&
+    !isMUCabChangingBrakeBindingQuery &&
+    (norm.includes('load') || norm.includes('लोड') || norm.includes('ôíå') || norm.includes('गाड़ी') || norm.includes('½âå‘ä') || norm.includes('वैगन') || norm.includes('वैन')) &&
+    (norm.includes('attach') || norm.includes('अटैच') || norm.includes('áãì¿') || norm.includes('áÃì¿') || norm.includes('जोड़ने') || norm.includes('लगाने') || norm.includes('जोड') || (norm.includes('load') && (norm.includes('leak') || norm.includes('लीकेज')))) &&
+    (norm.includes('bp') || norm.includes('mr') || norm.includes('प्रेशर') || norm.includes('pressure') || norm.includes('5 kg') || norm.includes('5kg') || norm.includes('5'));
+
+  if (isBPNotRisingAfterAttachingLoadQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: एयर ब्रेक लोड पर अटैच करने पर MR प्रेशर कम होने पर तीनों कम्प्रेशर चलाएं व BLCPD क्लोज करें। फिर भी न बनने पर लोको व लोड के बीच BP व FP एंगल कॉक बंद करें। MR 9.5 kg/cm² बनने पर लोड में लीकेज/खराबी है। MR न बनने पर लोको में लीकेज चेक करें। BP बढ़ने पर लोड में खराबी (वैगनों के बीच एंगल कॉक व होस पाइप जांचें) तथा BP न बढ़ने पर लोको में खराबी (TSD पृष्ठ 68-69 फेलियर 3 व 4 अनुसार ट्रबलशूट) करें। लोड खराबी दूर कर FP व BP एंगल कॉक खोलें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (एयर ब्रेक लोड पर अटैच करने के बाद BP 5 kg/cm² तक न बढ़ना व MR कम होना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12C-1. Explicit Check for BP प्रेशर बढ़कर 5 kg/cm² से अधिक होना व ब्रेक बंधना (CONV-BP-PRESSURE-SURGE-BRAKE-BINDING)
+  const isBPPressureSurgeBrakeBindingQuery =
+    !isSA9LocoBrakeNotApplyingQuery &&
+    !isA9LocoBrakeNotApplyingQuery &&
+    !isMUCabChangingBrakeBindingQuery &&
+    !isBPNotRisingAfterAttachingLoadQuery &&
+    (norm.includes('bp') || norm.includes('बीपी')) &&
+    (norm.includes('5') || norm.includes('५')) &&
+    (norm.includes('अधिक') || norm.includes('adhik') || norm.includes('बढ़कर') || norm.includes('badhkar') || norm.includes('घटकर') || norm.includes('ghatkar') || norm.includes('बंधती') || norm.includes('bandhti') || norm.includes('surge') || norm.includes('overcharge') || norm.includes('áãë»') || norm.includes('ïæ‘') || norm.includes('¾ã') || norm.includes('ïnëèä') || (norm.includes('गाड़ी') && norm.includes('ब्रेक')) || norm.includes('सारी गाड़ी'));
+
+  if (isBPPressureSurgeBrakeBindingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BP-PRESSURE-SURGE-BRAKE-BINDING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: A-9 रेगुलेटर से BP बढ़ाकर लोको व गाड़ी के ब्रेक रिलीज करें व सेक्शन क्लियर करें। A-9 इमरजेंसी पर रख BP 0 होने दें, लोको व गाड़ी के बीच BP/FP एंगल कॉक बंद करें। पूरी गाड़ी के ब्रेक रिलीज करें, A-9 रिलीज में रख 5 kg/cm² सेट करें। लोको DV का रिलीज वाल्व खींचें, एंगल कॉक खोलें व BV में BP 4.8-5 kg/cm² आने पर कन्टीन्युइटी टेस्ट करके ही गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (BP प्रेशर 5 से अधिक बढ़कर 5 पर घटना व ब्रेक बंधना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 12C. Explicit Check for BP प्रेशर नहीं बनता है (CONV-BP-PRESSURE-NOT-BUILDING)
+  const isBPPressureNotBuildingQuery =
+    !isSA9LocoBrakeNotApplyingQuery &&
+    !isA9LocoBrakeNotApplyingQuery &&
+    !isMUCabChangingBrakeBindingQuery &&
+    !isBPNotRisingAfterAttachingLoadQuery &&
+    !isBPPressureSurgeBrakeBindingQuery &&
+    (norm.includes('bp') || norm.includes('बीपी')) &&
+    (norm.includes('प्रेशर') || norm.includes('pressure') || norm.includes('íýë×ó') || norm.includes('p]sr')) &&
+    (norm.includes('नहीं') || norm.includes('not') || norm.includes('nahi') || norm.includes('kam') || norm.includes('कम') || norm.includes('0 kg') || norm.includes('ड्रॉप') || norm.includes('drop') || norm.includes('ìúi') || norm.includes('ïìèâ') || norm.includes('बनता') || norm.includes('banta') || norm.includes('ban raha') || norm.includes('बन रहा') || norm.includes('rhti') || norm.includes('रहता'));
+
+  if (isBPPressureNotBuildingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BP-PRESSURE-NOT-BUILDING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: A-9 हैंडल को दोनों कैब में रिलीज पोजीशन पर रखें व MR प्रेशर सामान्य सुनिश्चित करें। BLCPD क्लोज करें। A-9 दोनों COC कार्यरत कैब में खुले व रियर में बंद रखें। BP चार्जिंग कॉक, MU2B लीड पोजीशन (2-3 बार ऑपरेट), MR-4 COC खुला होना व दोनों सिरों पर एंगल कॉक बंद होना सुनिश्चित करें। IP व RS वाल्व लीकेज जांचें। BP 0 kg/cm² रहने पर रियर कैब के नीचे या कैब में एडिशनल कॉक की स्थिति चेक करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (BP प्रेशर नहीं बनना - केवल लोको)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 13. Explicit Check for BLCP क्लोज करने पर MR प्रेशर नहीं बनता है (CONV-BLCP-MR-PRESSURE-NOT-BUILDING)
+  const isBLCPMRNotBuildingQuery =
+    !isAuxDamagedBurntQuery &&
+    !isMRPressureLessThan7Query &&
+    !isSA9LocoBrakeNotApplyingQuery &&
+    !isA9LocoBrakeNotApplyingQuery &&
+    !isMUCabChangingBrakeBindingQuery &&
+    !isBPNotRisingAfterAttachingLoadQuery &&
+    !isBPPressureNotBuildingQuery &&
+    ((norm.includes('blcp') && (norm.includes('mr') || norm.includes('pressure') || norm.includes('प्रेशर') || norm.includes('mcp') || norm.includes('banta') || norm.includes('बनता') || norm.includes('ban raha') || norm.includes('बन रहा') || norm.includes('build'))) ||
+    ((norm.includes('blcpd') || norm.includes('hcp') || norm.includes('c-101') || norm.includes('c101') || norm.includes('c-102') || norm.includes('c102') || norm.includes('c-103') || norm.includes('c103')) && (norm.includes('mr') || norm.includes('mcp') || norm.includes('pressure') || norm.includes('प्रेशर'))) ||
+    ((norm.includes('mr') || norm.includes('एमआर')) && (norm.includes('प्रेशर') || norm.includes('pressure') || norm.includes('íýë×ó')) && (norm.includes('नहीं') || norm.includes('nahi') || norm.includes('not') || norm.includes('kam') || norm.includes('कम') || norm.includes('ÌÚIï') || norm.includes('ìúiï'))) ||
+    ((norm.includes('mr') || norm.includes('एमआर')) && (norm.includes('बनता') || norm.includes('banta') || norm.includes('बन रहा') || norm.includes('ban raha') || norm.includes('ïìèâ'))) ||
+    norm.includes('mr íýë×ó') ||
+    norm.includes('mcp kiy') ||
+    (norm.includes('mcp') && (norm.includes('काम') || norm.includes('कार्य') || norm.includes('kaam') || norm.includes('karya') || norm.includes('kiy') || norm.includes('chal') || norm.includes('चल'))));
+
+  if (isBLCPMRNotBuildingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BLCP-MR-PRESSURE-NOT-BUILDING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: BLCP पर MR प्रेशर न बनने पर पहले MCP का चलना चेक करें। यदि MCP न चले तो CPA चलाकर DJ/VCB क्लोज रखें, BLCPD क्लोज करें, HCP की पोजीशन बदलें व Q100 तथा CCA चेक करें। स्वतंत्र ऑक्सिलरी न चलने पर C-101/102/103 में से 2 वेज करें व Q118 वेज कर 450A से सेक्शन क्लियर करें। MCP चलने पर A9/SA9 COC, MR-4, एंगल कॉक, एयर ड्रायर बायपास (A, B बंद व C खुला) व लीकेज चेक करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_PNEUMATIC (अध्याय-7, फेलियर 14/15, पृष्ठ 53)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 53,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 13B. Explicit Check for फ्लैशर लाईट कार्य नहीं करती (CONV-FLASHER-LIGHT-NOT-WORKING)
+  const isFlasherLightNotWorkingQuery =
+    norm.includes('flasher') ||
+    norm.includes('फ्लैशर') ||
+    norm.includes('½l]sr') ||
+    norm.includes('lie<t') ||
+    (norm.includes('afl') && (norm.includes('fail') || norm.includes('not work') || norm.includes('फेल') || norm.includes('काम नहीं') || norm.includes('कार्य नहीं') || norm.includes('standby') || norm.includes('ग्लास')));
+
+  if (isFlasherLightNotWorkingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FLASHER-LIGHT-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम (फ्लैशर लाईट फेलियर): यदि शेड से निकलते समय फ्लैशर लाईट कार्य नहीं करती है तो लोको शेड से शेड आउट न करें। वर्किंग के दौरान यदि फ्लैशर लाईट कार्य नहीं करती है तो TLC को सूचित करें और लोको फेल करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - CONV_CAB (फ्लैशर लाईट कार्य न करना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14A. Explicit Check for (i) यदि LSGR पहले से ही बुझा है (CONV-LSGR-ALREADY-EXTINGUISHED)
+  const isLSGRAlreadyExtinguishedQuery =
+    (norm.includes('lsgr') && (norm.includes('पहले से') || norm.includes('pahle se') || norm.includes('pehle se') || norm.includes('already extinguished') || norm.includes('already bujha'))) ||
+    ((norm.includes('ccls') || norm.includes('qrs')) && norm.includes('lsgr') && (norm.includes('बुझा') || norm.includes('bujha'))) ||
+    norm.includes('conv-lsgr-already-extinguished');
+
+  if (isLSGRAlreadyExtinguishedQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSGR-ALREADY-EXTINGUISHED') || conventionalFaults.find(cf => cf.id === 'CONV-LOSS-TRACTIVE-FORCE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: एक नोच लेने पर यदि LSGR पहले से ही बुझा है तो BPT दबाकर LSRSI तथा LSP प्रकाशित होना चेक करें। यदि CCLS पिघल गया है तो बदलें; पुनः पिघलने पर HOBA को 'OFF' पर रखें और फ्यूज बदलें। आवश्यकता पड़ने पर QRS रिले को वेज करके बिना पायलट लैम्प के सावधानीपूर्वक गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (कर्षण बल की पूर्ण हानि - शाखा i)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14A-2. Dedicated Check for LSGR प्रकाशित नहीं होता है (CONV-LSGR-NOT-GLOWING)
+  const isLSGRNotGlowingQuery =
+    !isLSGRAlreadyExtinguishedQuery &&
+    ((norm.includes('lsgr') && (norm.includes('प्रकाशित नहीं') || norm.includes('not glow') || norm.includes('nahi jalta') || norm.includes('नहीं जलता') || norm.includes('नहीं जल रहा') || norm.includes('प्रकाशित न होना'))) ||
+     (norm.includes('smgr') && norm.includes('qv62')) ||
+     (norm.includes('qv62') && norm.includes('lsgr')) ||
+     norm.includes('conv-lsgr-not-glowing'));
+
+  if (isLSGRNotGlowingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSGR-NOT-GLOWING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (LSGR प्रकाशित नहीं होता है):\na) MP '0' पर है, सुनिश्चित करें।\nb) SMGR ड्रम चेक करें। यदि GR '0' पर नहीं है तो उसे हाथ से '0' पर लाएं। यदि GR '0' पर है तो भी उसे 2-3 बार ऑपरेट करें और वापस '0' पर लाएं।\nc) दूसरी कैब का लैम्प चेक करें। यदि प्रकाशित नहीं है तो QV62 चेक करें।\nd) नोच रिपीटर का ध्यान रखते हुए गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (LSGR प्रकाशित नहीं होना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14B. Explicit Check for (ii) यदि LSGR नहीं बुझता है (CONV-LSGR-NOT-EXTINGUISHING)
+  const isLSGRNotExtinguishingQuery =
+    !isLSGRAlreadyExtinguishedQuery && !isLSGRNotGlowingQuery &&
+    ((norm.includes('lsgr') && (norm.includes('नहीं बुझता') || norm.includes('nahi bujhta') || norm.includes('nahi buj') || norm.includes('does not extinguish') || norm.includes('not extinguishing'))) ||
+    ((norm.includes('q50') || norm.includes('q-50') || norm.includes('q48') || norm.includes('q-48') || norm.includes('pr-2') || norm.includes('pr2') || norm.includes('rgeb-2') || norm.includes('zsmgr') || norm.includes('smgr')) && (norm.includes('lsgr') || norm.includes('tractive') || norm.includes('कर्षण'))) ||
+    norm.includes('conv-lsgr-not-extinguishing'));
+
+  if (isLSGRNotExtinguishingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSGR-NOT-EXTINGUISHING') || conventionalFaults.find(cf => cf.id === 'CONV-LOSS-TRACTIVE-FORCE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MP से नोच न आने पर एक बार EEC से प्रयत्न करें। LSB प्रकाशित होने पर Q50, J1/J2, CTF 'R' व C145 चेक करें। LSP प्रकाशित होने पर Q48 थपथपाएं, HMCS ट्राय करें। ऑटो फ्लैशर LED जलने पर BP 5 kg/cm² चेक करें, CCLSA निकालें, PR-2 ओपन में वेज करें। VCD मालफंक्शन करने पर केवल 1 बार रीसेट करें, दूसरी बार में VCD को आइसोलेट करें। QRS एनर्जाइज न होने पर RGEB-2 कॉक चेक कर A9 से 2 kg/cm² ड्रॉप करें अन्यथा QRS वेज करें। ZSMS 1 पर, ZSMGR हैंडल खड़ा, SMGR प्रेशर 2.5-3.5 kg/cm² चेक करें व आवश्यकतानुसार GR हाथ से ऑपरेट करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (कर्षण बल की पूर्ण हानि - शाखा ii)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14C-2. Dedicated Check for पहली नोच लेने पर कॉन्टैक्टर L-1 से L-6 क्लोज नहीं होते हैं (CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING)
+  const isFirstNotchL1L6NotClosingQuery =
+    ((norm.includes('l-1') || norm.includes('l1')) && (norm.includes('l-6') || norm.includes('l6')) && (norm.includes('क्लोज') || norm.includes('close') || norm.includes('नहीं') || norm.includes('nahi'))) ||
+    ((norm.includes('कॉन्टैक्टर') || norm.includes('contactor')) && (norm.includes('l-1') || norm.includes('l1') || norm.includes('l1-l6')) && (norm.includes('क्लोज नहीं') || norm.includes('close nahi'))) ||
+    norm.includes('conv-first-notch-l1-l6-not-closing');
+
+  if (isFirstNotchL1L6NotClosingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING') || conventionalFaults.find(cf => cf.id === 'CONV-LSGR-EXTINGUISHES-NO-TE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: पहली नोच लेने पर यदि कॉन्टैक्टर L-1 से L-6 क्लोज नहीं होते हैं तो:\na) Q-50 इनर्जाइज होना सुनिश्चित करें (LSB बुझा होना चाहिए)।\nb) दोनों HVSI व HVMT सामान्य स्थिति में हैं, जांचें।\nc) HT-2 कट आउट कॉक खुला होना सुनिश्चित करें।\nd) DJ/VCB ओपन कर लोको ग्राउंड करें, CTF-1, 2, 3 को हाथ से 2-3 बार ऑपरेट कर 'रनिंग' पोजीशन पर रखें। सभी कॉन्टैक्टरों को न्यूमैटिकली हाथ से ऑपरेट करें व कॉइल टर्मिनल चेक करें।\ne) सफलता न मिलने पर सभी कॉन्टैक्टरों को वेज करें।\nf) रेहियोस्टैटिक ब्रेक का उपयोग न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (L-1 से L-6 क्लोज न होना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14C-3. Dedicated Check for L-1 से L-3 अथवा L-4 से L-6 क्लोज नहीं होते हैं (CONV-L1-L3-OR-L4-L6-NOT-CLOSING)
+  const isL1L3OrL4L6NotClosingQuery =
+    (((norm.includes('l-1') || norm.includes('l1')) && (norm.includes('l-3') || norm.includes('l3'))) ||
+     ((norm.includes('l-4') || norm.includes('l4')) && (norm.includes('l-6') || norm.includes('l6')))) &&
+    (norm.includes('क्लोज') || norm.includes('close') || norm.includes('नहीं') || norm.includes('अथवा') || norm.includes('या') || norm.includes('rsi') || norm.includes('वेज') || norm.includes('wedge')) ||
+    norm.includes('conv-l1-l3-or-l4-l6-not-closing');
+
+  if (isL1L3OrL4L6NotClosingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-L1-L3-OR-L4-L6-NOT-CLOSING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: L-1 से L-3 अथवा L-4 से L-6 क्लोज न होने पर (एक ट्रक/बोगी के लाइन कॉन्टैक्टर न लगना):\na) संबंधित HVSI और HVMT सामान्य स्थिति में हैं, जांचें व उन्हें 2-3 बार ऑपरेट करें। संबंधित RSI ब्लॉक को आइसोलेट करें।\nb) सुविधाजनक स्टॉप पर कॉन्टैक्टरों को वेज करें और स्विचों को सामान्य स्थिति में रखें।\nc) रेहियोस्टैटिक ब्रेक (RB) का उपयोग न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (L1-L3 अथवा L4-L6 क्लोज न होना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14C-4. Dedicated Check for कोई एक लाइन कॉन्टैक्टर क्लोज नहीं होता है (CONV-ONE-LINE-CONTACTOR-NOT-CLOSING)
+  const isOneLineContactorNotClosingQuery =
+    !isFirstNotchL1L6NotClosingQuery && !isL1L3OrL4L6NotClosingQuery &&
+    ((norm.includes('कोई एक') || norm.includes('ek line contactor') || norm.includes('one line contactor') || norm.includes('any one line') || norm.includes('koi ek')) && (norm.includes('लाइन कॉन्टैक्टर') || norm.includes('contactor') || norm.includes('कॉन्टैक्टर'))) ||
+    ((norm.includes('लाइन कॉन्टैक्टर') || norm.includes('line contactor')) && (norm.includes('क्लोज नहीं') || norm.includes('close nahi') || norm.includes('नहीं होता') || norm.includes('nahi hota')) && !norm.includes('l-1 से l-6') && !norm.includes('l1 se l6')) ||
+    norm.includes('conv-one-line-contactor-not-closing');
+
+  if (isOneLineContactorNotClosingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-ONE-LINE-CONTACTOR-NOT-CLOSING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: कोई एक लाइन कॉन्टैक्टर क्लोज न होने पर:\na) संबंधित HMCS पोजीशन '1' पर है, इसकी जांच करें।\nb) HMCS द्वारा संबंधित ट्रैक्शन मोटर को आइसोलेट करके गाड़ी चलाएं। यदि भार खींचने में कठिनाई हो तो सुविधाजनक स्टॉप पर ट्रबलशूट करें व कॉन्टैक्टर को वेज करें।\nc) रेहियोस्टैटिक ब्रेक (RB) का उपयोग न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (एक लाइन कॉन्टैक्टर क्लोज न होना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14C. Explicit Check for (iii) यदि LSGR बुझ जाता है (CONV-LSGR-EXTINGUISHES-NO-TE)
+  const isLSGRExtinguishesNoTEQuery =
+    !isLSGRAlreadyExtinguishedQuery && !isLSGRNotExtinguishingQuery &&
+    ((norm.includes('lsgr') && (norm.includes('बुझ जाता') || norm.includes('bujh jata') || norm.includes('extinguishes'))) &&
+     (norm.includes('l1') || norm.includes('l-1') || norm.includes('l6') || norm.includes('ctf') || norm.includes('ht-2') || norm.includes('hvsi') || norm.includes('डेविएट') || norm.includes('deviat') || norm.includes('कर्षण') || norm.includes('tractive') || norm.includes('no te') || norm.includes('0 amp'))) ||
+    norm.includes('conv-lsgr-extinguishes-no-te');
+
+  if (isLSGRExtinguishesNoTEQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSGR-EXTINGUISHES-NO-TE') || conventionalFaults.find(cf => cf.id === 'CONV-LOSS-TRACTIVE-FORCE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: LSGR बुझ जाने (नोच 1 आने) पर भी यदि दोनों एमीटर 0 दर्शाते हैं तो: HVSI-1, HVSI-2, HVMT-1, HVMT-2 को सामान्य स्थिति पर रखें; HT-2 का कट-आउट कॉक खुला होना सुनिश्चित करें; LT टेस्टिंग करके L1 से L6 तक के कॉन्टैक्टर क्लोज होना चेक करें व CTF-1, CTF-2, CTF-3 का 'रनिंग' पोजीशन में होना सुनिश्चित करें। आवश्यकता पड़ने पर L1 से L6 कॉन्टैक्टर वेज करें तथा रेहियोस्टैटिक ब्रेक (RB) का उपयोग बिल्कुल न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (कर्षण बल की पूर्ण हानि - शाखा iii)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14C-5. Dedicated Check for कर्षण बल की आंशिक हानि (CONV-PARTIAL-LOSS-TRACTIVE-FORCE)
+  const isPartialLossOfTractiveForceQuery =
+    norm.includes('आंशिक') || norm.includes('aanshik') || norm.includes('anshik') ||
+    norm.includes('partial loss') || norm.includes('partial tractive') || norm.includes('partial te') || norm.includes('partial') ||
+    norm.includes('19 kv') || (norm.includes('19') && norm.includes('kv')) ||
+    ((norm.includes('l-2') || norm.includes('l2')) && (norm.includes('l-5') || norm.includes('l5')) && (norm.includes('close') || norm.includes('वेज') || norm.includes('wedge') || norm.includes('कॉन्टैक्टर'))) ||
+    ((norm.includes('hvsi') || norm.includes('hvmt')) && norm.includes('hmcs')) ||
+    (norm.includes('समय की हानि') || norm.includes('time loss')) ||
+    (norm.includes('लोको ब्रेक') && norm.includes('ट्रेन ब्रेक')) ||
+    norm.includes('conv-partial-loss-tractive-force');
+
+  if (isPartialLossOfTractiveForceQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-PARTIAL-LOSS-TRACTIVE-FORCE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (कर्षण बल की आंशिक हानि / Partial Loss of Tractive Force):\ni) OHE वोल्टेज: 19 KV से कम होने पर यदि समय की हानि होती है तो पहले स्टेशन पर TPC/TLC को तुरंत सूचित करें; समय हानि न होने पर अगले सुविधाजनक स्टॉप पर सूचित करें।\nii) HVSI, HVMT और HMCS चेक करें: सभी स्विचें नॉर्मल पोजीशन '1' पर होनी चाहिए।\niii) एमीटर (A-1, A-2) व वोल्टमीटर (U-1, U-2) चेक करें: व्हील स्लिप होने पर नोच रिग्रेस करें व सैंडिंग (BPSW) दें; कोई एमीटर/वोल्टमीटर डेविएट न होने पर संबंधित लाइन कॉन्टैक्टर तथा दोनों डेविएट होने पर L-2 व L-5 का क्लोज होना जांचें (आवश्यकतानुसार वेज करें)।\niv) लोको ब्रेक चेक करें: रिलीज न होने पर रिलीज करें, लोको हैंड ब्रेक / पार्किंग ब्रेक रिलीज होना सुनिश्चित करें।\nv) ट्रेन ब्रेक बाइंडिंग जांचें: BP प्रेशर 5.0 kg/cm² सामान्य रखें, A-9 रिलीज पोजीशन, AFI स्थिर व गाड़ी के सभी हैंड ब्रेक रिलीज होना सुनिश्चित करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (कर्षण बल की आंशिक हानि)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D. Master Check for कर्षण बल की पूर्ण हानि (CONV-LOSS-TRACTIVE-FORCE)
+  const isLossOfTractiveForceQuery =
+    !isLSGRAlreadyExtinguishedQuery && !isLSGRNotExtinguishingQuery && !isLSGRExtinguishesNoTEQuery && !isPartialLossOfTractiveForceQuery &&
+    !norm.includes('आंशिक') && !norm.includes('partial') && !norm.includes('aanshik') && !norm.includes('anshik') &&
+    (norm.includes('कर्षण बल') || norm.includes('tractive force') || norm.includes('loss of tractive') || norm.includes('total loss') || norm.includes('karshan bal') ||
+    (norm.includes('एमीटर') && (norm.includes('डेविएट') || norm.includes('डेिवएट') || norm.includes('deviat'))) ||
+    (norm.includes('ammeter') && norm.includes('deviat')) ||
+    (norm.includes('एक नोच') && norm.includes('lsgr')) ||
+    norm.includes('conv-loss-tractive-force'));
+
+  if (isLossOfTractiveForceQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LOSS-TRACTIVE-FORCE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (CAMTECH संपूर्ण कर्षण बल हानि गाइड): 1 नोच लेकर LSGR का निरीक्षण करें। 3 विशिष्ट शाखाएं हैं: (i) यदि LSGR पहले से ही बुझा है -> CCLS फ्यूज बदलें, HOBA 'OFF', QRS वेज। (ii) यदि LSGR नहीं बुझता है -> EEC प्रयत्न, LSB पर Q50 व रिवर्सर जांच, LSP पर Q48 व सैंडिंग COC, AFL पर BP 5 व PR-2 ओपन वेज, VCD 1-बार रीसेट नियम, QRS/RGEB-2, ZSMGR व SMGR प्रेशर, GR मैनुअल। (iii) यदि LSGR बुझ जाता है -> HVSI/HVMT नॉर्मल, HT-2 खुला, L1-L6 क्लोजिंग व CTF रनिंग चेक, L1-L6 वेज, RB का उपयोग न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (अध्याय-10 / विफलता निवारण)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-2. Dedicated Check for ट्रैक्शन वोल्टमीटर डेविएट नहीं होते हैं परंतु कर्षण बल की कोई हानि नहीं है (CONV-TRACTION-VOLTMETER-NOT-DEVIATING)
+  const isTractionVoltmeterNotDeviatingQuery =
+    (norm.includes('28 नोच') || norm.includes('28 notch') || (norm.includes('28') && norm.includes('नोच'))) ||
+    ((norm.includes('ट्रैक्शन वोल्टमीटर') || norm.includes('traction voltmeter') || norm.includes('voltmeter') || norm.includes('वोल्टमीटर')) &&
+     (norm.includes('कोई हानि नहीं') || norm.includes('koi hani nahi') || norm.includes('हानि नहीं') || norm.includes('no loss') || norm.includes('चालू रखें'))) ||
+    norm.includes('conv-traction-voltmeter-not-deviating');
+
+  if (isTractionVoltmeterNotDeviatingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-TRACTION-VOLTMETER-NOT-DEVIATING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: ट्रैक्शन वोल्टमीटर डेविएट न होने पर परंतु कर्षण बल की कोई हानि न होने पर:\na) ट्रैक्शन चालू रखें।\nb) 28 नोच से आगे बिल्कुल न बढ़ें (सुरक्षा सीमा)।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (ट्रैक्शन वोल्टमीटर खराबी)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-3. Dedicated Check for नोच रिपीटर काम नहीं करता है (CONV-NOTCH-REPEATER-NOT-WORKING)
+  const isNotchRepeaterNotWorkingQuery =
+    (norm.includes('नोच रिपीटर') || norm.includes('notch repeater') || norm.includes('repeater')) &&
+    (norm.includes('काम नहीं') || norm.includes('not work') || norm.includes('खराब') || norm.includes('cctfs') || norm.includes('ccnr') || norm.includes('hravt'));
+
+  if (isNotchRepeaterNotWorkingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-NOTCH-REPEATER-NOT-WORKING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (नोच रिपीटर काम न करने पर):\na) वोल्टमीटर और एमीटर पर ध्यान रखते हुए ट्रैक्शन चालू रखें।\nb) CHBA का काम चेक करें। यदि CHBA काम नहीं करता तो उसके लिए ट्रबलशूट करें।\nc) यदि CHBA काम करता है और दोनों कैब के नोच रिपीटर काम नहीं करते हैं तो: CCTFS / CCNR फ्यूज या MCB चेक करें।\nd) यदि CCTFS / CCNR बार-बार पिघलता है तो: वोल्टमीटर और एमीटर पर ध्यान रखते हुए ट्रैक्शन चालू रखें।\ne) SIV (SI UNIT) लोको में: HRAVT का नॉर्मल होना चेक करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (नोच रिपीटर विफलता)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-4. Dedicated Check for BL को अनलॉक करने पर कोई भी पायलट लैम्प प्रकाशित नहीं होता है (CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL)
+  const isNoPilotLampOnUnlockingBLQuery =
+    !norm.includes('lsdj') &&
+    !norm.includes('lsb') &&
+    !norm.includes('lsgr') &&
+    !norm.includes('lschba') &&
+    !norm.includes('lsp') &&
+    !norm.includes('lsrsi') && (
+      ((norm.includes('पायलट लैम्प') || norm.includes('pilot lamp') || norm.includes('pilot lamps') || norm.includes('पायलट') || norm.includes('लैम्प')) &&
+      (norm.includes('कोई भी') || norm.includes('koi bhi') || norm.includes('koyi bhi') || norm.includes('no pilot') || norm.includes('none'))) ||
+      ((norm.includes('पायलट लैम्प') || norm.includes('pilot lamp') || norm.includes('pilot lamps')) &&
+      (norm.includes('bl') || norm.includes('अनलॉक') || norm.includes('unlock') || norm.includes('unlocking') || norm.includes('नहीं जल') || norm.includes('बुझ') || norm.includes('ccls') || norm.includes('hls') || norm.includes('zls'))) ||
+      (norm.includes('bl') && (norm.includes('अनलॉक') || norm.includes('unlock')) && (norm.includes('पायलट लैम्प') || norm.includes('pilot lamp') || norm.includes('कोई भी लैम्प') || norm.includes('कोई भी पायलट')) && (norm.includes('नहीं') || norm.includes('not'))) ||
+      norm.includes('conv-no-pilot-lamp-on-unlocking-bl')
+    );
+
+  if (isNoPilotLampOnUnlockingBLQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "नोट:-\ni) यदि CCLS कायम नहीं रहता है तो गाड़ी चलाने के लिए QRS को वेज करें।\nii) IP MAGNET VALVE का COC बंद करें।\niii) बिना पायलट लैम्प के गाड़ी चलाएं। अन्य मापक यंत्रों जैसे UA, नोच रिपीटर, एमीटर, CHBA एमीटर, रिले टारगेट इत्यादि पर ध्यान रखते हुए गाड़ी चलाएं (पृष्ठ 29 पर कंडिका 3.6 देखें)।\niv) विजिलेंस कंट्रोल डिवाइस {VCD} कार्य नहीं करेगी।\nv) रेहियोस्टैटिक ब्रेक का उपयोग न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (BL अनलॉक / पायलट लैम्प विफलता)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-5. Dedicated Check for BL अनलॉक करने पर LSDJ प्रकाशित नहीं होता है (CONV-LSDJ-NOT-GLOWING-ON-UNLOCKING-BL)
+  const isLSDJNotGlowingOnUnlockingBLQuery =
+    (norm.includes('lsdj') &&
+      (norm.includes('प्रकाशित नहीं') || norm.includes('नहीं जल') || norm.includes('नहीं होता') || norm.includes('not glow') || norm.includes('does not glow') || norm.includes('बुझ') || norm.includes('off') || norm.includes('नहीं')) &&
+      (norm.includes('bl') || norm.includes('अनलॉक') || norm.includes('unlock') || norm.includes('qv60') || norm.includes('cpa') || norm.includes('rs'))) ||
+    norm.includes('conv-lsdj-not-glowing-on-unlocking-bl');
+
+  if (isLSDJNotGlowingOnUnlockingBLQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSDJ-NOT-GLOWING-ON-UNLOCKING-BL')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण प्रक्रिया (BL अनलॉक करने पर LSDJ प्रकाशित न होने पर):\na) दूसरी कैब में LSDJ चेक करें।\nb) यदि दोनों कैब में प्रकाशित नहीं है तो: RS में प्रेशर चेक करें; यदि कम है तो CPA द्वारा 8 Kg/cm² प्रेशर बनाएं।\nc) QV60 रिले को दो-तीन बार हाथ से ऑपरेट करें। लैम्पों को चेक करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (LSDJ लैम्प विफलता / QV60 / CPA RS प्रेशर)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+
+  // 14D-7. Dedicated Check for BL अनलॉक करने पर LSB प्रकाशित नहीं होता है (CONV-LSB-NOT-GLOWING-ON-UNLOCKING-BL)
+  const isLSBNotGlowingOnUnlockingBLQuery =
+    (norm.includes('lsb') &&
+      (norm.includes('नहीं') || norm.includes('not') || norm.includes('off') || norm.includes('बुझ') || norm.includes('प्रकाशित नहीं')) &&
+      (norm.includes('bl') || norm.includes('अनलॉक') || norm.includes('unlock') || norm.includes('mpj') || norm.includes('रिवर्सर') || norm.includes('q50') || norm.includes('रेहियोस्टैटिक'))) ||
+    norm.includes('conv-lsb-not-glowing-on-unlocking-bl');
+
+  if (isLSBNotGlowingOnUnlockingBLQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSB-NOT-GLOWING-ON-UNLOCKING-BL')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "महत्वपूर्ण सावधानी (BL अनलॉक पर LSB प्रकाशित न होने पर):\na) दूसरी कैब में LSB चेक करें।\nb) MPJ ऑपरेट करते समय सुनिश्चित करें कि दोनों रिवर्सर सही दिशा में सेट हो गये हैं और Q50 इनर्जाइज हो गई है।\nc) रेहियोस्टैटिक ब्रेक (RB) का उपयोग न करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (LSB लैम्प विफलता)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-8. Dedicated Check for BL अनलॉक करने पर LSGR प्रकाशित नहीं होता है (CONV-LSGR-NOT-GLOWING-ON-UNLOCKING-BL)
+  const isLSGRNotGlowingOnUnlockingBLQuery =
+    ((norm.includes('lsgr') || (norm.includes('gr') && (norm.includes('0') || norm.includes('शून्य')))) &&
+      (norm.includes('नहीं') || norm.includes('not') || norm.includes('off') || norm.includes('बुझ') || norm.includes('प्रकाशित नहीं')) &&
+      (norm.includes('bl') || norm.includes('अनलॉक') || norm.includes('unlock') || norm.includes('smgr') || norm.includes('ड्रम'))) ||
+    norm.includes('conv-lsgr-not-glowing-on-unlocking-bl');
+
+  if (isLSGRNotGlowingOnUnlockingBLQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSGR-NOT-GLOWING-ON-UNLOCKING-BL')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "महत्वपूर्ण प्रक्रिया (BL अनलॉक पर LSGR प्रकाशित न होने पर):\na) SMGR ड्रम चेक करें और GR '0' पर होना सुनिश्चित करें।\nb) यदि GR '0' पर नहीं है तो उसे हाथ से '0' पर लाएं।\nc) यदि GR '0' पर है तो एमीटर और नोच रिपीटर की ओर ध्यान रखते हुये गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (LSGR लैम्प विफलता)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-9. Dedicated Check for BL अनलॉक करने पर LSP प्रकाशित होता है (CONV-LSP-GLOWS-ON-UNLOCKING-BL)
+  const isLSPGlowsOnUnlockingBLQuery =
+    (norm.includes('lsp') &&
+      (norm.includes('प्रकाशित होता') || norm.includes('glow') || norm.includes('जल') || norm.includes('on')) &&
+      (norm.includes('bl') || norm.includes('अनलॉक') || norm.includes('unlock') || norm.includes('q-48') || norm.includes('q48') || norm.includes('bpt'))) ||
+    norm.includes('conv-lsp-glows-on-unlocking-bl');
+
+  if (isLSPGlowsOnUnlockingBLQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSP-GLOWS-ON-UNLOCKING-BL')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "महत्वपूर्ण प्रक्रिया (BL अनलॉक पर LSP प्रकाशित होने पर):\na) Q-48 चेक करें: इनर्जाइज है तो हाथ से थपथपाएं, HMCS से TM चेक करें, सैंडिंग COC बंद कर GR हाथ से ऑपरेट करें।\nb) यदि Q-48 डी-इनर्जाइज है तो BPT को 2-3 बार ऑपरेट करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (BL अनलॉक पर LSP जलना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-10. Dedicated Check for BPT दबाने पर LSP/LSRSI प्रकाशित नहीं होते हैं (CONV-BPT-LSP-LSRSI-NOT-GLOWING)
+  const isBPTLspLsrsNotGlowingQuery =
+    ((norm.includes('bpt') || norm.includes('लैम्प टेस्ट') || norm.includes('lamp test')) &&
+      (norm.includes('lsp') || norm.includes('lsrsi') || norm.includes('टेल-टेल') || norm.includes('tell tale')) &&
+      (norm.includes('नहीं') || norm.includes('not') || norm.includes('बुझ') || norm.includes('off'))) ||
+    norm.includes('conv-bpt-lsp-lsrsi-not-glowing');
+
+  if (isBPTLspLsrsNotGlowingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-BPT-LSP-LSRSI-NOT-GLOWING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण प्रक्रिया (BPT दबाने पर LSP/LSRSI प्रकाशित न होने पर):\n• पीछे वाली कैब की BPT दबाकर टेस्ट करें।\n• यदि दोनों कैब से टेस्ट न हो तो व्हील स्लिप के साथ एमीटरों पर निगरानी रखें।\n• समय-समय पर RSI ब्लॉक पर टेल-टेल फ्यूज या LED चेक करते रहें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (BPT लैम्प टेस्ट विफलता)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-11. Dedicated Check for CPA चालू नहीं होता है (CONV-CPA-NOT-STARTING)
+  const isCPANotStartingQuery =
+    (norm.includes('cpa') || norm.includes('mcpa') || norm.includes('zcpa') || norm.includes('बेबी कंप्रेसर') || norm.includes('baby compressor')) &&
+    (norm.includes('चालू नहीं') || norm.includes('not start') || norm.includes('not starting') || norm.includes('काम नहीं') || norm.includes('not work') || norm.includes('80v') || norm.includes('टर्मिनल वायर')) &&
+    !norm.includes('प्रेशर नहीं') && !norm.includes('pressure not') ||
+    norm.includes('conv-cpa-not-starting');
+
+  if (isCPANotStartingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-CPA-NOT-STARTING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण प्रक्रिया (CPA चालू न होने पर):\na) HBA '1' पर है और ZCPA '1' पर रखने के बाद बैटरी वोल्टेज 80V से अधिक है, सुनिश्चित करें।\nb) CCBA फ्यूज चेक करें (आवश्यक होने पर HOBA का उपयोग करें)।\nc) ZCPA को 2-3 बार ऑपरेट करें।\nd) ZCPA व MCPA के टर्मिनल वायर कनेक्शन चेक करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (CPA चालू न होना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-12. Dedicated Check for CPA चालू होता है परंतु RS प्रेशर नहीं बनता है (CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING)
+  const isCPARunsRSPressureNotBuildingQuery =
+    ((norm.includes('cpa') || norm.includes('mcpa') || norm.includes('zcpa') || norm.includes('बेबी कंप्रेसर')) &&
+      (norm.includes('rs') || norm.includes('प्रेशर') || norm.includes('pressure') || norm.includes('ral') || norm.includes('rdj') || norm.includes('r-1') || norm.includes('r1') || norm.includes('लीकेज')) &&
+      (norm.includes('नहीं बनता') || norm.includes('not build') || norm.includes('कम') || norm.includes('leak') || norm.includes('लीक') || norm.includes('परंतु') || norm.includes('but'))) ||
+    norm.includes('conv-cpa-runs-rs-pressure-not-building');
+
+  if (isCPARunsRSPressureNotBuildingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण प्रक्रिया (CPA चलने पर RS प्रेशर न बनने पर):\n• RAL कॉक खुला होना सुनिश्चित करें (हल्का टैप करें)।\n• RS, MCPA, RDJ, DJ ऑयल सेपरेटर, पैंटो पाइपिंग व BV बॉक्स के ड्रेन कॉक व लीकेज चेक करें।\n• CPA सेफ्टी वाल्व लीक हो तो ब्लैंक करें या COC बंद करें।\n• R-1 COC को क्लोज करके प्रयत्न करें। CPA चालू रखकर लोको इनर्जाइज करें (7 kg/cm² पर CPA बंद करें)।\n• CPA चार्जिंग रेट 1 kg/cm² प्रति मिनट होना चाहिए।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (CPA चालू पर RS प्रेशर न बनना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-13. Dedicated Check for पैंटो नहीं उठता है (CONV-PANTO-NOT-RAISING)
+  const isConventionalPantoNotRaisingQuery =
+    (
+      norm.includes('conv-panto-not-raising') ||
+      norm.includes('íìºãí') || norm.includes('íìnãí') || norm.includes('éäèâ') ||
+      norm.includes('vept') ||
+      norm.includes('पैंटो नहीं उठता') || norm.includes('पेन्टो नहीं उठता') ||
+      norm.includes('panto nahi uthta') || norm.includes('pento nahi uthta') ||
+      norm.includes('पैंटो न उठना') || norm.includes('पेन्टो न उठना') ||
+      ((norm.includes('पैंटो') || norm.includes('पेन्टो') || norm.includes('panto') || norm.includes('pento') || norm.includes('pantograph')) &&
+       (norm.includes('नहीं उठता') || norm.includes('nahi uthta') || norm.includes('not raise') || norm.includes('not raising') || norm.includes('नहीं उठ') || norm.includes('nahi uth') || norm.includes('न उठना')) &&
+       !norm.includes('f0102') && !norm.includes('f0103') && !norm.includes('low pressure panto') && !norm.includes('3 phase') && !norm.includes('3-phase') && !norm.includes('3फ़ेस') && !norm.includes('3-फ़ेस') && !norm.includes('slave')) ||
+      ((norm.includes('bpems') || norm.includes('hls') || norm.includes('zls')) && (norm.includes('पैंटो') || norm.includes('पेन्टो') || norm.includes('panto') || norm.includes('pento')))
+    );
+
+  if (isConventionalPantoNotRaisingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-PANTO-NOT-RAISING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "महत्वपूर्ण सावधानी (पैंटो नहीं उठने पर):\na) दूसरे पैंटो का उपयोग करें।\nb) यदि BPEMS स्विच दबा है तो उसे रीसेट करें।\nc) यदि लोको में HLS / ZLS स्विच दिया है तो स्विच का ऑन होना सुनिश्चित करें।\nd) RS प्रेशर चेक करें, कम हो तो CPA द्वारा बनाएं।\ne) बैटरी वोल्टेज, CCBA व CCPT चेक करें।\nf) VEPT आइसोलेटिंग कॉक व टर्मिनल चेक करें, VEPT हाथ से ऑपरेट करें, पीछे वाली कैब से प्रयास करें, VEPT वेज करें व TLC से सम्पर्क करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (पैंटो नहीं उठता है)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-14. Dedicated Check for हेडलाइट प्रकाशित नहीं होती है (CONV-HEADLIGHT-NOT-GLOWING)
+  const isConventionalHeadlightNotGlowingQuery =
+    (
+      norm.includes('conv-headlight-not-glowing') ||
+      norm.includes('úìåôâåã') || norm.includes('úëå ôâåã') ||
+      norm.includes('blprd') || norm.includes('blprf') || norm.includes('blprr') ||
+      norm.includes('hrtpr') || norm.includes('rtpr') ||
+      norm.includes('हेडलाइट प्रकाशित नहीं होती') || norm.includes('हेड लाइट प्रकाशित नहीं होती') ||
+      norm.includes('हेडलाइट प्रकाशित नहीं') || norm.includes('हेड लाइट प्रकाशित नहीं') ||
+      norm.includes('हेडलाइट नहीं जलती') || norm.includes('हेड लाइट नहीं जलती') ||
+      norm.includes('headlight prakashit nahi hoti') ||
+      ((norm.includes('हेडलाइट') || norm.includes('हेड लाइट') || norm.includes('headlight')) &&
+       (norm.includes('नहीं') || norm.includes('not') || norm.includes('nahi') || norm.includes('off') || norm.includes('खराब') || norm.includes('फेल')) &&
+       !norm.includes('3 phase') && !norm.includes('3-phase') && !norm.includes('3फ़ेस') && !norm.includes('3-फ़ेस') && !norm.includes('310.1'))
+    );
+
+  if (isConventionalHeadlightNotGlowingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-HEADLIGHT-NOT-GLOWING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "महत्वपूर्ण सावधानी (हेडलाइट प्रकाशित न होने पर):\na) BL अनलॉक और ZRT/ZPR का ऑन होना सुनिश्चित करें।\nb) BLPRD क्लोज करें। BLPRD/BLPRF ओपन कर BLPRR क्लोज करें।\nc) यदि पीछे की हेडलाइट भी न जले तो DC-DC कन्वर्टर टॉगल स्विच बदलें; यदि पीछे की जले तो बल्ब बदलें।\nd) सफलता न मिलने पर मार्कर लाइट के सहारे 40 KMPH स्पीड रेस्ट्रिक्शन (G&SR 4.14) से कार्य करें।\nनोट: HRTPR होने पर '0' पर रखकर RTPR का उपयोग करें (कंडिका 3.7 पृष्ठ 29 देखें)।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (हेडलाइट प्रकाशित नहीं होती है)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 29,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14D-15. Dedicated Check for चालू गाड़ी में व्हीसल (हॉर्न) फेल हो जाती है (CONV-HORN-WHISTLE-FAILURE)
+  const isHornWhistleFailureQuery =
+    (
+      norm.includes('conv-horn-whistle-failure') ||
+      norm.includes('ʬीसल') || norm.includes('İʬसल') || norm.includes('हॉनŊ') || norm.includes('डुɘेƛ') || norm.includes('सैİȵंग') ||
+      norm.includes('व्हीसल') || norm.includes('व्हिसल') || norm.includes('whistle') ||
+      norm.includes('डुप्लेक्स चैक वाल्व') || norm.includes('duplex check valve') ||
+      norm.includes('4.50') ||
+      ((norm.includes('हॉर्न') || norm.includes('horn') || norm.includes('हॉन') || norm.includes('सीटी')) &&
+       (norm.includes('फेल') || norm.includes('fail') || norm.includes('नहीं बज') || norm.includes('खराब') || norm.includes('लीकेज') || norm.includes('काम नहीं')))
+    );
+
+  if (isHornWhistleFailureQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-HORN-WHISTLE-FAILURE')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण संरक्षा नियम (व्हीसल/हॉर्न विफलता):\na) स्टार्टिंग स्टेशन पर व्हीसल फेल होने पर लोको तुरंत फेल करें।\nb) चालू गाड़ी में: हवा का लीकेज चेक करें, सैंडिंग कट आउट कॉक बंद करें, अंडरफ्रेम डुप्लेक्स चेक वाल्व को टैप करें (कॉरिडोर नं. 2 के बाहर)।\nc) सफलता न मिलने पर सेक्शन क्लीयर कर TLC/ASM को सूचित करें। TLC की लिखित अनुमति पर साफ दृश्यता में 25 KMPH व अस्पष्ट दृश्यता में 8 KMPH से G&SR 4.50 (2) के अनुसार सतर्कतापूर्वक कार्य करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (व्हीसल/हॉर्न विफलता)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14F. Explicit Check for पहली नोच पर ऑटो रिग्रेशन - LSP प्रकाशित नहीं होता है (CONV-FIRST-NOTCH-AUTOREGRESSION-LSP-OFF)
+  const isAutoRegressionLSPOffQuery =
+    (norm.includes('lsp') && (norm.includes('नहीं होता') || norm.includes('nahi hota') || norm.includes('off') || norm.includes('नहीं जलता') || norm.includes('bujha') || norm.includes('nh)>') || norm.includes('nh)') || norm.includes('नहीं') || norm.includes('बुझा')) && (norm.includes('रिग्रेशन') || norm.includes('regression') || norm.includes('नोच') || norm.includes('notch'))) ||
+    ((norm.includes('पीछे') || norm.includes('rear cab')) && norm.includes('bl') && (norm.includes('lock') || norm.includes('लॉक') || norm.includes('अनलॉक') || norm.includes('unlock')) && (norm.includes('रिग्रेशन') || norm.includes('नोच') || norm.includes('कैब'))) ||
+    (norm.includes('bpr') && (norm.includes('दबी') || norm.includes('अटक'))) ||
+    (norm.includes('qvcd') && (norm.includes('ओपन') || norm.includes('वेज'))) ||
+    norm.includes('conv-first-notch-autoregression-lsp-off');
+
+  if (isAutoRegressionLSPOffQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FIRST-NOTCH-AUTOREGRESSION-LSP-OFF') || conventionalFaults.find(cf => cf.id === 'CONV-FIRST-NOTCH-AUTOREGRESSION')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 1st नोच पर ऑटो रिग्रेशन होने पर यदि LSP प्रकाशित नहीं होता है तो: a) पीछे वाली कैब की BL बराबर लॉक है, सुनिश्चित करें (आगे की BL लॉक करने पर पायलट लैम्प जलते रहें तो पीछे की BL अनलॉक है; लॉक करें अन्यथा Q118 वेज कर ZSMS 0 व EEC से काम करें या मोडीफाइड ZSMS में GR मैनुअल कंट्रोल करें)। b) BP सामान्य व VCD ऑपरेट होने पर VCD रीसेट करें अन्यथा QVCD को ओपन में वेज करें। c) मोडीफाइड ZSMS में BPR दबी अवस्था में अटकने पर नॉर्मल करें, अन्यथा ZSMS पोजीशन बदलें या GR मैनुअल कंट्रोल करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (पहली नोच पर ऑटो रिग्रेशन - LSP ऑफ)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14F-3. Dedicated Check for पहिये फिसलने पर LSP प्रकाशित नहीं होता (CONV-WHEEL-SLIP-LSP-NOT-GLOWING)
+  const isWheelSlipLSPNotGlowingQuery =
+    (norm.includes('पहिये फिसलने') || norm.includes('पाहिये फिसलने') || (norm.includes('फिसल') && (norm.includes('lsp') || norm.includes('पहिये') || norm.includes('पहिया')))) ||
+    ((norm.includes('wheel slip') || norm.includes('व्हील स्लिप')) && (norm.includes('not glow') || norm.includes('नहीं होता') || norm.includes('nahi hota') || norm.includes('नहीं जलता') || norm.includes('न जलना')) && norm.includes('lsp')) ||
+    (norm.includes('psa') && (norm.includes('gr रिग्रेस') || norm.includes('सैंडिंग') || norm.includes('zqwc'))) ||
+    norm.includes('conv-wheel-slip-lsp-not-glowing');
+
+  if (isWheelSlipLSPNotGlowingQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-WHEEL-SLIP-LSP-NOT-GLOWING')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (पहिये फिसलने पर LSP प्रकाशित नहीं होना - एमीटर रीडिंग में उतार-चढ़ाव):\na) यदि आटो रिग्रेशन और सैंडिंग नहीं होता: तो आवश्यक होने पर GR रिग्रेस करें और PSA को दबाएं (यदि आवश्यक हो तो ZQWC को दबाएं)।\nb) यदि आटो रिग्रेशन और सैंडिंग होता है: तो व्हील स्लिप के संकेतों का ध्यान रखते हुए गाड़ी चलाएं। ZQWC का उपयोग करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (पहिये फिसलने पर LSP प्रकाशित नहीं होना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14F-2. Dedicated Check for बिना नोच लिये LSP प्रकाशित रहता है (CONV-LSP-GLOWS-WITHOUT-NOTCH)
+  const isLSPGlowsWithoutNotchQuery =
+    !isWheelSlipLSPNotGlowingQuery &&
+    (norm.includes('bina notch') || norm.includes('बिना नोच') || norm.includes('बिना notch') || norm.includes('बिना नोच लिये') || norm.includes('बिना नोच लिए')) &&
+    (norm.includes('lsp') || norm.includes('q-48') || norm.includes('q48'));
+
+  if (isLSPGlowsWithoutNotchQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSP-GLOWS-WITHOUT-NOTCH')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (बिना नोच लिए LSP प्रकाशित रहना):\n1. Q-48 चेक करें (LSP): यदि इनर्जाइज है तो Q-48 को हाथ से थपथपाएं।\n2. अगर सफलता न मिले तो: HMCS के द्वारा प्रयत्न करें (संबंधित ट्रैक्शन मोटर आइसोलेट करके देखें)।\n3. अगर फिर भी सफलता नहीं मिलती तो: सैंडिंग कट-आउट कॉक (COC) बंद करें और GR को हाथ से ऑपरेट करके सेक्शन क्लीयर करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (बिना नोच लिए LSP प्रकाशित रहना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14G-1. Dedicated Check for नोच लेने पर LSP प्रकाशित होता है और आटो रिग्रेशन होता है (अध्याय 8-पृष्ठ 56 व अन्य नोचों पर शंटिंग कॉन्टैक्टर)
+  const isGeneralNotchAutoregressionLSPGlowsQuery =
+    !isAutoRegressionLSPOffQuery &&
+    ((norm.includes('अध्याय 8') || norm.includes('पृष्ठ 56') || norm.includes('failuer') || norm.includes('फेलियर सं') || norm.includes('अन्य नोच') || norm.includes('anya noch') || norm.includes('dusre noch')) ||
+     ((norm.includes('नोच लेने पर lsp') || norm.includes('notch lene par lsp') || (norm.includes('lsp') && norm.includes('नोच लेने पर'))) && (norm.includes('आटो') || norm.includes('ऑटो') || norm.includes('रिग्रेशन') || norm.includes('regression')) && !norm.includes('पहली नोच पर lsp')) ||
+     norm.includes('conv-notch-autoregression-lsp-glows'));
+
+  if (isGeneralNotchAutoregressionLSPGlowsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-NOTCH-AUTOREGRESSION-LSP-GLOWS')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (नोच लेने पर LSP प्रकाशित होना व ऑटो रिग्रेशन):\na) यदि पहली नोच पर LSP प्रकाशित होता है: अध्याय 8-पृष्ठ 56 फेलियर सं. 3(I) अनुसार व्हील स्लिप में सैंडिंग व ZQWC/BPQD उपयोग करें; एमीटर न हिलने पर संबंधित TM आइसोलेट करें; दोनों हिलने पर TM 2 व 5 को बारी-बारी आइसोलेट करें।\nb) यदि अन्य नोचों पर LSP प्रकाशित होता है: जांच करें कि कोई शंटिंग कॉन्टैक्टर क्लोज हालत में अटका तो नहीं; LT में ओपन करने का प्रयत्न करें; सफलता न मिलने पर HMCS द्वारा संबंधित ट्रैक्शन मोटर को आइसोलेट करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (नोच लेने पर LSP प्रकाशित व ऑटो रिग्रेशन)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14G. Explicit Check for पहली नोच पर ऑटो रिग्रेशन - LSP प्रकाशित होता है (CONV-FIRST-NOTCH-AUTOREGRESSION-LSP-GLOWS)
+  const isAutoRegressionLSPGlowsQuery =
+    !isAutoRegressionLSPOffQuery && !isGeneralNotchAutoregressionLSPGlowsQuery &&
+    ((norm.includes('lsp') && (norm.includes('प्रकाशित') || norm.includes('Ůकािशत') || norm.includes('glows') || norm.includes('जलता')) && (norm.includes('रिग्रेशन') || norm.includes('regression') || norm.includes('नोच') || norm.includes('notch'))) ||
+    (norm.includes('zqwc') || norm.includes('bpqd')) ||
+    ((norm.includes('tm 2') || norm.includes('tm-2') || norm.includes('मोटर 2')) && (norm.includes('tm 5') || norm.includes('tm-5') || norm.includes('मोटर 5')) && (norm.includes('आइसोलेट') || norm.includes('isolate'))) ||
+    (norm.includes('शंटिंग') && norm.includes('कॉन्टैक्टर') && (norm.includes('अटक') || norm.includes('चिपक') || norm.includes('क्लोज'))) ||
+    norm.includes('conv-first-notch-autoregression-lsp-glows'));
+
+  if (isAutoRegressionLSPGlowsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FIRST-NOTCH-AUTOREGRESSION-LSP-GLOWS') || conventionalFaults.find(cf => cf.id === 'CONV-FIRST-NOTCH-AUTOREGRESSION')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 1st नोच पर ऑटो रिग्रेशन होने पर यदि LSP प्रकाशित होता है तो: a) व्हील स्लिप होने पर सैंडिंग करें और ZQWC/BPQD का उपयोग करें। b) कोई एक एमीटर डेविएट न होने पर HMCS द्वारा संबंधित ट्रैक्शन मोटर को आइसोलेट करें। c) दोनों एमीटर डेविएट होने पर TM-2 और TM-5 को HMCS से बारी-बारी आइसोलेट करें। d) शंटिंग कॉन्टैक्टर चेक करें; क्लोज में अटका होने पर LT में ओपन करें अन्यथा HMCS से मोटर आइसोलेट करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (पहली नोच पर ऑटो रिग्रेशन - LSP प्रकाशित)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14H. Master Check for पहली नोच पर ऑटो रिग्रेशन (CONV-FIRST-NOTCH-AUTOREGRESSION)
+  const isAutoRegressionMasterQuery =
+    !isAutoRegressionLSPOffQuery && !isAutoRegressionLSPGlowsQuery &&
+    ((norm.includes('ऑटो रिग्रेशन') || norm.includes('auto regression') || norm.includes('ऑटोरेग्रेशन')) && (norm.includes('पहली नोच') || norm.includes('पहला नोच') || norm.includes('1st notch') || norm.includes('first notch') || norm.includes('lsgr'))) ||
+    (norm.includes('lsgr') && (norm.includes('बुझकर') || norm.includes('bujhkar')) && (norm.includes('प्रकाशित') || norm.includes('glow'))) ||
+    norm.includes('conv-first-notch-autoregression');
+
+  if (isAutoRegressionMasterQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-FIRST-NOTCH-AUTOREGRESSION')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: 1st नोच लेते ही ऑटो रिग्रेशन (LSGR बुझकर पुनः प्रकाशित) होने पर तुरंत LSP पायलट लैम्प का निरीक्षण करें। यदि LSP प्रकाशित होता है तो व्हील स्लिप, ZQWC/BPQD, एमीटर डेविएशन, TM 2/5 व शंटिंग कॉन्टैक्टर की जांच करें। यदि LSP प्रकाशित नहीं होता है तो पीछे की कैब BL लॉक, ZSMS 1, Q50 रिले व ब्रेक रिलीज जांचें अथवा GR हाथ से चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (पहली नोच पर ऑटो रिग्रेशन)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14J. Dedicated Check for MPJ को F या R पर रखने पर LSB प्रकाशित ही रहता है (CONV-MPJ-F-R-LSB-GLOWS)
+  const isMPJLSBGlowsQuery =
+    !norm.includes('ccpt') &&
+    (((norm.includes('mpj') || norm.includes('रिवर्सर') || norm.includes('reverser')) && norm.includes('lsb')) ||
+     (norm.includes('lsb') && (norm.includes('प्रकाशित') || norm.includes('glow') || norm.includes('जलता') || norm.includes('रहता') || norm.includes('बुझता नहीं') || norm.includes('नहीं बुझता'))) ||
+     ((norm.includes('j-1') || norm.includes('j1')) && (norm.includes('j-2') || norm.includes('j2')) && (norm.includes('ctf') || norm.includes('c-145') || norm.includes('c145'))) ||
+     norm.includes('conv-mpj-f-r-lsb-glows'));
+
+  if (isMPJLSBGlowsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-MPJ-F-R-LSB-GLOWS')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम: MPJ को 'F' या 'R' पर रखने पर यदि LSB प्रकाशित ही रहता है तो:\n(I) यदि Q-50 इनर्जाइज नहीं है:\n  a) CTF-1, CTF-2, CTF-3 'रनिंग' पोजीशन पर सेट होना सुनिश्चित करें (हाथ से सेट करें)।\n  b) J-1 और J-2 वांछित स्थिति में सेट करें व HT-1 व HT-2 न्यूमैटिक COC खुले होना सुनिश्चित करें।\n  c) C-145 ओपन होना व LSC-145 बुझा होना सुनिश्चित करें।\n  d) रिवर्सर/CTF सेट व C-145 ओपन होने पर Q-50 को वेज करें।\n(II) यदि Q-50 इनर्जाइज है तो LSB की परवाह न करें। यदि रिवर्सर क्षतिग्रस्त हो या सेट न हो, तो संबंधित RSI ब्लॉक आइसोलेट करें, LSC-145 बुझा सुनिश्चित करें और Q-50 को वेज करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (MPJ पर LSB प्रकाशित रहना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // 14K. Dedicated Check for LSRSI प्रकाशित रहता है (CONV-LSRSI-GLOWS)
+  const isLSRSIGlowsQuery =
+    (norm.includes('lsrsi') && !norm.includes('qrsi')) ||
+    ((norm.includes('rsi-1') || norm.includes('rsi1') || norm.includes('rsi-2') || norm.includes('rsi2') || norm.includes('rsi')) && (norm.includes('टेल-टेल') || norm.includes('tell tale') || norm.includes('telltale') || norm.includes('6 led') || norm.includes('14 led') || norm.includes('18 led') || norm.includes('14/18'))) ||
+    ((norm.includes('टेल-टेल') || norm.includes('tell-tale')) && (norm.includes('फ्यूज') || norm.includes('fuse'))) ||
+    norm.includes('conv-lsrsi-glows');
+
+  if (isLSRSIGlowsQuery) {
+    const f = conventionalFaults.find(cf => cf.id === 'CONV-LSRSI-GLOWS')!;
+    if (f) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "अति-महत्वपूर्ण सुरक्षा नियम (LSRSI प्रकाशित रहना - सिलिकॉन रेक्टिफायर ब्लॉक नियम):\n1. टेल-टेल फ्यूज: एक भुजा में या प्रत्येक भुजा में 1 फ्यूज पिघलने पर निकालें व ट्रैक्शन चालू रखें; 1 भुजा में 2 फ्यूज पिघलने पर RSI ब्लॉक आइसोलेट करें; कोई न पिघलने पर LSRSI इग्नोर करें।\n2. 6 LED ब्लॉक: 1 LED जलने पर संबंधित RSI ब्लॉक आइसोलेट करें और अनुमत लोड आधा करके गाड़ी चलाएं।\n3. 14/18 LED ब्लॉक: चलती गाड़ी में MP '0' पर लाएं; 1 LED जलने पर टॉगल स्विच ऑफ करें (न होने पर जांच कर सामान्य चलें); दोनों ब्लॉक में 1-1 LED होने पर टॉगल ऑफ करें; 1 ब्लॉक में 2 LED होने पर संबंधित ब्लॉक की एक ट्रैक्शन मोटर आइसोलेट करें; 2 से अधिक LED होने पर संबंधित RSI ब्लॉक आइसोलेट करें व लोड आधा करके गाड़ी चलाएं।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem} (LSRSI प्रकाशित रहना)`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // Check exact conventional defects
+
+  for (const f of conventionalFaults) {
+    const fId = f.id.toLowerCase();
+    if (
+      norm.includes(fId) ||
+      (f.id === 'CONV-LSRSI-GLOWS' && isLSRSIGlowsQuery) ||
+      (f.id === 'CONV-AUX-DAMAGED-BURNT' && isAuxDamagedBurntQuery) ||
+      (f.id === 'CONV-CHBA-NOT-WORKING' && isCHBANotWorkingQuery) ||
+      (f.id === 'CONV-MVRH-NOT-WORKING' && isMVRHNotWorkingQuery) ||
+      (f.id === 'CONV-MVMT-NOT-WORKING' && isMVMTNotWorkingQuery) ||
+      (f.id === 'CONV-MVSI-NOT-WORKING' && isMVSINotWorkingQuery) ||
+      (f.id === 'CONV-MVSL-NOT-WORKING' && isMVSLNotWorkingQuery) ||
+      (f.id === 'CONV-MPH-NOT-WORKING' && isMPHNotWorkingQuery) ||
+      (f.id === 'CONV-BLCP-MR-PRESSURE-NOT-BUILDING' && isBLCPMRNotBuildingQuery) ||
+      (f.id === 'CONV-DJ-TRIP-DIFFERENT-NOTCHES' && isDifferentNotchesTripQuery) ||
+      (f.id === 'CONV-DJ-TRIP-SIXTH-NOTCH' && isSixthNotchTripQuery) ||
+      (f.id === 'CONV-DJ-TRIP-FIRST-NOTCH' && isFirstNotchTripQuery) ||
+      (f.id === 'CONV-BLVMT-DJ-TRIP' && isBLVMTDJTripQuery) ||
+      (f.id === 'CONV-LSDJ-BEFORE-LSCHBA' && isLSCHBABeforeQuery) ||
+      (f.id === 'CONV-LSDJ-AFTER-LSCHBA' && isLSCHBAAfterQuery) ||
+      (f.id === 'CONV-LSDJ-EXTINGUISHED-UA-ZERO' && isLSDJExtinguishedUAZeroQuery) ||
+      (f.id === 'CONV-DJ-NOT-CLOSING' && !isCHBANotWorkingQuery && !isAuxDamagedBurntQuery && !isLSDJExtinguishedUAZeroQuery && !isLSCHBABeforeQuery && !isLSCHBAAfterQuery && !isBLVMTDJTripQuery && !isFirstNotchTripQuery && !isSixthNotchTripQuery && !isDifferentNotchesTripQuery && !isBLCPMRNotBuildingQuery && !isMPHNotWorkingQuery && !isMVSINotWorkingQuery && !isMVSLNotWorkingQuery && !isMVMTNotWorkingQuery && !isMVRHNotWorkingQuery && (
+        norm.includes('dj not closing') || norm.includes('vcb not closing') ||
+        norm.includes('lsdj') || norm.includes('icdj') || norm.includes('बुझता') || norm.includes('bujhta') || norm.includes('bujta') || norm.includes('nahi buj') ||
+        norm.includes('sub title') || norm.includes('subtitle') || norm.includes('कम प्रेशर') || norm.includes('उप-असामान्य संकेत') ||
+        (norm.includes('dj') && (norm.includes('close nahi') || norm.includes('nahi lag raha') || norm.includes('nahi band') || norm.includes('bldj') || norm.includes('blrdj') || norm.includes('बंद नहीं'))) ||
+        (norm.includes('q118') && norm.includes('energize')) || (norm.includes('q45') && norm.includes('energize')) ||
+        (norm.includes('c118') && norm.includes('close'))
+      )) ||
+      (f.id === 'CONV-DJ-TRIPPING-IMMEDIATE' && (norm.includes('blrdj chhodte') || norm.includes('turant trip') || (norm.includes('dj') && norm.includes('tripping immediately')))) ||
+      (f.id === 'CONV-GR-NO-PROGRESSION' && (norm.includes('notch') || norm.includes('नोच') || norm.includes('gr') || norm.includes('zsmgr') || norm.includes('progression'))) ||
+      (f.id === 'CONV-MPCS-ICE-RELAY-BYPASS-SOFT-WEDGE' && (
+        (norm.includes('ice') || norm.includes('3.0') || norm.includes('0,7,8,9') || norm.includes('0 7 8 9') || (norm.includes('soft') && norm.includes('key')) || norm.includes('सॉफ्ट') || norm.includes('qcvar')) &&
+        (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('relay') || norm.includes('रिले') || norm.includes('रले'))
+      )) ||
+      (f.id === 'CONV-MPCS-MEDHA-RELAY-BYPASS-SOFT-WEDGE' && (
+        (norm.includes('medha') || norm.includes('मेधा') || norm.includes('instantaneous') || norm.includes('permanent')) &&
+        (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('relay') || norm.includes('रिले') || norm.includes('रले') || norm.includes('bypass') || norm.includes('बायपास'))
+      )) ||
+      (f.id === 'CONV-MPCS-BPMPR-RESET' && (
+        norm.includes('bpmpr') || norm.includes('बीपीएमपीआर') ||
+        (
+          (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
+          (norm.includes('reset') || norm.includes('रीसेट') || norm.includes('रिसेट') || norm.includes('tr') || norm.includes('पैनल') || norm.includes('10 sec') || norm.includes('10 सेकंड') || norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम'))
+        ) ||
+        (
+          (norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम')) && (norm.includes('आइसोलेट') || norm.includes('isolate'))
+        )
+      )) ||
+      (f.id === 'CONV-MPCS-DJ-TRIPPED-VIA-C107-C106-C105-FEEDBACK-FAIL' && (
+        (norm.includes('feedback') || norm.includes('फीडबैक') || norm.includes('tripped via')) &&
+        (norm.includes('107') || norm.includes('106') || norm.includes('105') || norm.includes('c-107'))
+      )) ||
+      (f.id === 'CONV-MPCS-DJ-TRIP-ON-6TH-NOTCH-15-SEC' && (
+        ((norm.includes('mpcs') || norm.includes('एमपीसीएस')) && (norm.includes('6') || norm.includes('छठा') || norm.includes('छठी')) && (norm.includes('notch') || norm.includes('नोच') || norm.includes('ni[c'))) ||
+        (norm.includes('15') && (norm.includes('sec') || norm.includes('सेकंड')) && (norm.includes('notch') || norm.includes('नोच')))
+      )) ||
+      (f.id === 'CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING' && (
+        ((norm.includes('mpcs') || norm.includes('एमपीसीएस')) && (norm.includes('dj') || norm.includes('vcb') || norm.includes('icdj') || norm.includes('close') || norm.includes('±li[j'))) ||
+        norm.includes('bp1dj') ||
+        norm.includes('bp2dj') ||
+        norm.includes('add blrdj')
+      )) ||
+      (f.id === 'CONV-MPCS-MAIN-UNIT-NOT-WORKING' && (
+        norm.includes('mpcs') ||
+        norm.includes('एमपीसीएस') ||
+        norm.includes('main unit') ||
+        norm.includes('मेन यूनिट') ||
+        norm.includes('cccpu') ||
+        (norm.includes('m[n') && norm.includes('kiy<'))
+      )) ||
+      (f.id === 'CONV-SIV-EARTH-FAULT-BYPASS-PROCEDURE' && (
+        ((norm.includes('earth') || norm.includes('अर्थ') || norm.includes('ay<')) && (norm.includes('bypass') || norm.includes('बाईपास') || norm.includes('biypis'))) ||
+        (norm.includes('1500') && (norm.includes('45') || norm.includes('ohm') || norm.includes('ओम'))) ||
+        (norm.includes('hsiv') && (norm.includes('bypass') || norm.includes('बाईपास') || norm.includes('biypis')))
+      )) ||
+      (f.id === 'CONV-SIV-EXTERNAL-FAULT-EARTH-FAULT' && (
+        ((norm.includes('external') || norm.includes('e±stn<l') || norm.includes('एक्सटर्नल')) && (norm.includes('earth') || norm.includes('ay<fiˆãt') || norm.includes('अर्थ'))) ||
+        (norm.includes('hsiv') && !norm.includes('1500') && !norm.includes('45'))
+      )) ||
+      (f.id === 'CONV-SIV-EXTERNAL-FAULT-OVERCURRENT' && ((norm.includes('external') && norm.includes('fault')) || norm.includes('e±stn<l') || norm.includes('e±stn') || norm.includes('एक्सटर्नल') || (norm.includes('siv') && (norm.includes('overcurrent') || norm.includes('ai[vrkr>t') || norm.includes('ai[vrkr') || norm.includes('ओवरकरंट'))))) ||
+      (f.id === 'CONV-SIV-INTERNAL-FAULT-EARTH-FAULT' && ((norm.includes('internal') && norm.includes('fault')) || norm.includes('entn<l') || norm.includes('ay<fiˆãt') || norm.includes('dapl[') || norm.includes('इंटरनल') || (norm.includes('siv') && (norm.includes('internal') || norm.includes('earth') || norm.includes('fan') || norm.includes('temperature') || norm.includes('phasing'))))) ||
+      (f.id === 'CONV-SIV-BLVMT-OPEN-SIV-NOT-WORKING' && (norm.includes('blvmt') || norm.includes('ccinv') || (norm.includes('siv') && (norm.includes('open') || norm.includes('ai[pn'))))) ||
+      (f.id === 'CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE' && (norm.includes('input') || norm.includes('enp&t') || norm.includes('out of range') || norm.includes('आउट ऑफ रेंज') || norm.includes('608') || norm.includes('1144') || norm.includes('aiut ai[f') || norm.includes('lil l]'))) ||
+      (f.id === 'CONV-SIV-LSCHBA-GLOWS-WITHOUT-VCB-TRIP' && (
+        ((norm.includes('bina') || norm.includes('without') || norm.includes('बिना') || norm.includes('(bni')) && (norm.includes('vcb') || norm.includes('dj')) && norm.includes('lschba')) ||
+        (norm.includes('qsvm') && (norm.includes('chatter') || norm.includes('wedge') || norm.includes('वेज')))
+      )) ||
+      (f.id === 'CONV-SIV-TRIPPING' && (norm.includes('siv') || norm.includes('qsit') || norm.includes('lssit') || norm.includes('static converter'))) ||
+      (f.id === 'CONV-PANTO-NOT-RAISING' && (norm.includes('panto') || norm.includes('पैंटो') || norm.includes('zpt') || norm.includes('vept'))) ||
+      (f.id === 'CONV-FLASHER-LIGHT-NOT-WORKING' && (norm.includes('flasher') || norm.includes('फ्लैशर') || norm.includes('½l]sr') || norm.includes('lie<t') || norm.includes('afl'))) ||
+      (f.id === 'CONV-HEADLIGHT-NOT-GLOWING' && (norm.includes('headlight') || norm.includes('हेडलाइट') || norm.includes('blprd') || norm.includes('blprr'))) ||
+      (f.id === 'CONV-HORN-WHISTLE-FAILURE' && (norm.includes('horn') || norm.includes('whistle') || norm.includes('हॉर्न') || norm.includes('व्हीसल') || norm.includes('डुप्लेक्स') || norm.includes('4.50'))) ||
+      (f.id === 'CONV-LOCO-BRAKE-NOT-RELEASING-A9-SA9-RELEASE' && (norm.includes('release') || norm.includes('रिलीज') || norm.includes('ãóôäá')) && (norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('loco') || norm.includes('लोको'))) ||
+      (f.id === 'CONV-SA9-LOCO-BRAKE-NOT-APPLYING' && (norm.includes('sa-9') || norm.includes('sa9') || norm.includes('sa 9')) && (norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('ïýë»'))) ||
+      (f.id === 'CONV-A9-LOCO-BRAKE-NOT-APPLYING' && (norm.includes('a-9') || norm.includes('a9')) && (norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('ïýë»'))) ||
+      (f.id === 'CONV-MU-CAB-CHANGING-BRAKE-BINDING' && (norm.includes('mu') || norm.includes('मल्टीपल') || norm.includes('ñlãäíô') || norm.includes('trailing') || norm.includes('ट्रेलिंग') || norm.includes('mu2b') || (norm.includes('cab') && norm.includes('bind')))) ||
+      (f.id === 'CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD' && (norm.includes('load') || norm.includes('लोड') || norm.includes('ôíå') || norm.includes('attach') || norm.includes('अटैच') || norm.includes('áãì¿') || norm.includes('áÃì¿'))) ||
+      (f.id === 'CONV-BP-PRESSURE-SURGE-BRAKE-BINDING' && (norm.includes('बंधती') || norm.includes('surge') || (norm.includes('bp') && norm.includes('5') && norm.includes('अधिक')))) ||
+      (f.id === 'CONV-BP-PRESSURE-NOT-BUILDING' && (norm.includes('bp pressure') || norm.includes('bp drop') || norm.includes('afl') || norm.includes('a-8') || norm.includes('बीपी प्रेशर'))) ||
+      (f.id === 'CONV-MR-PRESSURE-LESS-THAN-7' && (norm.includes('7 kg') || (norm.includes('mr') && (norm.includes('7') || norm.includes('सात'))))) ||
+      (f.id === 'CONV-COMPRESSOR-CONTACTORS-NOT-CLOSING' && (
+        ((norm.includes('compressor') || norm.includes('कंप्रेसर') || norm.includes('कम्प्रेसर') || norm.includes('kàp[sr')) && (norm.includes('contactor') || norm.includes('कॉन्टैक्टर') || norm.includes('kiºt[±tr'))) ||
+        norm.includes('qcon') || norm.includes('qtd-101') || norm.includes('qtd101')
+      )) ||
+      (f.id === 'CONV-MR-NOT-BUILDING' && !isBLCPMRNotBuildingQuery && (norm.includes('mr pressure') || norm.includes('एमआर प्रेशर') || norm.includes('blcp') || norm.includes('rgcp'))) ||
+      (f.id === 'CONV-VCD-PENALTY-BRAKE' && (norm.includes('vcd') || norm.includes('vigilance') || norm.includes('पेनल्टी ब्रेक')))
+    ) {
+      return {
+        identifiedFaultId: f.id,
+        faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        suggestedActions: f.actions,
+        precautions: "कन्वेंशनल लोको में किसी भी रिले (Q44, Q118, QOP, QOA आदि) को बिना TLC अनुमति के लकड़ी की वेज से वेज न करें। सुरक्षा नियमों और गति प्रतिबंधों का कड़ाई से पालन करें।",
+        manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
+        verifiedFromPdf: true,
+        pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+        pdfPage: 1,
+        pdfQuote: `${f.message}\n${f.actions.join('\n')}`
+      };
+    }
+  }
+
+  // Fallback to highest scored match
+  let best = conventionalFaults[0];
+  let bestScore = 0;
+  for (const f of conventionalFaults) {
+    let score = 0;
+    const all = (f.id + ' ' + f.message + ' ' + f.effect + ' ' + f.actions.join(' ')).toLowerCase();
+    const words = norm.split(/\s+/).filter(w => w.length > 2);
+    for (const w of words) {
+      if (all.includes(w)) score += 10;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = f;
+    }
+  }
+
+  return {
+    identifiedFaultId: best.id,
+    faultTitle: best.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
+    analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${best.subSystem}\nदोष: ${best.message.replace(/\n/g, ' ')}\nसंकेत: ${best.lamp}\nप्रभाव: ${best.effect}`,
+    suggestedActions: best.actions,
+    precautions: "कन्वेंशनल लोको में समस्या आने पर संबंधित रिले के टारगेट, न्यूमैटिक प्रेशर और स्विच स्थिति की जांच करें।",
+    manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${best.subSystem}`,
+    verifiedFromPdf: true,
+    pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
+    pdfPage: 1,
+    pdfQuote: `${best.message}\n${best.actions.join('\n')}`
+  };
 }

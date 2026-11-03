@@ -1,14 +1,16 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, ChevronRight, ArrowLeft, AlertTriangle, Lightbulb, Activity, Wrench, ShieldAlert, Sparkles, Loader2, Bot, AlertCircle, ExternalLink, HelpCircle, Globe, BookOpen, Download, FileText, CheckCircle2, Bookmark, Layers, Smartphone, Copy, Check, X, Share2, Sun, Moon, Type, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, AlertTriangle, Lightbulb, Activity, Wrench, ShieldAlert, Sparkles, Loader2, Bot, AlertCircle, ExternalLink, HelpCircle, Globe, BookOpen, Download, FileText, CheckCircle2, Bookmark, Layers, Smartphone, Copy, Check, X, Share2, Sun, Moon, Type, Volume2, VolumeX, Mic, MicOff, Languages } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { subSystems, faults } from './data';
 import { amritBharatSubSystems, amritBharatFaults } from './dataAmritBharat';
+import { conventionalSubSystems, conventionalFaults } from './dataConventional';
 import { Fault } from './types';
 import { cn } from './lib/utils';
 import { cleanRailwayVoiceText } from './lib/speechCleaner';
 import { resolveDefectClientSide, expandLocoTokens } from './lib/clientTroubleshooter';
 import { usePWAInstall } from './lib/usePWAInstall';
-import { VoiceTroubleshooterPlayer } from './components/VoiceTroubleshooterPlayer';
+import { VoiceTroubleshooterPlayer, SpeechLanguageMode } from './components/VoiceTroubleshooterPlayer';
+import { getDisplayStepText, formatBilingualText, containsDevanagari } from './lib/railwayBilingualSpeech';
 
 interface AiTroubleshootResult {
   identifiedFaultId?: string | null;
@@ -41,7 +43,7 @@ interface ManualSearchResult {
 }
 
 export default function App() {
-  const [locoType, setLocoType] = useState<'3phase' | 'amrit_bharat'>('3phase');
+  const [locoType, setLocoType] = useState<'3phase' | 'amrit_bharat' | 'conventional'>('3phase');
   const [mode, setMode] = useState<'browse' | 'ai' | 'manual'>('browse');
   
   // Cab visibility modes: 'night' (Dark high contrast) or 'day' (Day glare high contrast)
@@ -82,6 +84,24 @@ export default function App() {
   const [aiResult, setAiResult] = useState<AiTroubleshootResult | null>(null);
   const [aiVoiceActiveIndex, setAiVoiceActiveIndex] = useState<number | null>(null);
   const [detailVoiceActiveIndex, setDetailVoiceActiveIndex] = useState<number | null>(null);
+  const [troubleshootLanguage, setTroubleshootLanguage] = useState<SpeechLanguageMode>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('tts_lang');
+        if (saved === 'hi' || saved === 'en' || saved === 'both') {
+          return saved as SpeechLanguageMode;
+        }
+      } catch {}
+    }
+    return 'hi';
+  });
+
+  const handleTroubleshootLangChange = (newLang: SpeechLanguageMode) => {
+    setTroubleshootLanguage(newLang);
+    try {
+      localStorage.setItem('tts_lang', newLang);
+    } catch {}
+  };
 
   // Voice Input (Loco Pilot Speech-to-Text Microphone) states
   const [isVoiceInputActive, setIsVoiceInputActive] = useState<boolean>(false);
@@ -155,6 +175,9 @@ export default function App() {
         if (rawTranscript) {
           const cleaned = cleanRailwayVoiceText(rawTranscript);
           setAiQuery(cleaned);
+          if (voiceInputLang === 'hi-IN' || containsDevanagari(rawTranscript)) {
+            handleTroubleshootLangChange('hi');
+          }
         }
       };
 
@@ -307,7 +330,12 @@ export default function App() {
     { label: "F0108P1 Primary Over Current / OCR-78", query: "SS01 F0108P1 Primary over current check over current relay flag close VCB after unlocking relay OCR-78" },
     { label: "F0109P1 Aux Winding Over Current / BUR MCB", query: "SS01 F0109P1 Aux winding over current try to close VCB again BUR-1 BUR-2 BUR-3 MCB 127.22" },
     { label: "F0110P1 Fatal Error Main Circuit / Turn OFF", query: "SS01 F0110P1 Fatal error in main circuit turn off the loco HB/SB MCB RDSO" },
-    { label: "Brake Electronics Fault", query: "Fault in brake electronics emergency brake applied" }
+    { label: "Brake Electronics Fault", query: "Fault in brake electronics emergency brake applied" },
+    { label: "SS17 F1701P1 प्रोसेसर FLG1 डिस्टर्बेंस", query: "SS17 F1701P1 Loco XXX SS17: Processor FLG1 DISTURBANCE IN PROCESSOR FLG1 FLG1 will be isolated" },
+    { label: "SS17 F1702P1 सॉफ्टवेयर मिसमैच / Panto", query: "SS17 F1702P1 Loco XXX SS17: Processor FLG1 SOFTWARE MISMATCH WAP-5/WAG-9 Panto will not raise" },
+    { label: "SS17 F1703P1 एंगल ट्रांसमीटर / स्विच 152", query: "SS17 F1703P1 Loco XXX SS17: Processor FLG1 FAULT IN ANGLE TRANSMITTER OF THROTTLE Bring TE/BE Throttle to zero Operate switch failure mode" },
+    { label: "SS17 F1704P1 सिमुलेशन स्विच / चाबी 179", query: "SS17 F1704P1 Loco XXX SS17: Processor FLG1 SIMULATION SWITCH POSITION NOT MATCHING Check simulation Key on master / slave" },
+    { label: "SS17 F1701P2 प्रोसेसर DIA 1 / DDS", query: "SS17 F1701P2 Loco XXX SS17: Processor FLG1 DISTURBANCE IN PROCESSOR DIA 1 DIA 1 will be isolated No fault data will be stored Press<Enter>" }
   ];
 
   const amritBharatQuickPrompts = [
@@ -366,16 +394,53 @@ export default function App() {
       qLower.includes('master & slave') || qLower.includes('slave loco') || qLower.includes('master loco') ||
       qLower.includes('hlc') || qLower.includes('power car') || qLower.includes('wtb') || qLower.includes('67');
 
+    const isExplicitConventional =
+      qLower.includes('conventional') || qLower.includes('कन्वेंशनल') ||
+      qLower.includes('wap4') || qLower.includes('wap-4') || qLower.includes('wag7') || qLower.includes('wag-7') ||
+      qLower.includes('wag5') || qLower.includes('wag-5') || qLower.includes('wam4') || qLower.includes('wam-4') ||
+      qLower.includes('q44') || qLower.includes('q118') || qLower.includes('qop') || qLower.includes('qoa') ||
+      qLower.includes('qlm') || qLower.includes('qrsi') || qLower.includes('zsmgr') || qLower.includes('c118') ||
+      qLower.includes('c145') || qLower.includes('hmcs') || qLower.includes('hqop') || qLower.includes('hqoa') ||
+      qLower.includes('blrdj') || qLower.includes('lsgr') || qLower.includes('tap changer') || qLower.includes('arno') ||
+      qLower.includes('qsit') || qLower.includes('lssit') || qLower.includes('siv fault') ||
+      qLower.includes('पहला नोच') || qLower.includes('पहली नोच') || qLower.includes('1st notch') || qLower.includes('छठा नोच') || qLower.includes('छठी नोच') || qLower.includes('6th notch') || qLower.includes('नोच') ||
+      qLower.includes('भिन्न') || qLower.includes('bhinn') || qLower.includes('different notch') || qLower.includes('random notch') || qLower.includes('spasht karan') || qLower.includes('स्पष्ट कारण') ||
+      qLower.includes('blcp') || qLower.includes('blcpd') || qLower.includes('hcp') || qLower.includes('mr-4') || qLower.includes('c-101') || qLower.includes('c101') ||
+      qLower.includes('mph') || qLower.includes('hph') || qLower.includes('chba') || qLower.includes('hchba') ||
+      qLower.includes('mvmt') || qLower.includes('hvmt') || qLower.includes('mvrh') || qLower.includes('hvrh') ||
+      qLower.includes('क्षतिग्रस्त') || qLower.includes('damage') || qLower.includes('जल गई') || qLower.includes('जल गयी') || qLower.includes('जली हुई') || qLower.includes('extinguisher') || qLower.includes('अग्निशामक') ||
+      qLower.includes('ccba') || qLower.includes('ccpt') || qLower.includes('ccls') || qLower.includes('ccdj') || qLower.includes('cclsa') || qLower.includes('ccvcd') || qLower.includes('ccinv') || (qLower.includes('cca') && !qLower.includes('ccb')) ||
+      qLower.includes('पिघल') || qLower.includes('फ्यूज') || (qLower.includes('fuse') && (qLower.includes('melt') || qLower.includes('indicator') || qLower.includes('संकेत') || qLower.includes('फेलियर'))) ||
+      qLower.includes('zuba') || qLower.includes('uba') ||
+      qLower.includes('conv-headlight-not-glowing') ||
+      qLower.includes('úìåôâåã') || qLower.includes('úëå ôâåã') ||
+      qLower.includes('blprd') || qLower.includes('blprf') || qLower.includes('blprr') ||
+      qLower.includes('hrtpr') || qLower.includes('rtpr') ||
+      qLower.includes('हेडलाइट प्रकाशित नहीं होती') || qLower.includes('हेड लाइट प्रकाशित नहीं होती') ||
+      qLower.includes('headlight prakashit nahi hoti') ||
+      ((qLower.includes('headlight') || qLower.includes('हेडलाइट') || qLower.includes('हेड लाइट')) &&
+       (qLower.includes('नहीं') || qLower.includes('not') || qLower.includes('nahi') || qLower.includes('off') || qLower.includes('खराब') || qLower.includes('फेल')) &&
+       (qLower.includes('bl') || qLower.includes('zrt') || qLower.includes('zpr') || qLower.includes('blprd') || qLower.includes('blprf') || qLower.includes('blprr') || qLower.includes('hrtpr') || qLower.includes('rtpr') || qLower.includes('40 kmph') || qLower.includes('dc to dc') || qLower.includes('g & sr') || qLower.includes('कन्वेंशनल') || qLower.includes('conventional') || qLower.includes('wap4') || qLower.includes('wag7') || qLower.includes('wag5'))) ||
+      qLower.includes('conv-horn-whistle-failure') ||
+      qLower.includes('ʬीसल') || qLower.includes('İʬसल') || qLower.includes('हॉनŊ') || qLower.includes('डुɘेƛ') || qLower.includes('सैİȵंग') ||
+      qLower.includes('व्हीसल') || qLower.includes('व्हिसल') || qLower.includes('whistle') ||
+      ((qLower.includes('हॉर्न') || qLower.includes('horn') || qLower.includes('हॉन') || qLower.includes('सीटी')) && (qLower.includes('फेल') || qLower.includes('fail') || qLower.includes('लीकेज') || qLower.includes('leakage') || qLower.includes('सैंडिंग') || qLower.includes('डुप्लेक्स') || qLower.includes('4.50') || qLower.includes('गाड़ी') || qLower.includes('लोको')));
+
     let targetLoco = locoType;
-    if (qLower.includes('3 phase ka pooch raha') || (isExplicit3Phase && !isExplicitAmrit)) {
+    if (qLower.includes('3 phase ka pooch raha') || (isExplicit3Phase && !isExplicitAmrit && !isExplicitConventional)) {
       targetLoco = '3phase';
       if (locoType !== '3phase') {
         setLocoType('3phase');
       }
-    } else if (isExplicitAmrit && !isExplicit3Phase) {
+    } else if (isExplicitAmrit && !isExplicit3Phase && !isExplicitConventional) {
       targetLoco = 'amrit_bharat';
       if (locoType !== 'amrit_bharat') {
         setLocoType('amrit_bharat');
+      }
+    } else if (isExplicitConventional && !isExplicit3Phase && !isExplicitAmrit) {
+      targetLoco = 'conventional';
+      if (locoType !== 'conventional') {
+        setLocoType('conventional');
       }
     }
 
@@ -430,9 +495,49 @@ export default function App() {
     setAiLoading(false);
   };
 
-  const fetchManualInfo = async (type?: '3phase' | 'amrit_bharat') => {
+  const fetchManualInfo = async (type?: '3phase' | 'amrit_bharat' | 'conventional') => {
     const target = type || locoType;
-    const url = target === 'amrit_bharat' ? '/api/amrit-bharat/info' : '/api/manual/info';
+    const conventionalFallback: ManualInfo = {
+      title: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WAG5, WAM4, WAP4 & WAG7 Locos)",
+      subTitle: "क्षेत्रीय विद्युत प्रशिक्षण केन्द्र, वड़ोदरा (Western Railway, BRC) - चतुर्थ संस्करण 2018",
+      totalPages: 252,
+      totalCharacters: 254649,
+      pdfFileSize: "23.4 MB",
+      memoryStatus: "Permanent In-Memory Cache Active (BRC 252p TSD मेमोरी में सुरक्षित)",
+      chapters: [
+        { id: "c1", title: "अध्याय 1: शेड में अथवा स्टेशन पर खड़े लोको की पूर्ण तैयारी (Checklist, Cab-1/2, HT/LT)", pageStart: 19, pageEnd: 32 },
+        { id: "c2", title: "अध्याय 2: लोकोमोटिव को लाइन पर चलाना (टैक्शन मोटर, लाइन कॉन्टैक्टर, MP, EEC, DBR, ढलान)", pageStart: 33, pageEnd: 44 },
+        { id: "c3", title: "अध्याय 3: महत्वपूर्ण परिचालन सम्बन्धित अनुदेश और तकनीकी मार्गदर्शन (लॉग बुक, ब्रेक टेस्ट, ऊर्जा बचत)", pageStart: 45, pageEnd: 50 },
+        { id: "c4", title: "अध्याय 4: मानक अनुदेश (फ्यूज, EM कॉन्टैक्टर वेज, रिले वेज, HQOA '0', HQOP)", pageStart: 51, pageEnd: 52 },
+        { id: "c5", title: "अध्याय 5: DJ का ट्रिप होना (रिले टारगेट: QLM, QRSI, QOP, QLA, QOA व DJ फेलियर 1-8)", pageStart: 55, pageEnd: 67 },
+        { id: "c6", title: "अध्याय 6: ऑग्जीलरी फेलियर (MCP, MPH, MVSI, MVSL, MVRH, MVMT, CHBA, डैमेज)", pageStart: 68, pageEnd: 70 },
+        { id: "c7", title: "अध्याय 7: फ्यूज पिघलने के फेलियर (Add CCBA, CCBA, CCPT, CCLS, CCA, CCDJ 1-17)", pageStart: 71, pageEnd: 73 },
+        { id: "c8", title: "अध्याय 8: ट्रैक्शन फेलियर (कर्षण बल पूर्ण हानि, आंशिक हानि, पहली नोच ऑटो रिग्रेशन 1-14)", pageStart: 74, pageEnd: 80 },
+        { id: "c9", title: "अध्याय 9: विविध फेलियर (पायलट लैम्प, CPA, पेन्टो, DBR, हेडलाइट, सीटी 1-28)", pageStart: 81, pageEnd: 86 },
+        { id: "c10", title: "अध्याय 10: न्यूमेटिक फेलियर (MR, BP, FP, लोड अटैच लीकेज, कैब बदलते ब्रेक बंधना 1-19)", pageStart: 87, pageEnd: 91 },
+        { id: "c11", title: "अध्याय 11: उपकरण आइसोलेट करने के बाद ट्रैक्शन चालू करने की शर्तें व प्रतिबंध (1-27)", pageStart: 95, pageEnd: 98 },
+        { id: "c12", title: "अध्याय 12: WAG5 के MU ऑपरेशन के लिये परिचालन अनुदेश (1-9)", pageStart: 101, pageEnd: 103 },
+        { id: "c13", title: "अध्याय 13: मल्टीपल यूनिट (MU) ऑपरेशन में लोको की ट्रबल-शूटिंग (1-11)", pageStart: 104, pageEnd: 107 },
+        { id: "c14", title: "अध्याय 14: दोष निवारण निर्देशिका WAG-7 लोको (1-2)", pageStart: 111, pageEnd: 111 },
+        { id: "c15", title: "अध्याय 15: दोष निवारण निर्देशिका WAP-4 लोको (1-14)", pageStart: 115, pageEnd: 117 },
+        { id: "c16", title: "अध्याय 16: दोष निवारण निर्देशिका WAM-4(6P) लोको (1-14)", pageStart: 121, pageEnd: 122 },
+        { id: "c17", title: "अध्याय 17: स्टेटिक इन्वर्टर यूनिट (SIV) लोको - परिचालन अनुदेश व ट्रबल शूटिंग", pageStart: 125, pageEnd: 137 },
+        { id: "c18", title: "अध्याय 18: माइक्रोप्रोसेसर (MPCS) लोको - परिचालन अनुदेश एवं ट्रबल शूटिंग (1-73)", pageStart: 141, pageEnd: 152 },
+        { id: "c19", title: "अध्याय 19: ड्रम कॉन्टेक्टर मैनुअल ऑपरेशन (J-1/J-2 रिवर्सर, CTF-1/2/3)", pageStart: 155, pageEnd: 159 },
+        { id: "c20_23", title: "अध्याय 20-23: रिले व कॉन्टेक्टर वेज विधि (PC-8, COMET, EM, EP, टारगेट रिले रीसेट)", pageStart: 160, pageEnd: 166 },
+        { id: "c24", title: "अध्याय 24: हैण्ड ब्रेक लगाना व रिलीज करना (Vertical WAG-5, Horizontal WAP-4, Gear Type)", pageStart: 167, pageEnd: 169 },
+        { id: "mod", title: "मॉडिफिकेशन: VCD (135), ZLS/HLS (138), BPEMS (138), एयर ड्रायर, ट्विन बीम, न्यूमेटिक पैनल", pageStart: 173, pageEnd: 193 },
+        { id: "ckt", title: "सर्किट डायग्राम (DJ/VCB, ARNO, SI Unit, Tap Changer, Line Contactor, Power Circuit)", pageStart: 195, pageEnd: 247 }
+      ],
+      subsystems: conventionalSubSystems.map(s => ({ code: s.id, name: s.name }))
+    };
+
+    const url = target === 'conventional'
+      ? '/api/conventional/info'
+      : target === 'amrit_bharat'
+        ? '/api/amrit-bharat/info'
+        : '/api/manual/info';
+
     try {
       const res = await fetch(url);
       if (res.ok) {
@@ -440,7 +545,10 @@ export default function App() {
         if (raw && !raw.trim().startsWith('<')) {
           try {
             const data = JSON.parse(raw);
-            if (data) setManualInfo(data);
+            if (data) {
+              setManualInfo(data);
+              return;
+            }
           } catch (e) {
             console.warn('Invalid JSON in manual info:', e);
           }
@@ -449,15 +557,21 @@ export default function App() {
     } catch (err) {
       console.error('Failed to load manual info:', err);
     }
+
+    if (target === 'conventional') {
+      setManualInfo(conventionalFallback);
+    }
   };
 
   const handleManualSearch = async (queryText?: string) => {
     const q = queryText !== undefined ? queryText : manualSearchQuery;
     if (!q.trim()) return;
     setManualSearching(true);
-    const url = locoType === 'amrit_bharat'
-      ? `/api/amrit-bharat/search?q=${encodeURIComponent(q.trim())}`
-      : `/api/manual/search?q=${encodeURIComponent(q.trim())}`;
+    const url = locoType === 'conventional'
+      ? `/api/conventional/search?q=${encodeURIComponent(q.trim())}`
+      : locoType === 'amrit_bharat'
+        ? `/api/amrit-bharat/search?q=${encodeURIComponent(q.trim())}`
+        : `/api/manual/search?q=${encodeURIComponent(q.trim())}`;
     try {
       const res = await fetch(url);
       if (res.ok) {
@@ -482,13 +596,15 @@ export default function App() {
   };
 
   const loadManualPage = async (pageNum: number) => {
-    const maxPage = locoType === 'amrit_bharat' ? 67 : 254;
+    const maxPage = locoType === 'conventional' ? 252 : locoType === 'amrit_bharat' ? 67 : 254;
     if (pageNum < 1 || pageNum > maxPage) return;
     setLoadingPage(true);
     setActivePageNumber(pageNum);
-    const url = locoType === 'amrit_bharat'
-      ? `/api/amrit-bharat/page/${pageNum}`
-      : `/api/manual/page/${pageNum}`;
+    const url = locoType === 'conventional'
+      ? `/api/conventional/page/${pageNum}`
+      : locoType === 'amrit_bharat'
+        ? `/api/amrit-bharat/page/${pageNum}`
+        : `/api/manual/page/${pageNum}`;
     try {
       const res = await fetch(url);
       if (res.ok) {
@@ -521,10 +637,12 @@ export default function App() {
   }, [locoType]);
 
   const currentSubSystems = useMemo(() => {
+    if (locoType === 'conventional') return conventionalSubSystems;
     return locoType === 'amrit_bharat' ? amritBharatSubSystems : subSystems;
   }, [locoType]);
 
   const currentFaults = useMemo(() => {
+    if (locoType === 'conventional') return conventionalFaults;
     const rawLower = searchQuery.trim().toLowerCase();
     const isAmritSearch = rawLower.includes('slave') || rawLower.includes('स्लेव') || rawLower.includes('स्लैब') || rawLower.includes('स्लेब') || rawLower.includes('slab') || rawLower.includes('push pull') || rawLower.includes('push-pull') || rawLower.includes('amrit') || rawLower.includes('अमृत');
     if (isAmritSearch) {
@@ -665,6 +783,41 @@ export default function App() {
         ? "bg-teal-100 text-teal-900 border-teal-300 shadow-sm" 
         : "bg-teal-950/80 text-teal-300 border-teal-500/60 shadow-teal-950/40";
     }
+    if (code.includes('CONV_DJ')) {
+      return isDayMode 
+        ? "bg-rose-100 text-rose-900 border-rose-300 shadow-sm" 
+        : "bg-rose-950/80 text-rose-300 border-rose-500/60 shadow-rose-950/40";
+    }
+    if (code.includes('CONV_GR')) {
+      return isDayMode 
+        ? "bg-amber-100 text-amber-900 border-amber-300 shadow-sm" 
+        : "bg-amber-950/80 text-amber-300 border-amber-500/60 shadow-amber-950/40";
+    }
+    if (code.includes('CONV_AUX')) {
+      return isDayMode 
+        ? "bg-emerald-100 text-emerald-900 border-emerald-300 shadow-sm" 
+        : "bg-emerald-950/80 text-emerald-300 border-emerald-500/60 shadow-emerald-950/40";
+    }
+    if (code.includes('CONV_RELAY')) {
+      return isDayMode 
+        ? "bg-purple-100 text-purple-900 border-purple-300 shadow-sm" 
+        : "bg-purple-950/80 text-purple-300 border-purple-500/60 shadow-purple-950/40";
+    }
+    if (code.includes('CONV_TRACTION')) {
+      return isDayMode 
+        ? "bg-blue-100 text-blue-900 border-blue-300 shadow-sm" 
+        : "bg-blue-950/80 text-blue-300 border-blue-500/60 shadow-blue-950/40";
+    }
+    if (code.includes('CONV_PNEUMATIC')) {
+      return isDayMode 
+        ? "bg-red-100 text-red-900 border-red-300 shadow-sm" 
+        : "bg-red-950/80 text-red-300 border-red-500/60 shadow-red-950/40";
+    }
+    if (code.includes('CONV_CAB')) {
+      return isDayMode 
+        ? "bg-teal-100 text-teal-900 border-teal-300 shadow-sm" 
+        : "bg-teal-950/80 text-teal-300 border-teal-500/60 shadow-teal-950/40";
+    }
     return isDayMode 
       ? "bg-slate-100 text-slate-800 border-slate-300" 
       : "bg-zinc-800 text-zinc-300 border-zinc-700";
@@ -672,16 +825,16 @@ export default function App() {
 
   const getSubsystemLeftAccent = (subSystem: string) => {
     const code = (subSystem || '').toUpperCase();
-    if (code.includes('SS01') || code.includes('VCB')) return "border-l-rose-500";
-    if (code.includes('SS02')) return "border-l-blue-500";
-    if (code.includes('SS03')) return "border-l-cyan-500";
-    if (code.includes('SS04')) return "border-l-purple-500";
-    if (code.includes('SS05')) return "border-l-amber-500";
-    if (code.includes('SS06') || code.includes('SS07') || code.includes('SS08')) return "border-l-emerald-500";
-    if (code.includes('SS09')) return "border-l-yellow-400";
-    if (code.includes('SS10') || code.includes('BRAKE')) return "border-l-red-500";
+    if (code.includes('SS01') || code.includes('VCB') || code.includes('CONV_DJ')) return "border-l-rose-500";
+    if (code.includes('SS02') || code.includes('CONV_TRACTION')) return "border-l-blue-500";
+    if (code.includes('SS03') || code.includes('CONV_GR')) return "border-l-amber-500";
+    if (code.includes('SS04') || code.includes('CONV_RELAY')) return "border-l-purple-500";
+    if (code.includes('SS05') || code.includes('HOTEL')) return "border-l-amber-500";
+    if (code.includes('SS06') || code.includes('SS07') || code.includes('SS08') || code.includes('CONV_AUX')) return "border-l-emerald-500";
+    if (code.includes('SS09') || code.includes('BATTERY')) return "border-l-yellow-400";
+    if (code.includes('SS10') || code.includes('BRAKE') || code.includes('CONV_PNEUMATIC')) return "border-l-red-500";
     if (code.includes('SS19') || code.includes('WTB')) return "border-l-indigo-500";
-    if (code.includes('GEN') || code.includes('COACH')) return "border-l-teal-500";
+    if (code.includes('GEN') || code.includes('COACH') || code.includes('CONV_CAB')) return "border-l-teal-500";
     return "border-l-orange-500";
   };
 
@@ -746,34 +899,44 @@ export default function App() {
               />
               <span className={cn(
                 "absolute -bottom-0.5 -right-0.5 text-[8px] font-black px-1 rounded-tl shadow-sm",
-                locoType === 'amrit_bharat' ? "bg-emerald-400 text-black font-extrabold" : "bg-gradient-to-r from-orange-500 to-amber-400 text-black font-extrabold"
+                locoType === 'conventional'
+                  ? "bg-blue-400 text-black font-extrabold"
+                  : locoType === 'amrit_bharat' 
+                    ? "bg-emerald-400 text-black font-extrabold" 
+                    : "bg-gradient-to-r from-orange-500 to-amber-400 text-black font-extrabold"
               )}>
-                {locoType === 'amrit_bharat' ? 'AB' : 'WAP'}
+                {locoType === 'conventional' ? 'CONV' : locoType === 'amrit_bharat' ? 'AB' : 'WAP'}
               </span>
             </div>
             <div className="flex flex-col leading-none">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className={cn(
                   "text-sm sm:text-base font-black tracking-wider uppercase",
-                  locoType === 'amrit_bharat' 
-                    ? (isDay ? "text-emerald-800" : "bg-gradient-to-r from-emerald-400 via-teal-300 to-lime-300 bg-clip-text text-transparent") 
-                    : (isDay ? "text-orange-700" : "bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-300 bg-clip-text text-transparent")
+                  locoType === 'conventional'
+                    ? (isDay ? "text-blue-800" : "bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-300 bg-clip-text text-transparent")
+                    : locoType === 'amrit_bharat' 
+                      ? (isDay ? "text-emerald-800" : "bg-gradient-to-r from-emerald-400 via-teal-300 to-lime-300 bg-clip-text text-transparent") 
+                      : (isDay ? "text-orange-700" : "bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-300 bg-clip-text text-transparent")
                 )}>
-                  {locoType === 'amrit_bharat' ? 'LocoAssist • Amrit Bharat' : 'LocoAssist Pro'}
+                  {locoType === 'conventional' ? 'LocoAssist • Conventional' : locoType === 'amrit_bharat' ? 'LocoAssist • Amrit Bharat' : 'LocoAssist Pro'}
                 </span>
                 <span className={cn(
                   "text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded border uppercase shadow-sm",
-                  locoType === 'amrit_bharat' 
-                    ? (isDay ? "bg-emerald-100 text-emerald-900 border-emerald-300" : "bg-emerald-950/80 text-emerald-300 border-emerald-500/60")
-                    : (isDay ? "bg-orange-100 text-orange-900 border-orange-300" : "bg-orange-950/80 text-orange-300 border-orange-500/60")
+                  locoType === 'conventional'
+                    ? (isDay ? "bg-blue-100 text-blue-900 border-blue-300" : "bg-blue-950/80 text-blue-300 border-blue-500/60")
+                    : locoType === 'amrit_bharat' 
+                      ? (isDay ? "bg-emerald-100 text-emerald-900 border-emerald-300" : "bg-emerald-950/80 text-emerald-300 border-emerald-500/60")
+                      : (isDay ? "bg-orange-100 text-orange-900 border-orange-300" : "bg-orange-950/80 text-orange-300 border-orange-500/60")
                 )}>
-                  {locoType === 'amrit_bharat' ? 'Push-Pull' : '3-Phase'}
+                  {locoType === 'conventional' ? 'WAP-4 / WAG-7' : locoType === 'amrit_bharat' ? 'Push-Pull' : '3-Phase'}
                 </span>
               </div>
               <span className={cn("text-xs mt-1 font-semibold hidden xs:inline", isDay ? "text-slate-600" : "text-slate-400")}>
-                {locoType === 'amrit_bharat' 
-                  ? 'Aerodynamic WAP-5 Push-Pull & Coaches (CLW 67p TSD)' 
-                  : '3 Phase Troubleshooter & Vadodara Directory (254p)'}
+                {locoType === 'conventional'
+                  ? 'Conventional Electric Loco TSD (CAMTECH / WAP-4, WAG-7, WAG-5)'
+                  : locoType === 'amrit_bharat' 
+                    ? 'Aerodynamic WAP-5 Push-Pull & Coaches (CLW 67p TSD)' 
+                    : '3 Phase Troubleshooter & Vadodara Directory (254p)'}
               </span>
             </div>
           </div>
@@ -901,8 +1064,8 @@ export default function App() {
               className="flex-1 flex flex-col h-full"
             >
               <div className="bg-[#0A0A0B] px-4 py-3 z-10 shrink-0 border-b border-[#27272A] flex flex-col gap-3">
-                {/* Primary 2-Tab Locomotive Switcher */}
-                <div className="grid grid-cols-2 p-1.5 bg-[#121214] rounded-xl border border-[#27272A] gap-2 shadow-inner">
+                {/* Primary 3-Tab Locomotive Switcher */}
+                <div className="grid grid-cols-3 p-1.5 bg-[#121214] rounded-xl border border-[#27272A] gap-1.5 shadow-inner">
                   <button
                     type="button"
                     onClick={() => {
@@ -911,16 +1074,16 @@ export default function App() {
                       setSelectedFault(null);
                     }}
                     className={cn(
-                      "py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold flex items-center justify-center gap-2 transition-all",
+                      "py-2 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
                       locoType === '3phase'
                         ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg shadow-orange-950/50 border border-orange-400/40 font-black"
                         : "text-[#A1A1AA] hover:text-white hover:bg-[#1C1C1F]"
                     )}
                   >
-                    <Activity className="w-4 h-4 text-orange-200" />
+                    <Activity className="w-3.5 h-3.5 text-orange-200 shrink-0" />
                     <div className="flex flex-col text-left sm:text-center leading-tight">
-                      <span className="font-extrabold tracking-wide">3-फ़ेस लोको (3-Phase)</span>
-                      <span className="text-xs font-normal opacity-85">WAP-7 / WAG-9 (254p)</span>
+                      <span className="font-extrabold tracking-wide">3-फ़ेस (3-Phase)</span>
+                      <span className="text-[10px] font-normal opacity-85">WAP-7 / WAG-9</span>
                     </div>
                   </button>
 
@@ -932,16 +1095,37 @@ export default function App() {
                       setSelectedFault(null);
                     }}
                     className={cn(
-                      "py-2.5 px-3 rounded-lg text-sm sm:text-base font-bold flex items-center justify-center gap-2 transition-all",
+                      "py-2 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
                       locoType === 'amrit_bharat'
                         ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-950/50 border border-emerald-400/40 font-black"
                         : "text-[#A1A1AA] hover:text-white hover:bg-[#1C1C1F]"
                     )}
                   >
-                    <Layers className="w-4 h-4 text-emerald-200" />
+                    <Layers className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
                     <div className="flex flex-col text-left sm:text-center leading-tight">
-                      <span className="font-extrabold tracking-wide">अमृत भारत (Amrit Bharat)</span>
-                      <span className="text-xs font-normal opacity-85">Push-Pull WAP-5 (67p)</span>
+                      <span className="font-extrabold tracking-wide">अमृत भारत</span>
+                      <span className="text-[10px] font-normal opacity-85">Push-Pull WAP-5</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLocoType('conventional');
+                      setSelectedSystem(null);
+                      setSelectedFault(null);
+                    }}
+                    className={cn(
+                      "py-2 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                      locoType === 'conventional'
+                        ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-lg shadow-blue-950/50 border border-blue-400/40 font-black"
+                        : "text-[#A1A1AA] hover:text-white hover:bg-[#1C1C1F]"
+                    )}
+                  >
+                    <Wrench className="w-3.5 h-3.5 text-blue-200 shrink-0" />
+                    <div className="flex flex-col text-left sm:text-center leading-tight">
+                      <span className="font-extrabold tracking-wide">कन्वेंशनल (Conv)</span>
+                      <span className="text-[10px] font-normal opacity-85">WAP-4 / WAG-7</span>
                     </div>
                   </button>
                 </div>
@@ -971,9 +1155,11 @@ export default function App() {
                     className={cn(
                       "flex-1 py-2.5 px-2 text-sm sm:text-base rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm", 
                       mode === 'ai' 
-                        ? (locoType === 'amrit_bharat' 
-                            ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-black shadow-lg shadow-emerald-500/30 font-black scale-[1.02]" 
-                            : "bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-500 text-black shadow-lg shadow-orange-500/30 font-black scale-[1.02]")
+                        ? (locoType === 'conventional'
+                            ? "bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 text-white shadow-lg shadow-blue-500/30 font-black scale-[1.02]"
+                            : locoType === 'amrit_bharat' 
+                              ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-black shadow-lg shadow-emerald-500/30 font-black scale-[1.02]" 
+                              : "bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-500 text-black shadow-lg shadow-orange-500/30 font-black scale-[1.02]")
                         : (isDay ? "text-slate-700 hover:text-orange-600 hover:bg-orange-50/50 font-bold" : "text-slate-300 hover:text-amber-400 hover:bg-slate-800/50 font-bold")
                     )}
                   >
@@ -992,7 +1178,7 @@ export default function App() {
                         : (isDay ? "text-slate-700 hover:text-purple-600 hover:bg-purple-50/50 font-bold" : "text-slate-300 hover:text-purple-400 hover:bg-slate-800/50 font-bold")
                     )}
                   >
-                    <BookOpen className="w-4 h-4"/> <span>{locoType === 'amrit_bharat' ? 'TSD बुक (67p)' : 'TSD डायरेक्टरी'}</span>
+                    <BookOpen className="w-4 h-4"/> <span>{locoType === 'conventional' ? 'CAMTECH TSD' : locoType === 'amrit_bharat' ? 'TSD बुक (67p)' : 'TSD डायरेक्टरी'}</span>
                   </button>
                 </div>
 
@@ -1001,7 +1187,13 @@ export default function App() {
                     <Search className={cn("absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4", isDay ? "text-amber-600" : "text-amber-400")} />
                     <input 
                       type="text" 
-                      placeholder="दोष कोड या समस्या खोजें... (उदा. P56 BP, P55 Panto, P53 Brakes, CE, F0101P1)" 
+                      placeholder={
+                        locoType === 'conventional'
+                          ? "दोष या समस्या खोजें... (उदा. DJ क्लोज़, QOP, QOA, QLM, SIV, नोच, BP, पैंटो)"
+                          : locoType === 'amrit_bharat'
+                            ? "दोष कोड या समस्या खोजें... (उदा. स्लेव लोको, WTB, 22-pin UIC, P56 BP, P55 Panto, Cock 136)"
+                            : "दोष कोड या समस्या खोजें... (उदा. P56 BP, P55 Panto, P53 Brakes, CE, F0101P1)"
+                      } 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className={cn(
@@ -1196,7 +1388,10 @@ export default function App() {
                         <div className="flex items-center gap-1 bg-black/30 p-0.5 rounded-lg border border-zinc-700/60">
                           <button
                             type="button"
-                            onClick={() => setVoiceInputLang('hi-IN')}
+                            onClick={() => {
+                              setVoiceInputLang('hi-IN');
+                              handleTroubleshootLangChange('hi');
+                            }}
                             className={cn(
                               "px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer",
                               voiceInputLang === 'hi-IN'
@@ -1208,7 +1403,10 @@ export default function App() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setVoiceInputLang('en-IN')}
+                            onClick={() => {
+                              setVoiceInputLang('en-IN');
+                              handleTroubleshootLangChange('en');
+                            }}
                             className={cn(
                               "px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer",
                               voiceInputLang === 'en-IN'
@@ -1418,16 +1616,113 @@ export default function App() {
                         <span className="text-[10px] text-amber-400 font-semibold">1-क्लिक समाधान</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {[
+                        {(locoType === 'conventional' ? [
+                          { label: 'LSDJ नहीं बुझता / ICDJ', query: 'LSDJ नहीं बुझता है DJ क्लोज़ नहीं हो रहा है' },
+                          { label: 'LSDJ बुझता / UA 0 KV', query: 'LSDJ बुझता है UA डेविएट नहीं होता है' },
+                          { label: 'LSCHBA से पहले LSDJ ट्रिप', query: 'LSCHBA के बुझने से पहले LSDJ फिर से प्रकाशित होता है' },
+                          { label: 'LSCHBA के बाद LSDJ ट्रिप', query: 'LSCHBA के बुझने के बाद LSDJ फिर से प्रकाशित होता है' },
+                          { label: 'BLVMT पर DJ ट्रिप', query: 'BLVMT क्लोज करने पर DJ/VCB ट्रिप होता है' },
+                          { label: '1st नोच पर DJ ट्रिप', query: 'पहला नोच लेते ही DJ ट्रिप होना 1st notch' },
+                          { label: '6th नोच पर DJ ट्रिप', query: 'छठी नोच पर DJ/VCB ट्रिप होता है' },
+                          { label: 'भिन्न-भिन्न नोच पर DJ ट्रिप', query: 'भिन्न भिन्न नोच पर DJ/VCB ट्रिप होता है अर्थात बिना किसी स्पष्ट कारण के' },
+                          { label: 'MVSI-1/2 काम नहीं करता', query: 'MVSI-1/MVSI-2 काम नहीं करता है HVSI HVMT HVSL 0 आधा लोड' },
+                          { label: 'MVSL-1/2 काम नहीं करता', query: 'MVSL-1/MVSL-2 काम नहीं करता है HVSL HVSI HVMT 0 आधा लोड' },
+                          { label: 'MVMT-1/2 चालू नहीं होता', query: 'MVMT-1/MVMT-2 चालू नहीं होता है HVMT C107 C105 C106 ब्लॉक आइसोलेट' },
+                          { label: 'MVRH चालू नहीं होता (450A)', query: 'MVRH चालू नहीं होता है HVRH C107 Q118 HC-107 450A' },
+                          { label: 'MPH काम नहीं करता (450A)', query: 'MPH काम नहीं करता है HPH 0 आइसोलेट 450 एम्पीयर' },
+                          { label: 'CHBA काम नहीं करता (LSCHBA)', query: 'CHBA काम नहीं करता है DJ ट्रिप हुये बिना LSCHBA लैम्प प्रकाशित रहता है HCHBA' },
+                          { label: 'ऑक्सिलरी क्षतिग्रस्त / जल गई', query: 'यदि कोई ऑक्सिलरी क्षतिग्रस्त Damage हो गई है अथवा जल गई है आग धुआं अग्निशामक' },
+                          { label: 'फ्यूज पिघलने के संकेत (CAMTECH)', query: 'विभिन्न फ्यूज के पिघलने पर मिलने वाले संकेत Additional CCBA CCBA CCPT CCLS CCA CCDJ' },
+                          { label: 'CCBA पिघलता है (HOBA नियम)', query: 'CCBA पिघलता है एक बार फ्यूज बदल दें HOBA ऑफ GR 0 HBA ऑफ' },
+                          { label: 'ADD CCBA पिघलता है', query: 'ADD CCBA पिघलता है एक बार फ्यूज बदल दें HOBA ऑफ GR 0 HBA ऑफ' },
+                          { label: 'CCBA vs ADD CCBA संकेत', query: 'एडिशनल CCBA पिघलने पर मिलने वाले संकेत UBA 0 ECC VCD BP' },
+                          { label: 'CCPT पिघलना (DJ/पैंटो डाउन)', query: 'CCPT पिघलने पर मिलने वाले संकेत DJ ओपन पैंटो लोअर' },
+                          { label: 'HBA ऑन पर CCPT पिघलना (Q118)', query: 'HBA को ऑन पर रखने पर CCPT पिघलता है Q118 कॉइल चेक करें' },
+                          { label: 'ZPT 1 पर CCPT पिघलना (ZPT-2)', query: 'ZPT को पोजीशन 1 पर रखने पर CCPT पिघलता है HOBA ZPT 2 दूसरी कैब' },
+                          { label: 'MPJ (F/R) पर CCPT पिघलना (J1/J2)', query: 'MPJ को F या R पर रखने पर CCPT पिघलता है J1 J2 CTF TWC हाथ से ऑपरेट' },
+                          { label: 'रिग्रेशन पर CCPT पिघलना (GR 0)', query: 'रिग्रेशन करने पर CCPT पिघलता है GR हाथ से 0 HOBA GR हाथ से ऑपरेट' },
+                          { label: '1st नोच पर CCPT पिघलना (RSI)', query: 'पहली नोच लेने पर CCPT पिघलता है HOBA GR हाथ से RSI ब्लॉक एक-एक करके आइसोलेट' },
+                          { label: '6th नोच पर CCPT (EVPHGR)', query: '6 नोच लेने पर CCPT पिघलता है EVPHGR TWC टेप GR हाथ से 0' },
+                          { label: 'MPS पर CCPT पिघलना', query: 'MPS ऑपरेट करने पर CCPT पिघलता है GR हाथ से 0 MPS पोजीशन उपयोग न करें' },
+                          { label: 'BPSW पर CCPT पिघलना', query: 'BPSW दबाने पर CCPT पिघलता है फ्यूज बदली BPSW उपयोग न करें' },
+                          { label: 'PVEF पर CCPT पिघलना', query: 'PVEF दबाने पर CCPT पिघलता है PVEF न दबाएं रेहियोस्टैटिक ब्रेक' },
+                          { label: 'MP "P" पर CCPT पिघलना (RB)', query: 'MP को P पर रखने पर CCPT पिघलता है रेहियोस्टैटिक ब्रेक' },
+                          { label: 'BL क्लोज पर CCA पिघलना', query: 'BL स्विचों की क्लोज हालत में CCA पिघलता है लोको इनर्जाइज हालत में BLCP BLCPD BLVMT HOBA' },
+                          { label: 'BLCP पर CCA पिघलना (C101-3)', query: 'BLCP क्लोज करने पर CCA पिघलता है C101 C102 C103 VEAD वाल्व HCP BLCPD HOBA' },
+                          { label: 'BLVMT पर CCA पिघलना (C105-7)', query: 'BLVMT क्लोज करने पर CCA पिघलता है C105 C106 C107 HVRH HVMT Q118 450A SI Unit' },
+                          { label: 'CCLS (10A) पिघलना (QRS/VCD)', query: 'CCLS 10A पिघलने पर मिलने वाले संकेत सभी लैम्प बुझना QRS VCD BP ड्रॉप' },
+                          { label: 'कर्षण बल की हानि (Total TE Loss)', query: 'कर्षण बल की पूर्ण हानि दोनों एमीटर डेविएट नहीं होते हैं एक नोच लें LSGR' },
+                          { label: 'LSGR प्रकाशित नहीं होता', query: 'LSGR प्रकाशित नहीं होता है MP 0 SMGR ड्रम GR हाथ से 0 QV62 नोच रिपीटर' },
+                          { label: 'LSGR पहले से बुझा (शाखा i)', query: 'यदि LSGR पहले से ही बुझा है CCLS पिघलना HOBA ऑफ QRS वेज' },
+                          { label: 'LSGR नहीं बुझता (शाखा ii)', query: 'यदि LSGR नहीं बुझता है Q50 Q48 PR-2 VCD QRS EEC ZSMGR SMGR' },
+                          { label: 'LSGR बुझता पर TE 0 (शाखा iii)', query: 'यदि LSGR बुझ जाता है HVSI HVMT HT-2 L1 L6 CTF रनिंग वेज' },
+                          { label: 'L-1 से L-6 क्लोज नहीं', query: 'पहली नोच लेने पर कॉन्टैक्टर L-1 से L-6 क्लोज नहीं होते हैं Q50 HVSI HVMT HT2 CTF वेज' },
+                          { label: 'L1-L3 या L4-L6 क्लोज नहीं', query: 'L-1 से L-3 अथवा L-4 से L-6 क्लोज नहीं होते हैं HVSI HVMT RSI आइसोलेट वेज' },
+                          { label: '1 लाइन कॉन्टैक्टर क्लोज नहीं', query: 'कोई एक लाइन कॉन्टैक्टर क्लोज नहीं होता है HMCS TM आइसोलेट वेज' },
+                          { label: 'कर्षण बल की आंशिक हानि (Partial TE)', query: 'कर्षण बल की आंशिक हानि Partial Loss of Tractive Force OHE 19 KV HVSI HVMT HMCS L2 L5' },
+                          { label: 'ट्रैक्शन वोल्टमीटर 0 (28 नोच)', query: 'ट्रैक्शन वोल्टमीटर डेविएट नहीं होते हैं परंतु कर्षण बल की कोई हानि नहीं है ट्रैक्शन चालू रखें 28 नोच' },
+                          { label: 'नोच रिपीटर खराब (CCTFS)', query: 'नोच रिपीटर काम नहीं करता है वोल्टमीटर एमीटर CHBA CCTFS CCNR HRAVT' },
+                          { label: 'BL अनलॉक पर पायलट लैम्प नहीं (CCLS)', query: 'BL को अनलॉक करने पर कोई भी पायलट लैम्प प्रकाशित नहीं होता है दूसरी कैब HLS ZLS CCBA CCLS QRS IP COC' },
+                          { label: 'BL अनलॉक पर LSDJ नहीं (QV60/CPA)', query: 'BL अनलॉक करने पर LSDJ प्रकाशित नहीं होता है दूसरी कैब RS प्रेशर CPA 8 Kg cm2 QV60' },
+                          { label: 'BL अनलॉक पर LSCHBA नहीं', query: 'BL अनलॉक करने पर LSCHBA प्रकाशित नहीं होता है दूसरी कैब BLRDJ 3 4 सेकंड CHBA एमीटर चार्जिंग' },
+                          { label: 'BL अनलॉक पर LSB नहीं', query: 'BL अनलॉक करने पर LSB प्रकाशित नहीं होता है दूसरी कैब MPJ रिवर्सर Q50 रेहियोस्टैटिक ब्रेक' },
+                          { label: 'BL अनलॉक पर LSGR नहीं', query: 'BL अनलॉक करने पर LSGR प्रकाशित नहीं होता है SMGR ड्रम GR हाथ से 0 एमीटर नोच रिपीटर' },
+                          { label: 'BL अनलॉक पर LSP प्रकाशित', query: 'BL अनलॉक करने पर LSP प्रकाशित होता है Q-48 इनर्जाइज थपथपाएं HMCS सैंडिंग COC GR हाथ से BPT' },
+                          { label: 'BPT पर LSP/LSRSI नहीं', query: 'BPT दबाने पर LSP LSRSI प्रकाशित नहीं होते हैं पीछे वाली कैब BPT सावधानीपूर्वक गाड़ी चलाएं व्हील स्लिप एमीटर RSI टेल-टेल फ्यूज LED' },
+                          { label: 'CPA चालू नहीं होता (ZCPA/80V)', query: 'CPA चालू नहीं होता है HBA 1 बैटरी वोल्टेज 80V CCBA HOBA ZCPA MCPA टर्मिनल वायर' },
+                          { label: 'CPA चालू पर RS प्रेशर नहीं बनता', query: 'CPA चालू होता है परंतु RS प्रेशर नहीं बनता है RAL कॉक MCPA RDJ पैंटो पाइपिंग BV बॉक्स सेफ्टी वाल्व R-1 COC 1 kg cm2' },
+                          { label: '1st नोच ऑटो रिग्रेशन (LSGR)', query: 'पहली नोच पर ऑटो रिग्रेशन होता है LSGR बुझकर फिर से प्रकाशित होता है LSP चेक करें दोनों एमीटर' },
+                          { label: 'नोच पर LSP व आटो रिग्रेशन', query: 'नोच लेने पर LSP प्रकाशित होता है और आटो रिग्रेशन होता है पहली नोच अन्य नोच शंटिंग कॉन्टैक्टर' },
+                          { label: 'बिना नोच LSP प्रकाशित (Q48)', query: 'बिना नोच लिये LSP प्रकाशित रहता है Q48 थपथपाएं HMCS सैंडिंग COC GR हाथ से' },
+                          { label: 'पहिया फिसलने पर LSP नहीं (PSA)', query: 'पहिये फिसलने पर LSP प्रकाशित नहीं होता एमीटर रीडिंग में उतार चढ़ाव GR रिग्रेस PSA सैंडिंग ZQWC' },
+                          { label: 'ऑटो रिग्रेशन (LSP ऑन)', query: 'पहली नोच पर ऑटो रिग्रेशन यदि नोच लेने पर LSP प्रकाशित होता है व्हील स्लिप ZQWC HMCS TM 2 5 शंटिंग' },
+                          { label: 'ऑटो रिग्रेशन (LSP ऑफ)', query: 'पहली नोच पर ऑटो रिग्रेशन यदि नोच लेने पर LSP प्रकाशित नहीं होता है पीछे कैब BL लॉक Q118 ZSMS EEC QVCD BPR' },
+                          { label: 'MPJ पर LSB प्रकाशित (Q50)', query: 'MPJ को F या R पर रखने पर LSB प्रकाशित ही रहता है Q50 CTF J1 J2 C145 LSC145 वेज' },
+                          { label: 'LSRSI प्रकाशित (RSI ब्लॉक)', query: 'LSRSI प्रकाशित रहता है RSI-1 RSI-2 टेल-टेल फ्यूज 6 LED 14 18 LED' },
+                          { label: 'नोच नहीं आ रहा (GR)', query: 'नोच नहीं आ रहा है GR प्रोग्रेशन नहीं हो रहा ZSMGR' },
+                          { label: 'QOP-1 ड्रॉप / DJ ट्रिप', query: 'QOP-1 ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QOP-2 ड्रॉप / DJ ट्रिप', query: 'QOP-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QOP अर्थ फॉल्ट (पावर)', query: 'QOP रिले ड्रॉप होना पावर सर्किट अर्थ फॉल्ट HMCS' },
+                          { label: 'QOA ड्रॉप / DJ ट्रिप', query: 'QOA ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QLA ड्रॉप / DJ ट्रिप', query: 'QLA ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QLM रिले ड्रॉप / DJ-VCB ट्रिप', query: 'QLM रिले ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QLM अकेली ड्रॉप (1)', query: '1. QLM अकेली ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QLM + अन्य रिले ट्रिप (A)', query: '(A) QLM किसी अन्य रिले के साथ ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QLM दोबारा ड्रॉप (B)', query: '(B) QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QRSI-1 ड्रॉप / DJ ट्रिप', query: 'QRSI-1 ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QRSI-2 ड्रॉप / DJ ट्रिप', query: '4. QRSI-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'SIV ट्रिपिंग / QSIT', query: 'SIV स्टैटिक कनवर्टर ट्रिपिंग QSIT फॉल्ट कोड' },
+                          { label: 'पैंटो नहीं उठ रहा (ZPT)', query: 'पैंटोग्राफ नहीं उठ रहा है ZPT VEPT RS प्रेशर' },
+                          { label: 'BP प्रेशर 5.0 kg नहीं बन रहा', query: 'बीपी प्रेशर 5.0 kg नहीं बन रहा ड्रॉप हो रहा A9' },
+                          { label: 'BLCP / MR प्रेशर नहीं बनता', query: 'BLCP क्लोज करने पर MR प्रेशर नहीं बनता है MCP चेक करें' },
+                          { label: 'MR प्रेशर ड्रॉप (8-10 kg)', query: 'MR प्रेशर 8-10 kg नहीं बन रहा कंप्रेसर BLCP' },
+                          { label: 'VCD पेनल्टी ब्रेक', query: 'VCD पेनल्टी ब्रेक लगना BPVR रीसेट' }
+                        ] : locoType === 'amrit_bharat' ? [
+                          { label: 'स्लेव लोको VCB क्लोज नहीं', query: 'Slave loco VCB not closing push pull' },
+                          { label: 'स्लेव ब्रेक रिलीज नहीं', query: 'Slave loco brake not releasing push pull' },
+                          { label: 'WTB ट्रेन बस फॉल्ट', query: 'WTB Train Bus communication failure' },
+                          { label: 'HLC होटल लोड सप्लाई नहीं', query: 'HLC- 2/1 hotel load not coming slave loco' },
+                          { label: 'मास्टर लोको तैयारी', query: 'Preparation of Master loco for push-pull' },
+                          { label: 'स्लेव लोको तैयारी', query: 'Preparation of Slave loco for push-pull' },
+                          { label: 'स्लेव लोको डेड बनाना', query: 'Procedure for making Slave loco Dead' },
+                          { label: 'P56 BP प्रेशर लीकेज', query: 'P56 BP Pressure leakage in push pull' },
+                          { label: 'P55 पैंटो नहीं उठ रहा', query: 'P55 Pantograph not raising in push pull' },
+                          { label: 'Node 504 / 596 फॉल्ट', query: 'Node 504 596 fault in master slave' }
+                        ] : [
                           { label: 'VCB क्लोज नहीं हो रहा / Trip', query: 'VCB close nahi ho raha ya VCB trip' },
                           { label: 'Panto नहीं उठ रहा', query: 'Panto raise nahi ho raha' },
+                          { label: 'QLM रिले ड्रॉप (Situation 1, 2, 3)', query: 'QLM रिले ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QLM + अन्य रिले ट्रिप (A)', query: '(A) QLM किसी अन्य रिले के साथ ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'QLM दोबारा ट्रिप (B)', query: '(B) QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होती है और DJ/VCB ट्रिप होता है' },
+                          { label: 'BHEL TCN ICP1 (SS17)', query: 'BHEL TCN SS17 ICP1 Disturbance in Processor ICP-1' },
+                          { label: 'BHEL TCN नियम', query: 'BHEL TCN and IGBT SR SS13 SS14 SS17 SS18 rule' },
                           { label: 'F1501P1 फायर अलार्म', query: 'F1501P1 Fire detection in machine room' },
                           { label: 'F1601P1 स्पीडोमीटर', query: 'F1601P1 speed limit exceeded speedometer' },
                           { label: 'SS19 ट्रेन बस', query: 'SS19 Train Bus isolated' },
                           { label: 'MCB 112.1 ट्रिप', query: 'MCB 112.1 trip SB-2' },
                           { label: 'BUR 1/2/3 फॉल्ट', query: 'BUR fault auxiliary converter' },
                           { label: 'MR प्रेशर ड्रॉप', query: 'MR pressure drop compressor low' },
-                        ].map((chip, idx) => (
+                        ]).map((chip, idx) => (
                           <button
                             key={idx}
                             type="button"
@@ -1600,7 +1895,7 @@ export default function App() {
                             fontSize === 'extra-large' ? 'text-2xl sm:text-3xl' : fontSize === 'large' ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl',
                             isDay ? "text-slate-950" : "text-white"
                           )}>
-                            {aiResult.faultTitle}
+                            {formatBilingualText(aiResult.faultTitle, troubleshootLanguage)}
                           </h3>
                         )}
                       </div>
@@ -1609,7 +1904,13 @@ export default function App() {
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <Activity className="w-4 h-4 text-blue-400" />
-                          <h4 className="font-black text-xs uppercase tracking-widest text-blue-400">Analysis (कारण एवं विवरण)</h4>
+                          <h4 className="font-black text-xs uppercase tracking-widest text-blue-400">
+                            {troubleshootLanguage === 'hi' 
+                              ? 'दोष विश्लेषण (कारण एवं विवरण)' 
+                              : troubleshootLanguage === 'en' 
+                                ? 'FAULT ANALYSIS & CAUSE' 
+                                : 'Analysis (कारण एवं विवरण)'}
+                          </h4>
                         </div>
                         <div className={cn(
                           "p-4 sm:p-5 rounded-2xl border-2 shadow-md leading-relaxed font-semibold transition-all",
@@ -1618,7 +1919,7 @@ export default function App() {
                             : "bg-[#0B132B]/90 border-blue-500/40 text-blue-100",
                           fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
                         )}>
-                          {aiResult.analysis}
+                          {formatBilingualText(aiResult.analysis, troubleshootLanguage)}
                         </div>
                       </div>
 
@@ -1631,7 +1932,11 @@ export default function App() {
                               "font-black uppercase tracking-wider text-amber-500",
                               fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
                             )}>
-                              Loco Pilot Troubleshooting Actions (दोष निवारण कार्यवाही)
+                              {troubleshootLanguage === 'hi'
+                                ? 'लोको पायलट निवारण कार्यवाही (Troubleshooting Steps)'
+                                : troubleshootLanguage === 'en'
+                                  ? 'LOCO PILOT TROUBLESHOOTING ACTIONS'
+                                  : 'Loco Pilot Troubleshooting Actions (दोष निवारण कार्यवाही)'}
                             </h4>
                           </div>
                         </div>
@@ -1644,10 +1949,64 @@ export default function App() {
                               faultTitle={aiResult.faultTitle || "दोष निवारण कार्यवाही"}
                               isDay={isDay}
                               fontSize={fontSize}
+                              selectedLanguage={troubleshootLanguage}
+                              onLanguageChange={handleTroubleshootLangChange}
                               onActiveStepChange={setAiVoiceActiveIndex}
                             />
                           </div>
                         )}
+
+                        {/* LANGUAGE TOGGLE FOR STEPS DISPLAY */}
+                        <div className={cn(
+                          "flex items-center justify-between gap-2 flex-wrap mb-3.5 px-3.5 py-2.5 rounded-xl border transition-all",
+                          isDay ? "bg-slate-100/90 border-slate-300" : "bg-slate-900/80 border-slate-700/80"
+                        )}>
+                          <div className="flex items-center gap-1.5 text-xs font-black">
+                            <Languages className="w-4 h-4 text-amber-500" />
+                            <span className={isDay ? "text-slate-800" : "text-amber-300"}>चरण भाषा (Troubleshooting Steps Language):</span>
+                          </div>
+                          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-slate-700">
+                            <button
+                              type="button"
+                              onClick={() => handleTroubleshootLangChange('en')}
+                              className={cn(
+                                "px-2.5 py-1 rounded-md text-xs font-black transition-all cursor-pointer flex items-center gap-1",
+                                troubleshootLanguage === 'en'
+                                  ? "bg-amber-400 text-black shadow-sm ring-2 ring-amber-300"
+                                  : "text-slate-300 hover:text-white hover:bg-slate-800"
+                              )}
+                              title="Display steps in English font"
+                            >
+                              <span>🇬🇧 English</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleTroubleshootLangChange('hi')}
+                              className={cn(
+                                "px-2.5 py-1 rounded-md text-xs font-black transition-all cursor-pointer flex items-center gap-1",
+                                troubleshootLanguage === 'hi'
+                                  ? "bg-amber-400 text-black shadow-sm ring-2 ring-amber-300"
+                                  : "text-slate-300 hover:text-white hover:bg-slate-800"
+                              )}
+                              title="Display steps in Hindi font"
+                            >
+                              <span>🇮🇳 हिंदी</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleTroubleshootLangChange('both')}
+                              className={cn(
+                                "px-2.5 py-1 rounded-md text-xs font-black transition-all cursor-pointer flex items-center gap-1",
+                                troubleshootLanguage === 'both'
+                                  ? "bg-amber-400 text-black shadow-sm ring-2 ring-amber-300"
+                                  : "text-slate-300 hover:text-white hover:bg-slate-800"
+                              )}
+                              title="Display both English & Hindi"
+                            >
+                              <span>🌐 दोनों (Both)</span>
+                            </button>
+                          </div>
+                        </div>
 
                         <div className="space-y-3.5">
                           {(() => {
@@ -1657,7 +2016,8 @@ export default function App() {
 
                             let stepCounter = 0;
 
-                            return validActions.map((action, idx) => {
+                            return validActions.map((rawAction, idx) => {
+                              const action = getDisplayStepText(rawAction, troubleshootLanguage);
                               const isHeader = action.startsWith('═') || action.startsWith('【') || action.endsWith('═') || action.startsWith('---');
                               const isBullet = action.startsWith('•') || action.startsWith('-') || action.startsWith('*');
                               const numberedMatch = action.match(/^(\d+)[\.\)]\s*(.*)/);
@@ -1678,10 +2038,51 @@ export default function App() {
                                       fontSize === 'extra-large' ? 'text-xl' : fontSize === 'large' ? 'text-lg' : 'text-base'
                                     )}
                                   >
-                                    <div className="flex items-center gap-2.5">
-                                      <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0 shadow-sm" />
-                                      <span>{cleanTitle}</span>
-                                    </div>
+                                    {(() => {
+                                      const roundParenMatch = cleanTitle.match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+                                      if (roundParenMatch) {
+                                        const mainText = roundParenMatch[1].trim();
+                                        const subText = roundParenMatch[2].trim();
+                                        if (troubleshootLanguage === 'hi') {
+                                          const hiText = containsDevanagari(subText) ? subText : containsDevanagari(mainText) ? mainText : cleanTitle;
+                                          return (
+                                            <div className="flex items-center gap-2.5">
+                                              <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0 shadow-sm" />
+                                              <span className="font-black text-left">{hiText}</span>
+                                            </div>
+                                          );
+                                        }
+                                        if (troubleshootLanguage === 'en') {
+                                          const enText = !containsDevanagari(mainText) ? mainText : !containsDevanagari(subText) ? subText : cleanTitle;
+                                          return (
+                                            <div className="flex items-center gap-2.5">
+                                              <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0 shadow-sm" />
+                                              <span className="font-black text-left">{enText}</span>
+                                            </div>
+                                          );
+                                        }
+                                        return (
+                                          <div className="flex items-start gap-2.5">
+                                            <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0 shadow-sm mt-1" />
+                                            <div className="flex flex-col text-left">
+                                              <span className="font-black leading-snug">{mainText}</span>
+                                              <span className={cn(
+                                                "text-xs font-semibold mt-0.5",
+                                                isDay ? "text-amber-900/80" : "text-amber-300/80"
+                                              )}>
+                                                {subText}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                      return (
+                                        <div className="flex items-center gap-2.5">
+                                          <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0 shadow-sm" />
+                                          <span className="font-black text-left">{cleanTitle}</span>
+                                        </div>
+                                      );
+                                    })()}
                                     {isSpeakingThis && (
                                       <span className="text-xs font-black uppercase px-2 py-0.5 rounded bg-emerald-500 text-white flex items-center gap-1 shadow-sm animate-pulse">
                                         <Volume2 className="w-3 h-3" />
@@ -1723,6 +2124,44 @@ export default function App() {
                                     )} />
                                     <p className="leading-relaxed whitespace-pre-wrap font-bold flex-1">
                                       {action.replace(/^[•\-\*]\s*/, '')}
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              const subMatch = action.match(/^(\([a-z0-9]+\)|[a-z]\)|\{[ivx0-9]+\})\s*(.*)/i);
+                              if (subMatch) {
+                                const subBadge = subMatch[1].replace(/[\(\)\{\}]/g, '').trim();
+                                const subText = subMatch[2];
+                                return (
+                                  <div 
+                                    key={`sub-${idx}`}
+                                    className={cn(
+                                      "flex items-start gap-3.5 p-3.5 ml-3 sm:ml-5 rounded-xl border-2 transition-all shadow-sm relative",
+                                      isSpeakingThis
+                                        ? "ring-4 ring-emerald-400 border-emerald-400 bg-emerald-950/60 text-white"
+                                        : isDay 
+                                          ? "bg-amber-50/70 border-amber-200 text-slate-900" 
+                                          : "bg-[#16161A] border-zinc-700/60 text-zinc-200",
+                                      fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                                    )}
+                                  >
+                                    {isSpeakingThis && (
+                                      <div className="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md animate-pulse">
+                                        <Volume2 className="w-3 h-3" />
+                                        <span>अब बोला जा रहा है</span>
+                                      </div>
+                                    )}
+                                    <div className={cn(
+                                      "w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-lg flex items-center justify-center text-xs font-black shadow border mt-0.5",
+                                      isSpeakingThis
+                                        ? "bg-emerald-400 text-emerald-950 border-white"
+                                        : "bg-amber-500/20 text-amber-500 border-amber-500/40"
+                                    )}>
+                                      {subBadge}
+                                    </div>
+                                    <p className="leading-relaxed whitespace-pre-wrap font-bold flex-1">
+                                      {subText}
                                     </p>
                                   </div>
                                 );
@@ -1786,14 +2225,18 @@ export default function App() {
                               "font-black uppercase tracking-wider text-emerald-400",
                               fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
                             )}>
-                              सावधानी एवं निर्देश (Precautions & TLC Advice)
+                              {troubleshootLanguage === 'hi'
+                                ? 'सावधानी एवं निर्देश (Precautions)'
+                                : troubleshootLanguage === 'en'
+                                  ? 'SAFETY PRECAUTIONS & TLC ADVICE'
+                                  : 'सावधानी एवं निर्देश (Precautions & TLC Advice)'}
                             </h4>
                           </div>
                           <p className={cn(
                             "leading-relaxed font-bold",
                             fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
                           )}>
-                            {aiResult.precautions}
+                            {formatBilingualText(aiResult.precautions, troubleshootLanguage)}
                           </p>
                         </div>
                       )}
@@ -1814,24 +2257,68 @@ export default function App() {
                             स्थायी मेमोरी सक्रिय (Permanent In-Memory Active)
                           </span>
                           <span className="text-[11px] text-[#71717A] bg-[#18181B] px-2 py-0.5 rounded border border-[#27272A]">
-                            {locoType === 'amrit_bharat' ? 'CLW 67 पृष्ठ सम्पूर्ण TSD' : '254 पृष्ठ संपूर्ण डायरेक्टरी'}
+                            {locoType === 'conventional' ? 'BRC वडोदरा 252 पृष्ठ सम्पूर्ण TSD' : locoType === 'amrit_bharat' ? 'CLW 67 पृष्ठ सम्पूर्ण TSD' : '254 पृष्ठ संपूर्ण डायरेक्टरी'}
                           </span>
                         </div>
                         <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                          {locoType === 'amrit_bharat' 
-                            ? 'चित्तरंजन लोकोमोटिव वर्क्स (CLW) - अमृत भारत पुश-पुल TSD फाइनल कॉपी'
-                            : '3 फ़ेस लोको परिचालन निर्देश एवं दोष निवारण निर्देशिका'}
+                          {locoType === 'conventional'
+                            ? 'क्षेत्रीय विद्युत प्रशिक्षण केन्द्र, वड़ोदरा (Western Railway, BRC)'
+                            : locoType === 'amrit_bharat' 
+                              ? 'चित्तरंजन लोकोमोटिव वर्क्स (CLW) - अमृत भारत पुश-पुल TSD फाइनल कॉपी'
+                              : '3 फ़ेस लोको परिचालन निर्देश एवं दोष निवारण निर्देशिका'}
                         </h2>
                         <p className="text-xs text-[#A1A1AA] mt-1">
-                          {locoType === 'amrit_bharat'
-                            ? 'एरोडायनामिक WAP-5 पुश-पुल लोको एवं 22-कोच रैक (अप्रैल 2024)'
-                            : 'क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वड़ोदरा (Western Railway Electric Training Centre, Vadodara)'}
+                          {locoType === 'conventional'
+                            ? 'परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WAG5, WAM4, WAP4 & WAG7) - 252 पृष्ठ'
+                            : locoType === 'amrit_bharat'
+                              ? 'एरोडायनामिक WAP-5 पुश-पुल लोको एवं 22-कोच रैक (अप्रैल 2024)'
+                              : 'क्षेत्रीय विद्युत प्रशिक्षण केंद्र, वड़ोदरा (Western Railway Electric Training Centre, Vadodara)'}
                         </p>
                       </div>
 
                       {/* Quick Action Buttons for PDF */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        {locoType === '3phase' ? (
+                        {locoType === 'conventional' ? (
+                          <>
+                            <a
+                              href="/api/conventional/pdf"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs bg-purple-600 hover:bg-purple-500 text-white font-medium px-3 py-1.5 rounded transition-colors"
+                            >
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span>मूल BRC PDF खोलें (252p)</span>
+                            </a>
+                            <a
+                              href="/api/conventional/pdf"
+                              download="Conventional_Loco_TSD_BRC_Vadodara.pdf"
+                              className="flex items-center gap-1.5 text-xs bg-[#18181B] hover:bg-[#27272A] border border-[#3F3F46] text-[#E4E4E7] font-medium px-3 py-1.5 rounded transition-colors"
+                            >
+                              <Download className="w-3.5 h-3.5 text-purple-400" />
+                              <span>डाउनलोड (23.4 MB)</span>
+                            </a>
+                          </>
+                        ) : locoType === 'amrit_bharat' ? (
+                          <>
+                            <a
+                              href="/assets/aistudio/AMRIT_BHARAT_TSD_28b1e428.pdf"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1.5 rounded transition-colors"
+                            >
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span>मूल CLW PDF खोलें</span>
+                            </a>
+                            <a
+                              href="/assets/aistudio/AMRIT_BHARAT_TSD_28b1e428.pdf"
+                              download="Amrit_Bharat_Push_Pull_TSD_CLW.pdf"
+                              className="flex items-center gap-1.5 text-xs bg-[#18181B] hover:bg-[#27272A] border border-[#3F3F46] text-[#E4E4E7] font-medium px-3 py-1.5 rounded transition-colors"
+                            >
+                              <Download className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>डाउनलोड (67p)</span>
+                            </a>
+                          </>
+                        ) : (
                           <>
                             <a
                               href="/api/manual/pdf"
@@ -1851,11 +2338,6 @@ export default function App() {
                               <span>डाउनलोड (21.3 MB)</span>
                             </a>
                           </>
-                        ) : (
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs font-medium">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>CLW 67p TSD RAM Memory Loaded</span>
-                          </div>
                         )}
                       </div>
                     </div>
@@ -1865,19 +2347,19 @@ export default function App() {
                       <div className="bg-[#18181B]/80 p-2 rounded border border-[#27272A]">
                         <span className="text-[10px] text-[#71717A] block uppercase">कुल पृष्ठ</span>
                         <span className="text-sm font-semibold text-white">
-                          {locoType === 'amrit_bharat' ? '67 Pages (16 Sections)' : '254 Pages'}
+                          {locoType === 'conventional' ? '252 Pages (24 अध्याय + सर्किट)' : locoType === 'amrit_bharat' ? '67 Pages (16 Sections)' : '254 Pages'}
                         </span>
                       </div>
                       <div className="bg-[#18181B]/80 p-2 rounded border border-[#27272A]">
                         <span className="text-[10px] text-[#71717A] block uppercase">कवर लोको</span>
                         <span className="text-sm font-semibold text-orange-400">
-                          {locoType === 'amrit_bharat' ? 'Amrit Bharat WAP-5' : 'WAP-7 / 5 / WAG-9'}
+                          {locoType === 'conventional' ? 'WAG-5, WAM-4, WAP-4, WAG-7' : locoType === 'amrit_bharat' ? 'Amrit Bharat WAP-5' : 'WAP-7 / 5 / WAG-9'}
                         </span>
                       </div>
                       <div className="bg-[#18181B]/80 p-2 rounded border border-[#27272A]">
                         <span className="text-[10px] text-[#71717A] block uppercase">सब-सिस्टम</span>
                         <span className="text-sm font-semibold text-blue-400">
-                          {locoType === 'amrit_bharat' ? 'Part A-D, UIC, WTB' : 'SS01 से SS19 TSD'}
+                          {locoType === 'conventional' ? 'DJ, GR, SIV, रिले, TM' : locoType === 'amrit_bharat' ? 'Part A-D, UIC, WTB' : 'SS01 से SS19 TSD'}
                         </span>
                       </div>
                       <div className="bg-[#18181B]/80 p-2 rounded border border-[#27272A]">
@@ -1896,7 +2378,7 @@ export default function App() {
                         manualSubTab === 'search' ? "bg-blue-600 text-white" : "text-[#71717A] hover:text-[#A1A1AA]"
                       )}
                     >
-                      <Search className="w-3.5 h-3.5" /> {locoType === 'amrit_bharat' ? 'अमृत भारत TSD में सर्च' : '254 पेजों में सर्च'}
+                      <Search className="w-3.5 h-3.5" /> {locoType === 'conventional' ? 'कन्वेंशनल TSD में सर्च' : locoType === 'amrit_bharat' ? 'अमृत भारत TSD में सर्च' : '254 पेजों में सर्च'}
                     </button>
                     <button
                       onClick={() => {
@@ -2060,18 +2542,21 @@ export default function App() {
                         </div>
 
                         <div className="flex items-center gap-2">
-
-                          {locoType === '3phase' && (
-                            <a
-                              href="/api/manual/pdf"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs bg-[#18181B] hover:bg-[#27272A] text-blue-400 border border-[#27272A] px-2.5 py-1.5 rounded flex items-center gap-1 transition-colors"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>PDF में देखें</span>
-                            </a>
-                          )}
+                          <a
+                            href={
+                              locoType === 'conventional'
+                                ? '/api/conventional/pdf'
+                                : locoType === 'amrit_bharat'
+                                  ? '/assets/aistudio/AMRIT_BHARAT_TSD_28b1e428.pdf'
+                                  : '/api/manual/pdf'
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs bg-[#18181B] hover:bg-[#27272A] text-blue-400 border border-[#27272A] px-2.5 py-1.5 rounded flex items-center gap-1 transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>PDF में देखें</span>
+                          </a>
                         </div>
                       </div>
 
@@ -2284,7 +2769,7 @@ export default function App() {
                     fontSize === 'extra-large' ? 'text-2xl sm:text-3xl' : fontSize === 'large' ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl',
                     isDay ? "text-slate-950" : "text-white"
                   )}>
-                    {selectedFault.message}
+                    {formatBilingualText(selectedFault.message, troubleshootLanguage)}
                   </h1>
                 </div>
 
@@ -2297,11 +2782,11 @@ export default function App() {
                     <div className="flex items-center gap-2 mb-1.5">
                       <Lightbulb className="w-4 h-4 text-amber-500" />
                       <h3 className={cn("font-black text-xs uppercase tracking-wider", isDay ? "text-slate-800" : "text-zinc-300")}>
-                        लैम्प एवं संकेत (Lamps)
+                        {troubleshootLanguage === 'hi' ? 'लैम्प एवं संकेत' : troubleshootLanguage === 'en' ? 'LAMPS & SIGNALS' : 'लैम्प एवं संकेत (Lamps)'}
                       </h3>
                     </div>
                     <p className={cn("text-xs sm:text-sm font-semibold", isDay ? "text-slate-700 italic" : "text-zinc-300 italic")}>
-                      {selectedFault.lamp}
+                      {formatBilingualText(selectedFault.lamp, troubleshootLanguage)}
                     </p>
                   </div>
 
@@ -2312,11 +2797,11 @@ export default function App() {
                     <div className="flex items-center gap-2 mb-1.5">
                       <Activity className="w-4 h-4 text-orange-500" />
                       <h3 className={cn("font-black text-xs uppercase tracking-wider", isDay ? "text-slate-800" : "text-zinc-300")}>
-                        प्रभाव एवं लक्षण (Effect)
+                        {troubleshootLanguage === 'hi' ? 'प्रभाव एवं लक्षण' : troubleshootLanguage === 'en' ? 'EFFECT & SYMPTOMS' : 'प्रभाव एवं लक्षण (Effect)'}
                       </h3>
                     </div>
                     <p className={cn("text-xs sm:text-sm font-semibold leading-relaxed", isDay ? "text-slate-700" : "text-zinc-300")}>
-                      {selectedFault.effect}
+                      {formatBilingualText(selectedFault.effect, troubleshootLanguage)}
                     </p>
                   </div>
 
@@ -2374,10 +2859,64 @@ export default function App() {
                         faultTitle={selectedFault.message || selectedFault.id}
                         isDay={isDay}
                         fontSize={fontSize}
+                        selectedLanguage={troubleshootLanguage}
+                        onLanguageChange={handleTroubleshootLangChange}
                         onActiveStepChange={setDetailVoiceActiveIndex}
                       />
                     </div>
                   )}
+
+                  {/* LANGUAGE TOGGLE FOR STEPS DISPLAY */}
+                  <div className={cn(
+                    "flex items-center justify-between gap-2 flex-wrap mb-3.5 px-3.5 py-2.5 rounded-xl border transition-all",
+                    isDay ? "bg-slate-100/90 border-slate-300" : "bg-slate-900/80 border-slate-700/80"
+                  )}>
+                    <div className="flex items-center gap-1.5 text-xs font-black">
+                      <Languages className="w-4 h-4 text-amber-500" />
+                      <span className={isDay ? "text-slate-800" : "text-amber-300"}>चरण भाषा (Troubleshooting Steps Language):</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-slate-700">
+                      <button
+                        type="button"
+                        onClick={() => handleTroubleshootLangChange('en')}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-xs font-black transition-all cursor-pointer flex items-center gap-1",
+                          troubleshootLanguage === 'en'
+                            ? "bg-amber-400 text-black shadow-sm ring-2 ring-amber-300"
+                            : "text-slate-300 hover:text-white hover:bg-slate-800"
+                        )}
+                        title="Display steps in English font"
+                      >
+                        <span>🇬🇧 English</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleTroubleshootLangChange('hi')}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-xs font-black transition-all cursor-pointer flex items-center gap-1",
+                          troubleshootLanguage === 'hi'
+                            ? "bg-amber-400 text-black shadow-sm ring-2 ring-amber-300"
+                            : "text-slate-300 hover:text-white hover:bg-slate-800"
+                        )}
+                        title="Display steps in Hindi font"
+                      >
+                        <span>🇮🇳 हिंदी</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleTroubleshootLangChange('both')}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-xs font-black transition-all cursor-pointer flex items-center gap-1",
+                          troubleshootLanguage === 'both'
+                            ? "bg-amber-400 text-black shadow-sm ring-2 ring-amber-300"
+                            : "text-slate-300 hover:text-white hover:bg-slate-800"
+                        )}
+                        title="Display both English & Hindi"
+                      >
+                        <span>🌐 दोनों (Both)</span>
+                      </button>
+                    </div>
+                  </div>
                   
                   <div className="space-y-3.5">
                     {(() => {
@@ -2385,7 +2924,8 @@ export default function App() {
                         .map(a => typeof a === 'string' ? a.trim() : '')
                         .filter(a => a.length > 0);
                       let stepCounter = 0;
-                      return validActions.map((action, idx) => {
+                      return validActions.map((rawAction, idx) => {
+                        const action = getDisplayStepText(rawAction, troubleshootLanguage);
                         const isHeader = action.startsWith('═') || action.startsWith('【') || action.endsWith('═') || action.startsWith('---');
                         const isBullet = action.startsWith('•') || action.startsWith('-') || action.startsWith('*');
                         const numberedMatch = action.match(/^(\d+)[\.\)]\s*(.*)/);
@@ -2406,10 +2946,51 @@ export default function App() {
                                 fontSize === 'extra-large' ? 'text-lg' : fontSize === 'large' ? 'text-base' : 'text-sm'
                               )}
                             >
-                              <div className="flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                                <span>{cleanTitle}</span>
-                              </div>
+                              {(() => {
+                                const roundParenMatch = cleanTitle.match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+                                if (roundParenMatch) {
+                                  const mainText = roundParenMatch[1].trim();
+                                  const subText = roundParenMatch[2].trim();
+                                  if (troubleshootLanguage === 'hi') {
+                                    const hiText = containsDevanagari(subText) ? subText : containsDevanagari(mainText) ? mainText : cleanTitle;
+                                    return (
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                                        <span className="font-black text-left">{hiText}</span>
+                                      </div>
+                                    );
+                                  }
+                                  if (troubleshootLanguage === 'en') {
+                                    const enText = !containsDevanagari(mainText) ? mainText : !containsDevanagari(subText) ? subText : cleanTitle;
+                                    return (
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                                        <span className="font-black text-left">{enText}</span>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <div className="flex items-start gap-2">
+                                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0 mt-1" />
+                                      <div className="flex flex-col text-left">
+                                        <span className="font-black leading-snug">{mainText}</span>
+                                        <span className={cn(
+                                          "text-xs font-semibold mt-0.5",
+                                          isDay ? "text-amber-900/80" : "text-amber-300/80"
+                                        )}>
+                                          {subText}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                                    <span className="font-black text-left">{cleanTitle}</span>
+                                  </div>
+                                );
+                              })()}
                               {isSpeakingThis && (
                                 <span className="text-xs font-black uppercase px-2 py-0.5 rounded bg-emerald-500 text-white flex items-center gap-1 shadow-sm animate-pulse">
                                   <Volume2 className="w-3 h-3" />
@@ -2446,6 +3027,44 @@ export default function App() {
                               )} />
                               <p className="leading-relaxed whitespace-pre-wrap font-semibold flex-1">
                                 {action.replace(/^[•\-\*]\s*/, '')}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        const subMatch = action.match(/^(\([a-z0-9]+\)|[a-z]\)|\{[ivx0-9]+\})\s*(.*)/i);
+                        if (subMatch) {
+                          const subBadge = subMatch[1].replace(/[\(\)\{\}]/g, '').trim();
+                          const subText = subMatch[2];
+                          return (
+                            <div 
+                              key={`fa-sub-${idx}`}
+                              className={cn(
+                                "flex items-start gap-3 p-3.5 ml-3 sm:ml-5 rounded-xl border-2 transition-all relative shadow-sm",
+                                isSpeakingThis
+                                  ? "ring-4 ring-emerald-400 border-emerald-400 bg-emerald-950/60 text-white"
+                                  : isDay 
+                                    ? "bg-amber-50/70 border-amber-200 text-slate-900" 
+                                    : "bg-[#16161A] border-zinc-700/60 text-zinc-200",
+                                fontSize === 'extra-large' ? 'text-lg sm:text-xl' : fontSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+                              )}
+                            >
+                              {isSpeakingThis && (
+                                <div className="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md animate-pulse">
+                                  <Volume2 className="w-3 h-3" />
+                                  <span>अब बोला जा रहा है</span>
+                                </div>
+                              )}
+                              <div className={cn(
+                                "w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-lg flex items-center justify-center text-xs font-black shadow border mt-0.5",
+                                isSpeakingThis
+                                  ? "bg-emerald-400 text-emerald-950 border-white"
+                                  : "bg-amber-500/20 text-amber-500 border-amber-500/40"
+                              )}>
+                                {subBadge}
+                              </div>
+                              <p className="leading-relaxed whitespace-pre-wrap font-bold flex-1">
+                                {subText}
                               </p>
                             </div>
                           );
@@ -2513,6 +3132,8 @@ export default function App() {
                         faultTitle={`स्लेव लोको: ${selectedFault.id}`}
                         isDay={isDay}
                         fontSize={fontSize}
+                        selectedLanguage={troubleshootLanguage}
+                        onLanguageChange={handleTroubleshootLangChange}
                       />
                     </div>
                     <div className="space-y-3.5">
@@ -2521,7 +3142,8 @@ export default function App() {
                           .map(a => typeof a === 'string' ? a.trim() : '')
                           .filter(a => a.length > 0);
                         let slaveStepCounter = 0;
-                        return validSlaveActions.map((action, idx) => {
+                        return validSlaveActions.map((rawAction, idx) => {
+                          const action = getDisplayStepText(rawAction, troubleshootLanguage);
                           const isHeader = action.startsWith('═') || action.startsWith('【') || action.endsWith('═') || action.startsWith('---');
                           const isBullet = action.startsWith('•') || action.startsWith('-') || action.startsWith('*');
                           const numberedMatch = action.match(/^(\d+)[\.\)]\s*(.*)/);
