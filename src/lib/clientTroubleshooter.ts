@@ -11931,25 +11931,25 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
 
   // 1. Explicit Check for QLM Special Cases (Repeat Drop / Case B and With Other Relays / Case A)
   const isQLMRepeatQuery =
-    norm.includes('qlm') &&
-    (norm.includes('repeat') || norm.includes('dobara') || norm.includes('doosri') || norm.includes('dusri') || norm.includes('दोबारा') || norm.includes('फिर से') || norm.includes('phir se') || norm.includes('re-drop') || norm.includes('redrop') || norm.includes('(b)') || norm.includes('case b') || norm.includes('case-b') || norm.includes('situation 3') || norm.includes('स्थिति 3'));
+    (norm.includes('qlm') || norm.includes('क्यूएलएम') || norm.includes('क्यू एल एम')) &&
+    (norm.includes('repeat') || norm.includes('dobara') || norm.includes('दोबारा') || norm.includes('फिर से') || norm.includes('phir se') || norm.includes('re-drop') || norm.includes('redrop') || norm.includes('(b)') || norm.includes('case b') || norm.includes('case-b') || norm.includes('situation 3') || norm.includes('स्थिति 3') || norm.includes('doosri baar') || norm.includes('dusri bar') || norm.includes('दूसरी बार'));
 
   const isQLMWithOtherRelaysQuery =
-    norm.includes('qlm') &&
-    (norm.includes('anya relay') || norm.includes('other relay') || norm.includes('किसी अन्य') || norm.includes('kisi anya') || norm.includes('dusri relay') || norm.includes('doosri relay') || norm.includes('अन्य रिले') || norm.includes('(a)') || norm.includes('case a') || norm.includes('case-a') || norm.includes('situation 2') || norm.includes('स्थिति 2'));
+    (norm.includes('qlm') || norm.includes('क्यूएलएम') || norm.includes('क्यू एल एम')) &&
+    (norm.includes('anya relay') || norm.includes('other relay') || norm.includes('anya realy') || norm.includes('other realy') || norm.includes('किसी अन्य') || norm.includes('kisi anya') || norm.includes('dusri relay') || norm.includes('doosri relay') || norm.includes('अन्य रिले') || norm.includes('(a)') || norm.includes('case a') || norm.includes('case-a') || norm.includes('situation 2') || norm.includes('स्थिति 2'));
 
   if (isQLMRepeatQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-QLM-REPEAT-DROP') || conventionalFaults.find(cf => cf.id === 'CONV-QLM-OVERCURRENT')!;
     return {
       identifiedFaultId: f.id,
       faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
-      analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+      analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem} (मेन ट्रांसफॉर्मर प्राइमरी ओवरकरंट सुरक्षा रिले QLM - स्थिति B)\nदोष: (B) QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होती है और DJ/VCB ट्रिप होता है\nकारण (यह दोष क्यों होता है?): मेन ट्रांसफॉर्मर, पावर सर्किट अथवा ऑक्सिलरी सर्किट में गंभीर आंतरिक दोष, वाइंडिंग शॉर्ट-सर्किट या बार-बार हेवी करंट होने के कारण रिले QLM पुनः ड्रॉप हुई है। रेलवे संरक्षा नियमों के अनुसार QLM को केवल एक ही बार रीसेट किया जा सकता है। दोबारा ड्रॉप होने पर ट्रांसफॉर्मर में गंभीर क्षति अथवा आग लगने का अत्यधिक खतरा होता है।\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
       suggestedActions: f.actions,
-      precautions: "अति-महत्वपूर्ण सुरक्षा नियम: QLM किसी अन्य रिले के साथ दोबारा ड्रॉप होने पर रिले को कभी भी रीसेट न करें। तुरंत सहायता मांगें (Demand Assistance)।",
+      precautions: "अति-महत्वपूर्ण संरक्षा नियम: QLM किसी अन्य रिले के साथ दोबारा (2nd time) ड्रॉप होने पर रिले को कभी भी रीसेट न करें। किसी भी परिस्थिति में रिले को वेज न करें। तुरंत सहायता मांगें (Demand Assistance) तथा TLC को सूचित कर लॉग बुक में दर्ज करें।",
       manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
       verifiedFromPdf: true,
       pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
-      pdfPage: 1,
+      pdfPage: 27,
       pdfQuote: `${f.message}\n${f.actions.join('\n')}`
     };
   }
@@ -11959,13 +11959,13 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
     return {
       identifiedFaultId: f.id,
       faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
-      analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+      analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem} (मेन ट्रांसफॉर्मर प्राइमरी ओवरकरंट सुरक्षा रिले QLM - स्थिति A)\nदोष: (A) QLM किसी अन्य रिले के साथ ड्रॉप होती है और DJ/VCB ट्रिप होता है\nकारण (यह दोष क्यों होता है?): ट्रैक्शन पावर सर्किट (QOP / QRSI) अथवा ऑक्सिलरी पावर सर्किट (QOA) में भारी फॉल्ट करंट प्रवाहित होने से मेन ट्रांसफॉर्मर प्राइमरी में ओवरकरंट उत्पन्न हुआ, जिससे संबंधित सुरक्षा रिले (QOP/QOA/QRSI) के साथ QLM भी ट्रिप हुई।\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
       suggestedActions: f.actions,
       precautions: "QLM किसी अन्य रिले (QOP, QOA, QRSI) के साथ गिरने पर वाइंडिंग सर्किट, CGR 1,2,3 आर्कच्यूट व उपकरण चेक करें, दोषयुक्त उपकरण आइसोलेट करें। नजदीकी संभव स्टेशन पर मेंटेनेंस स्टाफ द्वारा पूर्ण निरीक्षण कराएं व TLC को सूचित करें।",
       manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
       verifiedFromPdf: true,
       pdfDocumentName: "परिचालन संबंधित अनुदेश एवं दोष निवारण निर्देशिका (WR BRC / WAG-5, WAM-4, WAP-4, WAG-7)",
-      pdfPage: 1,
+      pdfPage: 27,
       pdfQuote: `${f.message}\n${f.actions.join('\n')}`
     };
   }
@@ -11994,11 +11994,23 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
   // 2. Explicit Check for QRSI-1 and QRSI-2 (Silicon Rectifier Overcurrent Protection)
   const isQRSI2Query =
     norm.includes('qrsi-2') || norm.includes('qrsi 2') || norm.includes('qrsi2') ||
-    (norm.includes('qrsi') && (norm.includes('2') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('tm 4') || norm.includes('tm-4') || norm.includes('rsi-2') || norm.includes('rsi 2')));
+    norm.includes('qrsi two') || norm.includes('qrsi-two') || norm.includes('qrsi दो') || norm.includes('qrsi-दो') ||
+    norm.includes('q r s i 2') || norm.includes('q r s i-2') || norm.includes('q r s i two') || norm.includes('q r s i दो') ||
+    norm.includes('hmcs-2') || norm.includes('hmcs 2') ||
+    (
+      (norm.includes('qrsi') || norm.includes('q r s i') || norm.includes('क्यूआरएसआई') || norm.includes('क्यू आर एस आई')) &&
+      (norm.includes('2') || norm.includes('दो') || norm.includes('two') || norm.includes('bogie 2') || norm.includes('bogie-2') || norm.includes('tm 4') || norm.includes('tm-4') || norm.includes('rsi-2') || norm.includes('rsi 2'))
+    );
 
   const isQRSI1Query =
     norm.includes('qrsi-1') || norm.includes('qrsi 1') || norm.includes('qrsi1') ||
-    (norm.includes('qrsi') && !isQRSI2Query);
+    norm.includes('qrsi one') || norm.includes('qrsi-one') || norm.includes('qrsi एक') || norm.includes('qrsi-एक') ||
+    norm.includes('q r s i 1') || norm.includes('q r s i-1') || norm.includes('q r s i one') || norm.includes('q r s i एक') ||
+    norm.includes('hmcs-1') || norm.includes('hmcs 1') ||
+    (
+      (norm.includes('qrsi') || norm.includes('q r s i') || norm.includes('क्यूआरएसआई') || norm.includes('क्यू आर एस आई')) &&
+      !isQRSI2Query
+    );
 
   if (isQRSI2Query) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-QRSI-2-TRIP')!;
@@ -12006,7 +12018,7 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
       return {
         identifiedFaultId: f.id,
         faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
-        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem} (सिलिकॉन रेक्टिफायर ब्लॉक-2 व बोगी-2 ओवरकरंट सुरक्षा)\nदोष: QRSI-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है (QRSI-2 Drops and DJ/VCB Trips)\nकारण (यह दोष क्यों होता है?): सिलिकॉन रेक्टिफायर ब्लॉक-2 (RSI-2) अथवा बोगी-2 के पावर सर्किट (ट्रैक्शन मोटर TM 4, 5, 6, स्मूथिंग रिएक्टर SL-2, लाइन कॉन्टैक्टर L4-L6, रिवर्सर J-2 आदि) में अनुमेय सीमा से अधिक करंट (Overcurrent) या शॉर्ट सर्किट प्रवाहित होने पर ओवरकरंट सुरक्षा रिले QRSI-2 ड्रॉप हो जाती है। यह DJ/VCB को ट्रिप कराकर पावर कट करती है ताकि रेक्टिफायर डायोड्स और ट्रैक्शन मोटर्स गंभीर रूप से जलने या फ्लैशओवर होने से बच सकें।\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
         suggestedActions: f.actions,
         precautions: "QRSI-2 ड्रॉप होने पर RSI-2 ब्लॉक व बोगी-2 की ट्रैक्शन मोटरों (TM 4, 5, 6) की जांच करें। HMCS-2 द्वारा दोषयुक्त मोटर को आइसोलेट करें या आवश्यकता पड़ने पर HVSI-2, HVMT-2, HVSL-2 को '0' पर रखकर बोगी-2 को आइसोलेट कर 50% लोड पर गाड़ी चलाएं।",
         manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,
@@ -12024,7 +12036,7 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
       return {
         identifiedFaultId: f.id,
         faultTitle: f.message.split('\n')[0] + " [कन्वेंशनल लोको TSD]",
-        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem}\nदोष: ${f.message.replace(/\n/g, ' ')}\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
+        analysis: `भारतीय रेल CAMTECH कन्वेंशनल इलेक्ट्रिक लोको TSD डायरेक्टरी (WAP-4, WAG-7, WAG-5):\nसिस्टम: ${f.subSystem} (सिलिकॉन रेक्टिफायर ब्लॉक-1 व बोगी-1 ओवरकरंट सुरक्षा)\nदोष: QRSI-1 ड्रॉप होती है और DJ/VCB ट्रिप होता है (QRSI-1 Drops and DJ/VCB Trips)\nकारण (यह दोष क्यों होता है?): सिलिकॉन रेक्टिफायर ब्लॉक-1 (RSI-1) अथवा बोगी-1 के पावर सर्किट (ट्रैक्शन मोटर TM 1, 2, 3, स्मूथिंग रिएक्टर SL-1, लाइन कॉन्टैक्टर L1-L3, रिवर्सर J-1 आदि) में अनुमेय सीमा से अधिक करंट (Overcurrent) या शॉर्ट सर्किट प्रवाहित होने पर ओवरकरंट सुरक्षा रिले QRSI-1 ड्रॉप हो जाती है। यह DJ/VCB को ट्रिप कराकर पावर कट करती है ताकि रेक्टिफायर डायोड्स और ट्रैक्शन मोटर्स गंभीर रूप से जलने या फ्लैशओवर होने से बच सकें।\nसंकेत: ${f.lamp}\nप्रभाव: ${f.effect}`,
         suggestedActions: f.actions,
         precautions: "QRSI-1 ड्रॉप होने पर RSI-1 ब्लॉक व बोगी-1 की ट्रैक्शन मोटरों (TM 1, 2, 3) की जांच करें। HMCS-1 द्वारा दोषयुक्त मोटर को आइसोलेट करें या आवश्यकता पड़ने पर HVSI-1, HVMT-1, HVSL-1 को '0' पर रखकर बोगी-1 को आइसोलेट कर 50% लोड पर गाड़ी चलाएं।",
         manualReference: `CAMTECH कन्वेंशनल लोको TSD - ${f.subSystem}`,

@@ -356,13 +356,37 @@ export function getSpokenHindi(text: string): string {
     }
   }
 
-  // 1. Check for outermost square bracket containing Devanagari: e.g. "English text [हिंदी निर्देश]"
+  // 1. Accurate bilingual split using splitBilingualStep (strips English half if outside/inside)
+  const split = splitBilingualStep(cleaned);
+  if (split && split.hindi && containsDevanagari(split.hindi)) {
+    let cleanHi = split.hindi
+      .replace(/\(\([^\)]*\)\)/g, '')
+      .replace(/\[\[[^\]]*\]\]/g, '')
+      .replace(/\s*\(\s*\)\s*/g, ' ')
+      .replace(/\s*\[\s*\]\s*/g, ' ')
+      .trim();
+
+    // Strip long English explanation brackets e.g. (Open VCB before initiating...)
+    cleanHi = cleanHi.replace(/\(([A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{8,})\)/g, (fullMatch, inside) => {
+      if (containsDevanagari(inside)) return fullMatch;
+      return '';
+    }).replace(/\[([A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{8,})\]/g, (fullMatch, inside) => {
+      if (containsDevanagari(inside)) return fullMatch;
+      return '';
+    });
+
+    if (containsDevanagari(cleanHi)) {
+      return normalizeHindiSpeech(cleanRawLine(cleanHi));
+    }
+  }
+
+  // 2. Check for outermost square bracket containing Devanagari: e.g. "English text [हिंदी निर्देश]"
   const squareMatch = cleaned.match(/\[([\s\S]*?)\]\s*$/) || cleaned.match(/\[([\s\S]*?)\]/);
   if (squareMatch && containsDevanagari(squareMatch[1])) {
     return normalizeHindiSpeech(cleanRawLine(squareMatch[1]));
   }
 
-  // 2. Check for outermost round bracket containing Devanagari where outside is English: e.g. "English text (हिंदी निर्देश)"
+  // 3. Check for outermost round bracket containing Devanagari where outside is English: e.g. "English text (हिंदी निर्देश)"
   const roundMatch = cleaned.match(/\(([\s\S]*?)\)\s*$/);
   if (roundMatch && containsDevanagari(roundMatch[1])) {
     const outside = cleaned.slice(0, roundMatch.index).trim();
@@ -371,8 +395,28 @@ export function getSpokenHindi(text: string): string {
     }
   }
 
-  // 3. If Devanagari is in the main text:
+  // 4. If Devanagari is present in the main text:
   let workingHindi = cleanRawLine(cleaned);
+
+  // First, strip all double-bracket English translations ((...)) and [[...]] BEFORE dictionary translation
+  workingHindi = workingHindi
+    .replace(/\(\([^\)]*\)\)/g, '')
+    .replace(/\[\[[^\]]*\]\]/g, '')
+    .replace(/\{[^\}]*\}/g, '');
+
+  // Strip long purely English explanatory brackets (while preserving short acronyms like Q50, VCB, A-9)
+  workingHindi = workingHindi
+    .replace(/\(([A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{7,})\)/g, (fullMatch, inside) => {
+      if (containsDevanagari(inside)) return fullMatch;
+      return '';
+    })
+    .replace(/\[([A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{7,})\]/g, (fullMatch, inside) => {
+      if (containsDevanagari(inside)) return fullMatch;
+      return '';
+    })
+    .replace(/\s*\(\s*\)\s*/g, ' ')
+    .replace(/\s*\[\s*\]\s*/g, ' ')
+    .trim();
 
   // Translate parenthesized English status if present (e.g. "(Loco will be shut down)")
   for (const [pattern, hi] of ENGLISH_TO_HINDI_PATTERNS) {
@@ -382,30 +426,11 @@ export function getSpokenHindi(text: string): string {
   // Unwrap short acronyms in parentheses like (MCPA), (BUR-1), (SB-1), (A-9) so they remain audible
   workingHindi = workingHindi.replace(/\(([A-Za-z0-9\-\.\/]{1,10})\)/g, ' $1 ');
 
-  // Only remove purely English long explanatory brackets (while preserving loco models)
-  const strippedOfEngBrackets = workingHindi
-    .replace(/\{[^\}]*\}/g, '')
-    .replace(/\(([A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{8,})\)/g, (fullMatch, inside) => {
-      if (/\b(?:WAP|WAG|WAM|WDM|WDG|WDP)\b/i.test(inside)) return fullMatch;
-      if (containsDevanagari(inside)) return fullMatch;
-      return '';
-    })
-    .replace(/\[([A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{8,})\]/g, (fullMatch, inside) => {
-      if (/\b(?:WAP|WAG|WAM|WDM|WDG|WDP)\b/i.test(inside)) return fullMatch;
-      if (containsDevanagari(inside)) return fullMatch;
-      return '';
-    })
-    .trim();
-
-  if (containsDevanagari(strippedOfEngBrackets) && strippedOfEngBrackets.length > 5) {
-    return normalizeHindiSpeech(cleanRawLine(strippedOfEngBrackets));
-  }
-
   if (containsDevanagari(workingHindi)) {
     return normalizeHindiSpeech(cleanRawLine(workingHindi));
   }
 
-  // 4. If the text has NO Devanagari at all (pure English instruction), translate known patterns to Hindi
+  // 5. If the text has NO Devanagari at all (pure English instruction), translate known patterns to Hindi
   let translated = cleanRawLine(cleaned);
   for (const [pattern, hi] of ENGLISH_TO_HINDI_PATTERNS) {
     translated = translated.replace(pattern, hi);

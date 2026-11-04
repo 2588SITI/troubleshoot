@@ -256,7 +256,14 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
     } else if (useLang === 'hi') {
       // HINDI ONLY MODE
       setCurrentlySpeakingSubPart('hi');
-      const spokenText = stepItem.hindi;
+      let spokenText = stepItem.hindi
+        .replace(/\(\([^\)]*\)\)/g, '')
+        .replace(/\[\[[^\]]*\]\]/g, '')
+        .replace(/\([A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{7,}\)/g, '')
+        .replace(/\[[A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{7,}\]/g, '')
+        .replace(/\s*\(\s*\)\s*/g, ' ')
+        .trim();
+
       const utterance = new SpeechSynthesisUtterance(spokenText);
       utterance.rate = rateRef.current;
       utterance.pitch = 1.0;

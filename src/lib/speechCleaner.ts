@@ -58,6 +58,7 @@ export function cleanRailwayVoiceText(raw: string): string {
 
   // 5d. MPCS Version & Relay OCR / Voice replacements
   text = text.replace(/वजन\s*3\.0/gi, 'वर्जन 3.0');
+  text = text.replace(/realy|rely/gi, 'relay');
   text = text.replace(/रले\s*को/gi, 'रिले को');
   text = text.replace(/रले\s*के/gi, 'रिले के');
   text = text.replace(/बाइपास/gi, 'बाईपास');
@@ -87,6 +88,9 @@ export function cleanRailwayVoiceText(raw: string): string {
   text = text.replace(/क्यू\s*एल\s*ए|क्यु\s*एल\s*ए|क्यूएलए|क्युएलए/gi, 'QLA');
   text = text.replace(/क्यू\s*ओ\s*पी|क्यु\s*ओ\s*पी|क्यूओपी|क्युओपी/gi, 'QOP');
   text = text.replace(/क्यू\s*ओ\s*ए|क्यु\s*ओ\s*ए|क्यूओए|क्युओए/gi, 'QOA');
+  text = text.replace(/(?:^|\s|[.,!?])(?:q\s*r\s*s\s*i|क्यू\s*आर\s*एस\s*आई|क्यु\s*आर\s*एस\s*आई|क्यूआरएसआई|क्युआरएसआई)\s*[-_]?\s*(?:2|two|tu|टू|दो)(?=\s|[.,!?]|$)/gi, ' QRSI-2 ');
+  text = text.replace(/(?:^|\s|[.,!?])(?:q\s*r\s*s\s*i|क्यू\s*आर\s*एस\s*आई|क्यु\s*आर\s*एस\s*आई|क्यूआरएसआई|क्युआरएसआई)\s*[-_]?\s*(?:1|one|van|वन|एक)(?=\s|[.,!?]|$)/gi, ' QRSI-1 ');
+  text = text.replace(/(?:^|\s|[.,!?])(?:q\s*r\s*s\s*i)(?=\s|[.,!?]|$)/gi, ' QRSI ');
   text = text.replace(/क्यू\s*आर\s*एस\s*आई|क्यु\s*आर\s*एस\s*आई|क्यूआरएसआई|क्युआरएसआई/gi, 'QRSI');
   text = text.replace(/डी\s*जे|डीजे/gi, 'DJ');
   text = text.replace(/आक\s*७८|ओसीआर\s*७८|ओसीआर-७८/gi, 'OCR-78');
@@ -639,9 +643,9 @@ export function cleanRailwayVoiceText(raw: string): string {
       text = 'QOP-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है';
     } else if ((text.includes('QOP-1') || text.includes('QOP 1') || text.includes('HQOP-1')) && (text.includes('D^iˆp') || text.includes('HMCS-1') || text.includes('RSI-1') || text.includes('SL-1') || text.includes('CTF-1'))) {
       text = 'QOP-1 ड्रॉप होती है और DJ/VCB ट्रिप होता है';
-    } else if (text.includes('QRSI-2') && text.includes('HMCS-2') && text.includes('HVSI')) {
+    } else if (text.includes('QRSI-2') || (text.includes('QRSI') && (text.includes('2') || text.includes('दो') || text.includes('two') || text.includes('two') || text.includes('HMCS-2') || text.includes('RSI-2')))) {
       text = 'QRSI-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है';
-    } else if (text.includes('QRSI-1') && (text.includes('HMCS-1') || text.includes('HVSI') || text.includes('Q-20') || text.includes('QD-1') || text.includes('RSI-1') || text.includes('TM1'))) {
+    } else if (text.includes('QRSI-1') || text.includes('QRSI')) {
       text = 'QRSI-1 ड्रॉप होती है और DJ/VCB ट्रिप होता है';
     } else if (
       text.includes('CGR 1,2,3') || text.includes('áâ»ô¿èÃ') || text.includes('GR ÖëPÃä') ||

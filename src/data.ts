@@ -94,8 +94,6 @@ export const faults: Fault[] = [
       "4. Switch OFF control electronics and turn it ON again. If LSDJ illuminates:- (कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करें {कंट्रोल इलेक्ट्रॉनिक्स को ऑफ करके ऑन करने की विधि पेज सं. 74/75 पर दी गई है}। यदि LSDJ प्रकाशित होता है तो:-)",
       "5. Raise pantograph, close VCB and resume normal traction. (पैंटो को उठाएं और VCB क्लोज करें और सामान्य ट्रैक्शन चालू करें।)",
       "6. If unsuccessful, try from the other cab. (यदि सफलता नहीं मिलती तो दूसरी कैब से प्रयत्न करें।)",
-      "7. If VCB remains stuck in ON, check switch 154 and MCB 127.1 on SB-1 panel. (यदि VCB अभी भी stuck in ON रहे तो SB-1 पैनल पर स्विच 154 तथा MCB 127.1 चेक करें।)",
-      "8. Switch OFF control electronics and turn ON after 5 minutes. (कंट्रोल इलेक्ट्रॉनिक्स को 5 मिनट बाद पुनः ऑफ करके ऑन करें।)",
       "--------------------------------------------------",
       "【Situation 2: MAIN POWER ISOLATED (VCB Inhibited, Loco is dead) - स्थिति 2: मेन पावर आइसोलेटेड】",
       "1. Switch OFF control electronics once again and turn it ON, try to resume traction. (एक बार पुनः कंट्रोल इलेक्ट्रॉनिक्स को ऑफ कर फिर से ऑन करें, ट्रैक्शन चालू करने का प्रयत्न करें।)",

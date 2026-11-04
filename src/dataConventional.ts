@@ -879,25 +879,25 @@ export const conventionalFaults: Fault[] = [
     lamp: 'LSDJ प्रकाशित होगा, रिले पैनल पर QRSI-1 का लाल टारगेट गिरेगा (LSDJ will glow, red target of QRSI-1 relay will drop)',
     effect: 'DJ/VCB ट्रिप होगा, बोगी-1 / TM 1-2-3 में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction cut off in Bogie-1)',
     actions: [
-      '• Inspection: Check RSI-1, SL-1, L1, L2 and L3, SJ, J-1, CTF, QD-1, Q-20 and TM1, TM2 and TM3 etc. whether there is any defect in them. (जांच: RSI-1, SL-1, L1, L2 और L3, SJ, J-1, CTF, QD-1, Q-20 और TM1, TM2 और TM3 इत्यादि को चेक करें, उनमें कोई खराबी तो नहीं है।)',
+      '• Inspection: Check RSI-1, SL-1, L1, L2 and L3, SJ, J-1, CTF, QD-1, Q-20 and TM1, TM2 and TM3 etc., whether there is any defect in them or any metallic piece or cable is shorted. (जांच: RSI-1, SL-1, L1, L2 और L3, SJ, J-1, CTF, QD-1, Q-20 और TM1, TM2 और TM3 इत्यादि को चेक करें, उनमें कोई खराबी तो नहीं है अथवा कोई धातु का टुकड़ा या केबल शॉर्ट तो नहीं है।)',
       'a) If any defect is found: Isolate the concerned equipment. ({a} यदि कोई खराबी मिलती है तो - संबंधित उपकरण को आइसोलेट करें।)',
       'b) If no defect is found: Reset relay, close DJ/VCB. Resume traction. ({b} यदि कोई खराबी नहीं मिलती है तो - रिले रीसेट करें, DJ/VCB क्लोज करें। ट्रैक्शन चालू करें।)',
       '• If QRSI-1 drops again and DJ/VCB trips: Identify the defective traction motor via HMCS-1 and keep it isolated. (यदि QRSI-1 फिर से ड्रॉप होती है और DJ/VCB ट्रिप होता है तो HMCS-1 के द्वारा खराबी वाली ट्रैक्शन मोटर का पता लगाकर उसको आइसोलेट ही रखें।)',
-      '• If still no success: Place HVSI-1, HVMT-1 and HVSL-1 to "0" position and work train with the remaining three traction motors. (यदि फिर भी सफलता नहीं मिलती है तो HVSI-1, HVMT-1 और HVSL-1 को 0 पोजीशन पर रखकर शेष तीन ट्रैक्शन मोटरों से कार्य करें।)'
+      '• If still no success: Place HVSI-1, HVMT-1 and HVSL-1 to 0 position and work train with the remaining three traction motors. (यदि फिर भी सफलता नहीं मिलती है तो HVSI-1, HVMT-1 और HVSL-1 को शून्य पोजीशन पर रखकर शेष तीन ट्रैक्शन मोटरों से कार्य करें।)'
     ]
   },
   {
     id: 'CONV-QRSI-2-TRIP',
     subSystem: 'CONV_RELAY',
-    message: '4. QRSI-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है\nQRSI-2 DROPS AND DJ/VCB TRIPS\n(सिलिकॉन रेक्टिफायर-2 ओवरकरंट सुरक्षा रिले QRSI-2 / RSI-2 व बोगी-2 सर्किट)',
+    message: 'QRSI-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है\nQRSI-2 DROPS AND DJ/VCB TRIPS\n(सिलिकॉन रेक्टिफायर-2 ओवरकरंट सुरक्षा रिले QRSI-2 / RSI-2 व बोगी-2 सर्किट)',
     lamp: 'LSDJ प्रकाशित होगा, रिले पैनल पर QRSI-2 का लाल टारगेट गिरेगा (LSDJ will glow, red target of QRSI-2 relay will drop)',
     effect: 'DJ/VCB ट्रिप होगा, बोगी-2 / TM 4-5-6 में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction cut off in Bogie-2)',
     actions: [
-      '• Inspection: Check RSI-2, SL-2, L4, L5 and L6, SJ, J-2, CTF, QD-2 and TM4, TM5 and TM6 etc. whether there is any defect in them. (जांच: RSI-2, SL-2, L4, L5 और L6, SJ, J-2, CTF, QD-2 और TM4, TM5 और TM6 इत्यादि को चेक करें, उनमें कोई खराबी तो नहीं है।)',
-      'a) If any defect is found: Isolate the concerned equipment. (a) यदि कोई खराबी मिलती है तो - संबंधित उपकरण को आइसोलेट करें।)',
-      'b) If no defect is found: Reset relay, close DJ/VCB. Resume traction. (b) यदि कोई खराबी नहीं मिलती है तो - रिले रीसेट करें, DJ/VCB क्लोज करें। ट्रैक्शन चालू करें।)',
+      '• Inspection: Check RSI-2, SL-2, L4, L5 and L6, SJ, J-2, CTF, QD-2, Q-20 and TM4, TM5 and TM6 etc., whether there is any defect in them or any metallic piece or cable is shorted. (जांच: RSI-2, SL-2, L4, L5 और L6, SJ, J-2, CTF, QD-2, Q-20 और TM4, TM5 और TM6 इत्यादि को चेक करें, उनमें कोई खराबी तो नहीं है अथवा कोई धातु का टुकड़ा या केबल शॉर्ट तो नहीं है।)',
+      'a) If any defect is found: Isolate the concerned equipment. ({a} यदि कोई खराबी मिलती है तो - संबंधित उपकरण को आइसोलेट करें।)',
+      'b) If no defect is found: Reset relay, close DJ/VCB. Resume traction. ({b} यदि कोई खराबी नहीं मिलती है तो - रिले रीसेट करें, DJ/VCB क्लोज करें। ट्रैक्शन चालू करें।)',
       '• If QRSI-2 drops again and DJ/VCB trips: Identify the defective traction motor via HMCS-2 and keep it isolated. (यदि QRSI-2 फिर से ड्रॉप होती है और DJ/VCB ट्रिप होता है तो HMCS-2 के द्वारा खराबी वाली ट्रैक्शन मोटर का पता लगाकर उसको आइसोलेट ही रखें।)',
-      '• If still no success: Place HVSI-2, HVMT-2 and HVSL-2 to "0" position and work train with the remaining three traction motors. (यदि फिर भी सफलता नहीं मिलती है तो HVSI-2, HVMT-2 और HVSL-2 को 0 पोजीशन पर रखकर शेष तीन ट्रैक्शन मोटरों से कार्य करें।)'
+      '• If still no success: Place HVSI-2, HVMT-2 and HVSL-2 to 0 position and work train with the remaining three traction motors. (यदि फिर भी सफलता नहीं मिलती है तो HVSI-2, HVMT-2 और HVSL-2 को शून्य पोजीशन पर रखकर शेष तीन ट्रैक्शन मोटरों से कार्य करें।)'
     ]
   },
   {
