@@ -265,6 +265,19 @@ export function splitBilingualHeader(inside: string): { hindi: string; english: 
     }
   }
 
+  // 1b. Slash-separated format: e.g. "【(A) यदि MCP काम नहीं करता है... / Sub-condition (A): If MCP does not work...】:"
+  const slashParts = clean.split(/\s+\/\s+/);
+  if (slashParts.length === 2) {
+    const partA = slashParts[0].trim().replace(/^[:【\s]+|[:】\s]+$/g, '');
+    const partB = slashParts[1].trim().replace(/^[:【\s]+|[:】\s]+$/g, '');
+    if (containsDevanagari(partA) && !containsDevanagari(partB)) {
+      return { hindi: partA, english: partB };
+    }
+    if (!containsDevanagari(partA) && containsDevanagari(partB)) {
+      return { hindi: partB, english: partA };
+    }
+  }
+
   // 2. Dash separated: e.g. "Situation 1: ... - स्थिति 1: ..."
   const dashParts = clean.split(/\s+[-–—]\s+/);
   if (dashParts.length === 2) {
@@ -293,9 +306,11 @@ export function splitBilingualHeader(inside: string): { hindi: string; english: 
  */
 function extractSituationSpeech(cleaned: string, targetLang: 'hi' | 'en'): string | null {
   const isHeader = 
-    /^[【═\s]*(?:Situation|स्थिति|Screen|स्क्रीन|Sub-?abnormal|उप-?असामान्य)/i.test(cleaned) ||
+    /^[【═\s]*(?:Situation|स्थिति|Screen|स्क्रीन|Sub-?abnormal|Sub-?condition|उप-?असामान्य)/i.test(cleaned) ||
     cleaned.includes('उप-असामान्य संकेत') ||
-    cleaned.includes('Sub-abnormal Indication');
+    cleaned.includes('Sub-abnormal Indication') ||
+    cleaned.includes('Sub-condition') ||
+    /^[【═]\s*\([A-Z0-9]\)/i.test(cleaned);
 
   if (!isHeader) return null;
 
@@ -456,6 +471,14 @@ function normalizeHindiSpeech(str: string): string {
     .replace(/‘2’|'2'|"2"|“2”/g, 'दो')
     .replace(/‘II’|'II'|"II"/g, 'दो')
     .replace(/‘I’|'I'|"I"/g, 'एक')
+    // Locomotive Pneumatic Spoken Pronunciation rules (MR -> M R pressure, RS -> R S)
+    .replace(/(?:MR|एम\s*आर|एमआर)\s*(?:प्रेशर|presar|pressure)/gi, 'एम आर प्रेशर')
+    .replace(/(?:^|[\s,.\/()\-–—:;\"'\[\]])(?:MR|एम\s*आर|एमआर)\s*[-_]?\s*([0-9]+)(?=$|[\s,.\/()\-–—:;\"'\[\]])/gi, (m, n) => 'एम आर ' + n)
+    .replace(/(?:^|[\s,.\/()\-–—:;\"'\[\]])(?:RS|आर\s*एस|आरएस)\s*[-_]?\s*([0-9]+)(?=$|[\s,.\/()\-–—:;\"'\[\]])/gi, (m, n) => 'आर एस ' + n)
+    .replace(/(?:^|[\s,.\/()\-–—:;\"'\[\]])(?:MR|एम\s*आर|एमआर)(?=$|[\s,.\/()\-–—:;\"'\[\]])/g, (m) => m.replace(/MR|एम\s*आर|एमआर/g, 'एम आर प्रेशर'))
+    .replace(/एम\s*आर\s*प्रेशर\s*([0-9]+)/gi, 'एम आर $1')
+    .replace(/एम\s*आर\s*प्रेशर\s*प्रेशर/gi, 'एम आर प्रेशर')
+    .replace(/(?:^|[\s,.\/()\-–—:;\"'\[\]])(?:RS|आर\s*एस|आरएस)(?=$|[\s,.\/()\-–—:;\"'\[\]])/g, (m) => m.replace(/RS|आर\s*एस|आरएस/g, 'आर एस'))
     .replace(/[:\-–—\s]+$/, '')
     .trim();
   return s;
@@ -580,6 +603,13 @@ export function getSpokenEnglish(text: string): string {
 function normalizeEnglishSpeech(str: string): string {
   let s = str
     .replace(/^[═\s【\-\*•#_]+|[═\s】\-\*•#_]+$/g, '')
+    // Locomotive Pneumatic Spoken Pronunciation rules (MR -> M R pressure, RS -> R S)
+    .replace(/\b(?:MR|M\s*R)\s*[-_]?\s*([0-9]+)\b/gi, 'M R $1')
+    .replace(/\b(?:RS|R\s*S)\s*[-_]?\s*([0-9]+)\b/gi, 'R S $1')
+    .replace(/\b(?:MR|M\s*R)\s*pressure\b/gi, 'M R pressure')
+    .replace(/\bMR\b/g, 'M R pressure')
+    .replace(/\bM\s*R\s*pressure\s*pressure\b/gi, 'M R pressure')
+    .replace(/\bRS\b/g, 'R S')
     .replace(/[:\-–—\s]+$/, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -600,29 +630,6 @@ export function splitBilingualStep(text: string): { prefix: string; english: str
   const prefix = prefixMatch ? prefixMatch[0] : '';
   const body = prefixMatch ? trimmed.slice(prefixMatch[0].length) : trimmed;
 
-  // Case 1: Check outermost brackets at end of string
-  const lastBracketMatch = body.match(/\(([\s\S]*?)\)\s*$/) || body.match(/\[([\s\S]*?)\]\s*$/);
-  if (lastBracketMatch && lastBracketMatch.index !== undefined) {
-    const inside = lastBracketMatch[1].trim();
-    const outside = body.slice(0, lastBracketMatch.index).trim();
-    if (containsDevanagari(inside) && !containsDevanagari(outside) && outside.length > 0) {
-      // English outside, Hindi inside
-      let hindiClean = inside.replace(/^(\s*(?:\d+|[ivx]+|[a-z])[\.\)]\s*|\s*[•\-\*]\s*|\s*\{[ivx0-9]+\}\s*)/i, '').trim();
-      return {
-        prefix,
-        english: outside,
-        hindi: hindiClean || inside
-      };
-    } else if (!containsDevanagari(inside) && containsDevanagari(outside) && inside.length > 8) {
-      // Hindi outside, English inside
-      return {
-        prefix,
-        english: inside,
-        hindi: outside
-      };
-    }
-  }
-
   // Find index of the first Devanagari character (U+0900 to U+097F)
   const devanagariMatch = body.match(/[\u0900-\u097F]/);
   if (!devanagariMatch || devanagariMatch.index === undefined) {
@@ -631,20 +638,63 @@ export function splitBilingualStep(text: string): { prefix: string; english: str
   }
 
   const firstDevIndex = devanagariMatch.index;
-
-  // The Hindi translation is enclosed in '(' or '[' right before the first Devanagari character.
-  // Search backwards from firstDevIndex for '(' or '['
   const textBeforeDev = body.substring(0, firstDevIndex);
-  const lastOpenParen = textBeforeDev.lastIndexOf('(');
-  const lastOpenBracket = textBeforeDev.lastIndexOf('[');
-  const openIndex = Math.max(lastOpenParen, lastOpenBracket);
+
+  // Check if Hindi is on the outside (at the beginning) and English is enclosed in brackets at the end
+  if (firstDevIndex === 0 || /^[\s:–—•\-\*【]+$/.test(textBeforeDev)) {
+    // Hindi starts first; look for English in parentheses/brackets
+    const engBracket = body.match(/\(([^)]*[a-zA-Z]{3,}[^)]*)\)\s*$/) || body.match(/\[([^\]]*[a-zA-Z]{3,}[^\]]*)\]\s*$/);
+    if (engBracket && engBracket.index !== undefined && !containsDevanagari(engBracket[1])) {
+      const hindiPart = body.slice(0, engBracket.index).trim();
+      return {
+        prefix,
+        english: engBracket[1].trim(),
+        hindi: hindiPart
+      };
+    }
+  }
+
+  // Look for the bracket boundary where Hindi begins
+  let openIndex = -1;
+  const lastDoubleParen = textBeforeDev.lastIndexOf('((');
+  const lastDoubleBracket = textBeforeDev.lastIndexOf('[[');
+  if (lastDoubleParen >= 0 || lastDoubleBracket >= 0) {
+    openIndex = Math.max(lastDoubleParen, lastDoubleBracket);
+  } else {
+    // Collect all '(' and '[' before the first Devanagari character
+    const candidates: number[] = [];
+    let pos = 0;
+    while (true) {
+      const idxP = textBeforeDev.indexOf('(', pos);
+      const idxB = textBeforeDev.indexOf('[', pos);
+      let nextIdx = -1;
+      if (idxP >= 0 && idxB >= 0) nextIdx = Math.min(idxP, idxB);
+      else if (idxP >= 0) nextIdx = idxP;
+      else if (idxB >= 0) nextIdx = idxB;
+      if (nextIdx === -1) break;
+      candidates.push(nextIdx);
+      pos = nextIdx + 1;
+    }
+    // Search backwards for the opening bracket where after it is only bullet prefixes or spaces before Hindi
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      const c = candidates[i];
+      const afterC = textBeforeDev.substring(c + 1).trim();
+      if (/^(\([a-z0-9ivx]+\)|[a-z0-9ivx]+[\.\)])?\s*$/i.test(afterC)) {
+        openIndex = c;
+        break;
+      }
+    }
+    if (openIndex < 0 && candidates.length > 0) {
+      openIndex = candidates[candidates.length - 1];
+    }
+  }
 
   if (openIndex >= 0) {
     const englishPart = textBeforeDev.substring(0, openIndex).trim();
     if (englishPart.length > 0 && !containsDevanagari(englishPart)) {
-      let hindiPart = body.substring(openIndex + 1).trim();
+      let hindiPart = body.substring(openIndex).replace(/^[\(\[\s]+/, '').trim();
       // Remove trailing matching ')' or ']'
-      hindiPart = hindiPart.replace(/[\)\]]\s*$/, '').trim();
+      hindiPart = hindiPart.replace(/[\)\]\s]+$/, '').trim();
       let hindiClean = hindiPart.replace(/^(\s*(?:\d+|[ivx]+|[a-z])[\.\)]\s*|\s*[•\-\*]\s*|\s*\{[ivx0-9]+\}\s*)/i, '').trim();
       return {
         prefix,

@@ -43,6 +43,10 @@ export function cleanRailwayVoiceText(raw: string): string {
   text = text.replace(/ट्रेक्शन/gi, 'ट्रैक्शन');
   text = text.replace(/कम्प्रेसर|कंप्रेशर/gi, 'कंप्रेसर');
 
+  // 5a. Pneumatic Brake Valves (SA-9, A-9) voice recognition normalization
+  text = text.replace(/(?:^|\s|[.,!?])(?:एस\s*[-_]?\s*ए|एसए|sa|s\.a\.|essay|say)\s*[-_]?\s*(?:9|nine|नाइन|नौ)(?=\s|[.,!?]|$)/gi, ' SA-9 ');
+  text = text.replace(/(?:^|\s|[.,!?])(?:ए|a|ei|aye)\s*[-_]?\s*(?:9|nine|नाइन|नौ)(?=\s|[.,!?]|$)/gi, ' A-9 ');
+
   // 5b. Push-Pull & Locomotive terms: Slave / Master / Amrit Bharat corrections
   // 'स्लैब लोको' / 'स्लेब लोको' / 'स्लैब' / 'स्लेब' -> 'स्लेव लोको' (Common Speech-to-Text misrecognition for 'slave loco')
   text = text.replace(/स्लैब\s*लोको/gi, 'स्लेव लोको');
@@ -80,6 +84,8 @@ export function cleanRailwayVoiceText(raw: string): string {
   text = text.replace(/इनरजाइज़/gi, 'इनर्जाइज');
   text = text.replace(/सेन\s*लयर/gi, 'सेक्शन क्लियर');
   text = text.replace(/नन\s*तरीके/gi, 'निम्न तरीके');
+  text = text.replace(/(?:^|\s|[.,!?])(?:reser|रीसर|रिसेर|रेसर|रिशेट|रिशेर|रिसैट|रीसैट)(?=\s|[.,!?]|$)/gi, ' रीसेट ');
+  text = text.replace(/(?:^|\s|[.,!?])(?:bpmpr|बी\s*पी\s*एम\s*पी\s*आर|बीपीएमपीआर)(?=\s|[.,!?]|$)/gi, ' BPMPR ');
 
   // 5c. Conventional Locomotive Safety Relays & Controls (QLM, QOP, QOA, DJ, etc.)
   text = text.replace(/(?:^|\s|[.,!?])(?:क्यू\s*एल\s*एम|क्यु\s*एल\s*एम|क्यूएलएम|क्युएलएम)(?=\s|[.,!?]|$)/gi, ' QLM ');
@@ -144,11 +150,16 @@ export function cleanRailwayVoiceText(raw: string): string {
   text = text.replace(/(?:prakashit|प्रकाषित|प्रकाशित)\s*(?:nahin|nahi|नहीं|नही)\s*(?:hote|होते)\s*(?:hain|hai|हैं|है)?/gi, ' प्रकाशित नहीं होते हैं ');
   text = text.replace(/(?:prakashit|प्रकाषित|प्रकाशित)\s*(?:rehta|rahta|rahata|रहता)\s*(?:hai|है)?/gi, ' प्रकाशित रहता है ');
   text = text.replace(/(?:prakashit|प्रकाषित|प्रकाशित)\s*(?:hota|होता)\s*(?:hai|है)?/gi, ' प्रकाशित होता है ');
+  text = text.replace(/(?:^|\s|[.,!?])(?:bujhne|bujne|bujhane|bujhe|bujhe|बुझने|बुजने|बुझने\s*के|बुजने\s*के)(?=\s|[.,!?]|$)/gi, ' बुझने ');
   text = text.replace(/(?:bujhta|bujta|बुझता)\s*(?:nahin|nahi|नहीं|नही)\s*(?:hai|है)?/gi, ' नहीं बुझता है ');
   text = text.replace(/(?:nahin|nahi|नहीं|नही)\s*(?:bujhta|bujta|बुझता)\s*(?:hai|है)?/gi, ' नहीं बुझता है ');
-  text = text.replace(/(?:bujh\s*jata|बुझ\s*जाता)\s*(?:hai|है)?/gi, ' बुझ जाता है ');
+  text = text.replace(/(?:bujh\s*jata|buj\s*jata|बुझ\s*जाता|बुज\s*जाता)\s*(?:hai|है)?/gi, ' बुझ जाता है ');
+  text = text.replace(/(?:^|\s|[.,!?])(?:bujha|buja|bujhe|बुझा|बुजे)(?=\s|[.,!?]|$)/gi, ' बुझा ');
 
   // Operations & Statuses
+  text = text.replace(/(?:^|\s|[.,!?])(?:छठी|छठा|6|६|6th|छह|पहली|पहला|1st|1|१|एक|भिन्न-भिन्न|किसी\s*भी)\s*(?:नाच)(?=\s|[.,!?]|$)/gi, (m) => m.replace(/नाच/g, 'नोच'));
+  text = text.replace(/(?:^|\s|[.,!?])नाच\s*(?:पर|लेने|लेते|बढ़ने|आने|जाती|नहीं|रिपीटर)(?=\s|[.,!?]|$)/gi, (m) => m.replace(/नाच/g, 'नोच'));
+  text = text.replace(/नाच\s*रिपीटर/gi, 'नोच रिपीटर');
   text = text.replace(/(?:notch|noch|नोच)\s*(?:repeater|ripitar|रिपीटर)/gi, ' नोच रिपीटर ');
   text = text.replace(/(?:traction|treksan|ट्रेक्शन)\s*(?:voltmeter|volt\s*meter|वोल्टमीटर)/gi, ' ट्रैक्शन वोल्टमीटर ');
   text = text.replace(/(?:deviate|deviat|डेविएट|डेिवएट)\s*(?:nahin|nahi|नहीं|नही)\s*(?:hote|होते)\s*(?:hain|hai|हैं|है)?/gi, ' डेविएट नहीं होते हैं ');
@@ -168,50 +179,18 @@ export function cleanRailwayVoiceText(raw: string): string {
   // Headlight operations
   text = text.replace(/(?:^|\s|[.,!?])(?:headlight|head\s*light|हेडलाइट|हेड\s*लाइट|हेडलाईट)\s*(?:prakashit|प्रकाशित)?\s*(?:nahin|nahi|नहीं|नही)\s*(?:hoti|hota|jalti|जलती|होती|होता)\s*(?:hai|है)?/gi, ' हेडलाइट प्रकाशित नहीं होती है ');
 
-  // Whistle / Horn operations
-  text = text.replace(/(?:^|\s|[.,!?])(?:चालू\s*गाड़ी\s*में\s*)?(?:whistle|vhisl|विसल|व्हीसल|व्हिसल|हॉर्न|हॉन|horn)\s*(?:fail|फेल|खराब|काम\s*नहीं)\s*(?:ho\s*gaya|ho\s*gayi|ho\s*jati|ho\s*jata|ho|हो\s*गया|हो\s*गई|हो\s*जाती|हो\s*जाता|हो)?\s*(?:gaya|gayi|jati|jata|गई|गया|जाती|जाता)?\s*(?:hai|hain|है|हैं)?/gi, ' चालू गाड़ी में व्हीसल (हॉर्न) फेल हो जाती है ');
+  // Flasher light operations (ASR corrections for 'फ्रेशर लाइट', 'फ्लेसर लाइट', 'fresher light', etc.)
+  text = text.replace(/(?:^|\s|[.,!?])(?:flasher|fresher|fleshar|flezer|फ्लैशर|फ्रेशर|फ्लेसर|फ्लेशर|फलेसर)\s*(?:light|lie<t|laait|lait|लाइट|लाईट)\s*(?:fail|फेल|खराब|काम\s*नहीं|कार्य\s*नहीं|kaam\s*nahi|kary\s*nahi|nh\)?\s*krt\)?|नहीं\s*जलती|nahin\s*jalti)(?:[^\n]*)/gi, ' फ्लैशर लाईट कार्य नहीं करती ');
+  text = text.replace(/(?:^|\s|[.,!?])(?:fresher|fleshar|flezer|फ्रेशर|फ्लेसर|फ्लेशर|फलेसर)\s*(?:light|lie<t|laait|lait|लाइट|लाईट)(?=\s|[.,!?]|$)/gi, ' फ्लैशर लाईट ');
 
-  // 5d. Kruti Dev / Shree Lipi legacy font decoding for QLA, QLM, QRSI, QOP & relays
-  if (
-    text.includes('á»ëÔä') || text.includes('Å÷âúÍ') || text.includes('ãÃ÷Í') || text.includes('ã»Öä') ||
-    text.includes('ánÒ') || text.includes('QRSI') || text.includes('ÎëãÔÒÓ') || text.includes('D^iˆp') ||
-    text.includes('QOP') || text.includes('HQOP') || text.includes('HMCS') || text.includes('QLA') ||
-    text.includes('áâÓÌíï') || text.includes('áâúgÁäÔÓäÒo') || text.includes('ÏçÂÈâ') ||
-    text.includes('LSDJ') || text.includes('Q118') || text.includes('C118') || text.includes('Q45') || text.includes('Q44') ||
-    text.includes('ÍÚÔä') || text.includes('Ìâë¿') || text.includes('HVSI') || text.includes('MVSI') || text.includes('QVSI') ||
-    text.includes('ÀÄä') || text.includes('C107') || text.includes('C105') || text.includes('C106') || text.includes('Q100') || text.includes('CCA') ||
-    text.includes('ãÐnÌ') || text.includes('sÍwÃ') || text.includes('»âÓÇ') ||
-    text.includes('BLCP') || text.includes('BLCPD') || (text.includes('MCP') && text.includes('HCP')) ||
-    text.includes('MPH') || text.includes('HPH') || text.includes('MVSL') || text.includes('HVSL') ||
-    text.includes('MVMT') || text.includes('HVMT') || text.includes('MVRH') || text.includes('HVRH') ||
-    text.includes('CHBA') || text.includes('HCHBA') ||
-    text.includes('BPSW') || text.includes('PVEF') || text.includes('MPS') || text.includes('EVPHGR') ||
-    text.includes('ÜãÈ½ýsÈ') || text.includes('Damage') || text.includes('ÁÔ') || text.includes('ÁÔä') ||
-    text.includes('áãgÌ×âÑ»') || text.includes('extinguisher') ||
-    text.includes('»ØôÇ') || text.includes('»ØôÔÏÔ') || text.includes('áâïã×»') || text.includes('Tractive') || text.includes('tractive') || text.includes('Partial') || text.includes('partial') ||
-    text.includes('ÅëãÕ#Ã') || text.includes('LSGR') || text.includes('áâúÃíãÓ½ýë×Ì') || text.includes('ZQWC') || text.includes('BPQD') ||
-    text.includes('LSRSI') || text.includes('ÃëÔ-ÃëÔ') || text.includes('RSI') ||
-    text.includes('áÌÔâú»') || text.includes('ÍâÒÔÃ') || text.includes('ÔìmÍ') ||
-    text.includes('LSCHBA') || text.includes('LSB') || text.includes('BPT') ||
-    text.includes('CPA') || text.includes('MCPA') || text.includes('ZCPA') ||
-    text.includes('ÍìºÃí') || text.includes('ÍìnÃí') || text.includes('éÄÈâ') || text.includes('VEPT') ||
-    text.includes('SI UNIT') || text.includes('enp&T') || text.includes('vi[ÃT[j') || text.includes('aiUT') || text.includes('r[>j') || text.includes('(Ds¼l[') || text.includes('l]Àp') ||
-    text.includes('BLVMT') || text.includes('CCINV') || text.includes('ai[pn') || text.includes('clti') ||
-    text.includes('EXTERNAL FAULT') || text.includes('E±sTn<l') || text.includes('fiˆÃT') || text.includes('ai[vrkr>T') ||
-    text.includes('INTERNAL FAULT') || text.includes('enTn<l') || text.includes('aY<fiˆÃT') || text.includes('(DApl[') ||
-    text.includes('kÀp[Sr') || text.includes('kiºT[±Tr') || text.includes('QCON') || text.includes('QTD-101') ||
-    text.includes('(bni') || text.includes('h‰E') || text.includes('QSVM') ||
-    text.includes('biypis') || text.includes('aY<') ||
-    text.includes('MPCS') || text.includes('CCCPU') || text.includes('m[n y‰(nT') || text.includes('m[n y*(nT') || text.includes('m[n y') ||
-    text.includes('BP1DJ') || text.includes('BP2DJ') || text.includes('ICDJ') || text.includes('Add BLRDJ') ||
-    text.includes('15 sec') || text.includes('15 s[k') ||
-    text.includes('Feedback fail') || text.includes('Feedback') || text.includes('C-107/C-106/C-105') ||
-    text.includes('ʬीसल') || text.includes('İʬसल') || text.includes('हॉनŊ') || text.includes('डुɘेƛ') || text.includes('सैİȵंग')
-  ) {
+  // 5d. Kruti Dev / Shree Lipi legacy font decoding & railway defect normalizations
+  // Run unconditionally so that ANY pasted or uploaded legacy Kruti Dev / ASR text is properly decoded
+  if (true) {
     text = text.replace(/DJ\s*tripped\s*via\s*C-?107\/C-?106\/C-?105\s*Feedback\s*fail(?:\s*Inform\s*TLC)?(?:-?\s*ka\s*n?answer\s*ye\s*hai)?/gi, 'DJ tripped via C-107/C-106/C-105 Feedback fail Inform TLC MPCS');
     text = text.replace(/MPCS\s*li\[ki\[\s*m\[>(?:\s*li\[ki\[\s*piylT\s*oiri\s*T\^bl\s*S\*T\)>g)?/gi, 'MPCS लोको में लोको पायलट द्वारा ट्रबल शूटिंग');
     text = text.replace(/6\s*ni\[c\s*l\[n\[\s*pr(?:\s*15\s*sec\s*k\[\s*a>dr\s*h\))?(?:\s*DJ\/VCB\s*\(?T\^p\s*hi\[ti\s*h\])?(?:-?\s*ka\s*n?answer\s*ye\s*hai)?/gi, 'MPCS लोको में 6 नोच लेने पर 15 सेकंड के अंदर DJ/VCB ट्रिप होता है');
     text = text.replace(/DJ\/VCB\s*±li\[j\s*nh\)>?\s*hi\[ti(?:\s*\/ICDJ)?(?:-?\s*ka\s*n?answer\s*ye\s*hai)?/gi, 'MPCS लोको में DJ/VCB क्लोज नहीं होता ICDJ');
+    text = text.replace(/(?:(?:MPCS|एमपीसीएस)\s*(?:ko|को)?\s*(?:reser|reset|रीसेट|रिसेट|रीसर|रिसेर|रेसर)|(?:reser|reset|रीसेट|रिसेट|रीसर|रिसेर|रेसर)\s*(?:MPCS|एमपीसीएस))\s*(?:karne|krne|करने)?(?:\s*(?:ka\s*tarika|का\s*तरीका|kaise\s*kare|कैसे\s*करें|विधि))?/gi, 'BPMPR द्वारा MPCS को रीसेट करना');
     text = text.replace(/airni\[>\s*vil\[\s*li\[ki\[/gi, 'आर्नो वाले लोको');
     text = text.replace(/m\[n\s*y[‰\*]\(nT\s*kiy<\s*nh\)>?\s*krti\s*h\](?:-?\s*ka\s*n?answer\s*ye\s*hai)?/gi, 'MPCS मेन यूनिट कार्य नहीं करती है');
     text = text.replace(/m\[n\s*y[‰\*]\(nT/gi, 'मेन यूनिट');
@@ -435,16 +414,16 @@ export function cleanRailwayVoiceText(raw: string): string {
         text = 'MPH काम नहीं करता है';
       } else if (
         (text.includes('LSCHBA') || text.includes('lschba') || text.includes('ÏçÂÌë')) &&
-        (text.includes('LSDJ') || text.includes('lsdj')) &&
-        (text.includes('पहले') || text.includes('ÍÚÔë') || text.toLowerCase().includes('before') || text.toLowerCase().includes('pehle'))
+        (text.includes('पहले') || text.includes('ÍÚÔë') || text.toLowerCase().includes('before') || text.toLowerCase().includes('pehle')) &&
+        !text.includes('बाद') && !text.includes('baad') && !text.includes('bad')
       ) {
         text = 'LSCHBA के बुझने से पहले LSDJ फिर से प्रकाशित होता है';
       } else if (
-        (text.includes('LSCHBA') || text.includes('lschba') || text.includes('ÏçÂÌë')) &&
-        (text.includes('LSDJ') || text.includes('lsdj')) &&
-        (text.includes('बाद') || text.includes('ÏâÊ') || text.toLowerCase().includes('after') || text.toLowerCase().includes('baad'))
+        (text.includes('LSCHBA') || text.includes('lschba') || text.includes('ÏçÂÌë') || text.includes('बुझने')) &&
+        (text.includes('LSCHBA') || text.includes('lschba')) &&
+        (text.includes('बाद') || text.includes('ÏâÊ') || text.toLowerCase().includes('after') || text.toLowerCase().includes('baad') || text.toLowerCase().includes('bad'))
       ) {
-        text = 'LSCHBA के बुझने के बाद LSDJ फिर से प्रकाशित होता है';
+        text = 'LSCHBA के बुझने के बाद LSDJ फिर से प्रकाशित होता है HPH HVSL-1 HVSL-2 3 Q118';
       } else if (
         (text.includes('कम्प्रेसर') || text.includes('compressor') || text.includes('kÀp[Sr')) &&
         (text.includes('कॉन्टैक्टर') || text.includes('contactor') || text.includes('kiºT[±Tr') || text.includes('C101') || text.includes('C102') || text.includes('C103') || text.includes('क्लोज') || text.includes('±li[J'))
@@ -465,13 +444,15 @@ export function cleanRailwayVoiceText(raw: string): string {
         text.includes('BPMPR') || text.includes('bpmpr') || text.includes('बीपीएमपीआर') ||
         (
           (text.includes('MPCS') || text.includes('mpcs') || text.includes('एमपीसीएस')) &&
-          (text.includes('रीसेट') || text.includes('रिसेट') || text.includes('reset')) &&
-          (text.includes('TR') || text.includes('पैनल') || text.includes('10') || text.includes('सब-सिस्टम') || text.includes('सब सिस्टम') || text.includes('बटन'))
+          (
+            text.includes('रीसेट') || text.includes('रिसेट') || text.includes('reset') || text.includes('reser') || text.includes('रीसर') || text.includes('रिसेर') || text.includes('रेसर') ||
+            text.includes('TR') || text.includes('पैनल') || text.includes('10') || text.includes('सब-सिस्टम') || text.includes('सब सिस्टम') || text.includes('बटन') || text.includes('तरीका') || text.includes('विधि')
+          )
         ) ||
         (
           (text.includes('सब-सिस्टम') || text.includes('सब सिस्टम') || text.includes('sub-system') || text.includes('subsystem')) &&
           (text.includes('आइसोलेट') || text.includes('isolate')) &&
-          (text.includes('रीसेट') || text.includes('reset') || text.includes('BPMPR') || text.includes('MPCS') || text.includes('एमपीसीएस') || text.includes('10 sec') || text.includes('10 सेकंड'))
+          (text.includes('रीसेट') || text.includes('reset') || text.includes('reser') || text.includes('BPMPR') || text.includes('MPCS') || text.includes('एमपीसीएस') || text.includes('10 sec') || text.includes('10 सेकंड'))
         )
       ) {
         text = 'BPMPR द्वारा MPCS को रीसेट करना मेन यूनिट TR पैनल एक से अधिक सब सिस्टम आइसोलेट DJ VCB ओपन पैंटो लोवर BL चाबी 10 sec लोको इनर्जाइज सेक्शन क्लियर';
@@ -512,11 +493,19 @@ export function cleanRailwayVoiceText(raw: string): string {
       ) {
         text = 'MPCS लोको में मेन यूनिट कार्य नहीं करती है CCCPU CCBA CCPT Add CCBA HOBA IPMV';
       } else if (
-        (text.includes('MPCS') || text.includes('mpcs') || text.includes('एमपीसीएस')) &&
-        (text.includes('DJ') || text.includes('VCB') || text.includes('ICDJ') || text.includes('icdj') || text.includes('BP1DJ') || text.includes('BP2DJ') || text.includes('क्लोज नहीं') || text.includes('±li[j')) &&
-        !text.includes('6') && !text.includes('छठी') && !text.includes('छठा')
+        (
+          text.includes('ICDJ') || text.toLowerCase().includes('icdj') ||
+          text.includes('±li[j nh)> hi[ti') || text.includes('±li[j nh)>') ||
+          text.includes('क्लोज नहीं होता') || text.toLowerCase().includes('close nahi hota') ||
+          ((text.includes('MPCS') || text.includes('mpcs') || text.includes('एमपीसीएस')) &&
+           (text.includes('DJ') || text.includes('VCB') || text.includes('ICDJ') || text.includes('icdj') || text.includes('BP1DJ') || text.includes('BP2DJ') || text.includes('क्लोज नहीं') || text.includes('±li[j'))) ||
+          ((text.includes('DJ') || text.includes('VCB') || text.includes('डीजे') || text.includes('वीसीबी')) &&
+           (text.includes('क्लोज नहीं') || text.includes('not close') || text.includes('nahi hota') || text.includes('नहीं होता') || text.includes('नहीं लगता') || text.includes('नहीं लग') || text.includes('बंद नहीं')))
+        ) &&
+        !text.includes('6') && !text.includes('छठी') && !text.includes('छठा') &&
+        !text.includes('बुझने') && !text.includes('bujhne') && !text.includes('LSDJ नहीं बुझता')
       ) {
-        text = 'MPCS लोको में DJ/VCB क्लोज नहीं होता ICDJ BP1DJ BP2DJ Add BLRDJ CCCPU HQOA HQOP C118';
+        text = 'DJ/VCB क्लोज नहीं होता ICDJ MPCS लोको में DJ/VCB क्लोज नहीं होता BP1DJ BP2DJ Add BLRDJ CCCPU HQOA HQOP C118';
       } else if (
         (text.includes('MPCS') || text.includes('mpcs') || text.includes('एमपीसीएस')) &&
         (text.includes('6') || text.includes('छठा') || text.includes('छठी')) &&
@@ -524,9 +513,8 @@ export function cleanRailwayVoiceText(raw: string): string {
       ) {
         text = 'MPCS लोको में 6 नोच लेने पर 15 सेकंड के अंदर DJ/VCB ट्रिप होता है C105 C106 C107 HVMT1 HVMT2 3 HOBA IPMV';
       } else if (
-        (text.includes('6 नोच') || text.includes('6th notch') || text.includes('छठी नोच')) &&
-        (text.includes('15') || text.includes('सेकंड') || text.includes('sec')) &&
-        (text.includes('DJ') || text.includes('VCB') || text.includes('ट्रिप') || text.includes('trip'))
+        (text.includes('6 नोच') || text.includes('6th notch') || text.includes('छठी नोच') || (text.includes('6') && (text.includes('नोच') || text.includes('notch') || text.includes('ni[c')))) &&
+        (text.includes('15') || text.includes('सेकंड') || text.includes('sec'))
       ) {
         text = 'MPCS लोको में 6 नोच लेने पर 15 सेकंड के अंदर DJ/VCB ट्रिप होता है C105 C106 C107 HVMT1 HVMT2 3 HOBA IPMV';
       } else if (
@@ -565,16 +553,13 @@ export function cleanRailwayVoiceText(raw: string): string {
       ) {
         text = 'लोको ब्रेक रिलीज नहीं होते हैं यद्यपि A-9 और SA-9 रिलीज पोजीशन पर हैं';
       } else if (
-        (text.includes('SA-9') || text.includes('SA9') || text.toLowerCase().includes('sa-9') || text.toLowerCase().includes('sa9') || text.includes('SA 9') || text.toLowerCase().includes('sa 9')) &&
-        (text.includes('लोको') || text.includes('Ôí»í') || text.toLowerCase().includes('loco') || text.includes('ब्रेक') || text.includes('Ïýë»') || text.toLowerCase().includes('brake')) &&
-        (text.includes('नहीं') || text.includes('ÌÚI') || text.toLowerCase().includes('not') || text.toLowerCase().includes('nahi'))
+        (text.includes('SA-9') || text.includes('SA9') || text.toLowerCase().includes('sa-9') || text.toLowerCase().includes('sa9') || text.includes('SA 9') || text.toLowerCase().includes('sa 9') || text.includes('एसए 9') || text.includes('एसए-9') || text.includes('एसए9') || text.includes('एस ए 9') || text.includes('एस ए नाइन') || text.includes('एसए नाइन')) &&
+        !text.includes('रिलीज') && !text.includes('release') && !text.includes('ãÓÔäÁ')
       ) {
         text = 'SA-9 द्वारा लोको ब्रेक नहीं लगती है';
       } else if (
-        (text.includes('A-9') || text.includes('A9') || text.toLowerCase().includes('a-9') || text.toLowerCase().includes('a9')) &&
-        (text.includes('लोको') || text.includes('Ôí»í') || text.toLowerCase().includes('loco')) &&
-        (text.includes('ब्रेक') || text.includes('Ïýë»') || text.toLowerCase().includes('brake')) &&
-        (text.includes('नहीं') || text.includes('ÌÚI') || text.toLowerCase().includes('not') || text.toLowerCase().includes('nahi'))
+        (text.includes('A-9') || text.includes('A9') || text.toLowerCase().includes('a-9') || text.toLowerCase().includes('a9') || text.includes('ए 9') || text.includes('ए-9') || text.includes('ए9') || text.includes('ए नाइन') || text.includes('ए-नाइन') || text.includes('a nine')) &&
+        !text.includes('रिलीज') && !text.includes('release') && !text.includes('ãÓÔäÁ')
       ) {
         text = 'A-9 द्वारा लोको ब्रेक नहीं लगती है';
       } else if (
@@ -621,8 +606,20 @@ export function cleanRailwayVoiceText(raw: string): string {
       ((text.includes('ãÐnÌ') || text.includes('भिन्न')) && (text.includes('Ìâë¿') || text.includes('नोच') || text.includes('notch')))
     ) {
       text = 'भिन्न-भिन्न नोच पर DJ/VCB ट्रिप होता है अर्थात बिना किसी स्पष्ट कारण के';
-    } else if (text.includes('ÀÄä Ìâë¿') || (text.includes('छठी नोच') && (text.includes('ट्रिप') || text.includes('trip') || text.includes('ãÃ÷Í'))) || ((text.includes('C107') || text.includes('C105') || text.includes('C106')) && (text.includes('Q100') || text.includes('CCA') || text.includes('क्लोज') || text.includes('kÔíÁ')))) {
-      text = 'छठी नोच पर DJ/VCB ट्रिप होता है';
+    } else if (
+      text.includes('ÀÄä Ìâë¿') ||
+      (
+        (text.includes('छठी') || text.includes('छठा') || text.includes('6') || text.includes('६') || text.includes('6th') || text.includes('sixth') || text.includes('chhati') || text.includes('chatha')) &&
+        (text.includes('नोच') || text.includes('नाच') || text.includes('notch') || text.includes('noch')) &&
+        (text.includes('ट्रिप') || text.includes('trip') || text.includes('ãÃ÷Í') || text.includes('dj') || text.includes('vcb') || text.includes('डीजे')) &&
+        !text.includes('15') && !text.includes('15 sec') && !text.includes('15 सेकंड') && !text.includes('CCPT')
+      ) ||
+      (
+        (text.includes('C107') || text.includes('C105') || text.includes('C106')) &&
+        (text.includes('Q100') || text.includes('CCA') || text.includes('क्लोज') || text.includes('kÔíÁ'))
+      )
+    ) {
+      text = 'छठी नोच पर DJ/VCB ट्रिप होता है C107 C105 C106 Q100 CCA HVMT-1 HVMT-2 3 Q118';
     } else if (text.includes('ÍÚÔä Ìâë¿') || (text.includes('पहली नोच') && (text.includes('ट्रिप') || text.includes('trip') || text.includes('ãÃ÷Í'))) || ((text.includes('HVSI') || text.includes('MVSI') || text.includes('QVSI')) && (text.includes('3') || text.includes('bÔíáÓ') || text.includes('ब्लोअर') || text.includes('ãÃ÷Í') || text.includes('ट्रिप')))) {
       text = 'पहली नोच पर DJ/VCB ट्रिप होता है';
     } else if (text.includes('BLVMT') && (text.includes('kÔíÁ') || text.includes('क्लोज') || text.includes('close') || text.includes('trip') || text.includes('ãÃ÷Í') || text.includes('HVRH') || text.includes('HVMT') || text.includes('MVRH'))) {
@@ -633,7 +630,7 @@ export function cleanRailwayVoiceText(raw: string): string {
       text = 'LSCHBA के बुझने के बाद LSDJ फिर से प्रकाशित होता है';
     } else if (text.includes('LSDJ') && (text.includes('UA') || text.includes('डेविएट') || text.includes('डेिवएट') || text.includes('deviat'))) {
       text = 'LSDJ बुझता है UA डेविएट नहीं होता है';
-    } else if (text.includes('LSDJ') && (text.includes('ÏçÂÈâ') || text.includes('बुझता') || text.includes('नहीं बुझता') || text.includes('ÌÚI') || text.includes('ICDJ') || text.includes('Q118') || text.includes('C118') || text.includes('RAL') || text.includes('Q45') || text.includes('Q44'))) {
+    } else if (text.includes('LSDJ') && (text.includes('ÏçÂÈâ') || text.includes('बुझता') || text.includes('नहीं बुझता') || text.includes('ÌÚI') || text.includes('Q118') || text.includes('C118') || text.includes('RAL') || text.includes('Q45') || text.includes('Q44'))) {
       text = 'LSDJ नहीं बुझता है';
     } else if (text.includes('QOA') && (text.includes('HQOA') || text.includes('BLRA') || text.includes('BLCP') || text.includes('BLVMT') || text.includes('CCRA') || text.includes('HCHBA') || text.includes('TK ÍìÌÔ') || text.includes('R118') || text.includes('C118') || text.includes('áâÓÌíï'))) {
       text = 'QOA ड्रॉप होती है और DJ/VCB ट्रिप होता है';

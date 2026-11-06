@@ -1,0 +1,1138 @@
+[
+  {
+    "faultId": "CONV-DJ-NOT-CLOSING",
+    "text": "b) Ensure GR is at \"0\". If GR is not at \"0\", bring it to \"0\" manually by hand. (b) GR \"0\" पर है, सुनिश्चित करें। यदि GR \"0\" पर नहीं है तो उसे हाथ से \"0\" पर लाएं।)"
+  },
+  {
+    "faultId": "CONV-DJ-NOT-CLOSING",
+    "text": "a) Ensure ZPT is at \"1\" or \"2\" and BLDJ is closed. (a) ZPT \"1\" या \"2\" पर और BLDJ क्लोज है, सुनिश्चित करें।)"
+  },
+  {
+    "faultId": "CONV-DJ-NOT-CLOSING",
+    "text": "c) Check terminals of normally open (N/O) interlock of C-118. (c) C-118 के N/O इंटरलॉक के टर्मिनल चेक करें।)"
+  },
+  {
+    "faultId": "CONV-LSDJ-EXTINGUISHED-UA-ZERO",
+    "text": "• Inspection: Check Pantograph. (जांच: पैंटो चेक करें।)"
+  },
+  {
+    "faultId": "CONV-LSDJ-BEFORE-LSCHBA",
+    "text": "a) आर्नो चेक करें। (Check ARNO.)"
+  },
+  {
+    "faultId": "CONV-LSDJ-BEFORE-LSCHBA",
+    "text": "• विस्तृत प्रक्रिया (Detailed Procedure): HQCVAR को पोजीशन \"0\" पर रखें, DJ/VCB क्लोज करें और BLRDJ को 3-4 सेकंड में छोड़ दें। LSCHBA नहीं बुझेगा: आर्नो चेक करें।"
+  },
+  {
+    "faultId": "CONV-LSDJ-AFTER-LSCHBA",
+    "text": "• Place HPH, HVSL-1 and HVSL-2 to position \"3\" and close DJ/VCB: (HPH, HVSL-1 और HVSL-2 को \"3\" पर रखें और DJ/VCB क्लोज करें:)"
+  },
+  {
+    "faultId": "CONV-LSDJ-AFTER-LSCHBA",
+    "text": "a) If DJ/VCB holds: Check operation of MPH, MVSL-1 and MVSL-2 auxiliaries. ((a) यदि DJ/VCB कायम रहता है तो : MPH, MVSL-1 और MVSL-2 ऑग्जीलरीयों का कार्य चेक करें।)"
+  },
+  {
+    "faultId": "CONV-LSDJ-AFTER-LSCHBA",
+    "text": "i) If MPH is not working: Place HPH to \"0\" and isolate it. (i) यदि MPH काम नहीं कर रहा है तो - HPH को \"0\" पर रखकर उसे आइसोलेट करें।)"
+  },
+  {
+    "faultId": "CONV-BLVMT-DJ-TRIP",
+    "text": "• Place HVRH, HVMT-1 and HVMT-2 to position \"3\" and close DJ/VCB: (HVRH, HVMT-1 और HVMT-2 को \"3\" पर रखकर DJ/VCB क्लोज करें:)"
+  },
+  {
+    "faultId": "CONV-BLVMT-DJ-TRIP",
+    "text": "a) If DJ/VCB holds: Check operation of MVRH, MVMT-1 and MVMT-2 blowers. ((a) यदि DJ/VCB कायम रहता है तो : MVRH, MVMT-1 और MVMT-2 ब्लोअरों का कार्य चेक करें।)"
+  },
+  {
+    "faultId": "CONV-BLVMT-DJ-TRIP",
+    "text": "i) If any blower is not working: Isolate it. (i) यदि कोई ब्लोअर काम नहीं करता तो – उसे आइसोलेट करें।)"
+  },
+  {
+    "faultId": "CONV-MPH-NOT-WORKING",
+    "text": "a) Ensure HPH is at position \"1\". ((a) HPH \"1\" पर है, सुनिश्चित करें।)"
+  },
+  {
+    "faultId": "CONV-AUX-DAMAGED-BURNT",
+    "text": "c) If DJ/VCB trips on 6th notch, wedge relay Q118. ((c) यदि छठी नोच पर DJ/VCB ट्रिप होता है तो Q118 को वेज करें।)"
+  },
+  {
+    "faultId": "CONV-AUX-DAMAGED-BURNT",
+    "text": "b) Wedge relay Q118. ((b) Q118 को वेज करें।)"
+  },
+  {
+    "faultId": "CONV-CHBA-NOT-WORKING",
+    "text": "a) Check position of switch HCHBA, it must be on \"1\". ((a) HCHBA की पोजीशन चेक करें, \"1\" पर होनी चाहिये।)"
+  },
+  {
+    "faultId": "CONV-FUSES-MELTING-FAILURES",
+    "text": "• चालू गाड़ी में जब तक DJ/VCB क्लोज है, एडिशनल CCBA पिघलने का पता नहीं चलता है। बैटरी चार्ज होना बंद हो जाती है।"
+  },
+  {
+    "faultId": "CONV-FUSES-MELTING-FAILURES",
+    "text": "• जब DJ/VCB ओपन होता है या किया जाता है तब निम्नलिखित संकेत मिलते हैं:"
+  },
+  {
+    "faultId": "CONV-FUSES-MELTING-FAILURES",
+    "text": "• चालू गाड़ी में जब तक DJ/VCB क्लोज है, CCBA पिघलने का पता नहीं चलता है। बैटरी चार्ज होना बंद हो जाती है।"
+  },
+  {
+    "faultId": "CONV-FUSES-MELTING-FAILURES",
+    "text": "• नोट :- CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से “0” पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें।"
+  },
+  {
+    "faultId": "CONV-FUSE-ADDITIONAL-CCBA",
+    "text": "• जब DJ/VCB ओपन होता है या किया जाता है तब:"
+  },
+  {
+    "faultId": "CONV-FUSE-ADDITIONAL-CCBA",
+    "text": "1) पैंटो लोअर हो जाएगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-ADDITIONAL-CCBA",
+    "text": "2) यदि GR नोच पर है तो रिग्रेशन नहीं होगा। LSGR पायलट लैम्प बुझा रहेगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-ADDITIONAL-CCBA",
+    "text": "3) सभी पायलट लैम्प बुझ जाएंगे।"
+  },
+  {
+    "faultId": "CONV-FUSE-ADDITIONAL-CCBA",
+    "text": "4) LSDBR लैम्प बुझ जाएगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-ADDITIONAL-CCBA",
+    "text": "5) ZUBA दबाने पर UBA बैटरी वोल्टेज ‘0’ बताएगी।"
+  },
+  {
+    "faultId": "CONV-FUSE-ADDITIONAL-CCBA",
+    "text": "6) फ्यूज टेस्टर ECC कार्य नहीं करेगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-ADDITIONAL-CCBA",
+    "text": "8) विजिलेंस कंट्रोल डिवाइस {VCD} डिस्प्ले यूनिट का HEALTHY लैम्प बुझ जाएगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCBA",
+    "text": "3) LSGR लैम्प को छोड़कर सभी पायलट लैम्प प्रकाशित रहेंगे।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCBA",
+    "text": "5) ZUBA दबाने पर UBA सामान्य बैटरी वोल्टेज बताएगी।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCBA",
+    "text": "6) फ्यूज टेस्टर ECC कार्य करेगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCPT",
+    "text": "1) DJ/VCB ओपन हो जाएगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCPT",
+    "text": "2) पैंटो लोअर हो जाएगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCPT",
+    "text": "3) यदि GR नोच पर है तो रिग्रेशन नहीं होगा। LSGR पायलट लैम्प बुझा रहेगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCPT",
+    "text": "4) बाकी सभी पायलट लैम्प प्रकाशित रहेंगे।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCPT",
+    "text": "5) LSDBR लैम्प बुझ जाएगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCPT",
+    "text": "6) ZUBA दबाने पर UBA सामान्य बैटरी वोल्टेज बताता है।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCPT",
+    "text": "7) फ्यूज टेस्टर ECC कार्य करेगा।"
+  },
+  {
+    "faultId": "CONV-HBA-ON-CCPT-MELTS",
+    "text": "a) Q118 की कॉइल चेक करें, यदि कॉइल में खराबी है तो सहायता मांगें। ((a) Check coil of relay Q118; if defect is found in coil, demand assistance.)"
+  },
+  {
+    "faultId": "CONV-HBA-ON-CCPT-MELTS",
+    "text": "• नोट: फ्यूज बदलने से पहले GR को हाथ से “0” पर लाएं, MP, MPJ व ZPT को “0” पर रखें, IP MAGNET VALVE का COC बंद करें और HBA को “ऑफ” पर रखें।"
+  },
+  {
+    "faultId": "CONV-REGRESSION-CCPT-MELTS",
+    "text": "a) GR को हाथ से “0” पर लाएं। ((a) Bring GR manually by hand to \"0\".)"
+  },
+  {
+    "faultId": "CONV-6TH-NOTCH-CCPT-MELTS",
+    "text": "1. GR को हाथ से “0” पर लाएं। (Bring GR manually by hand to \"0\".)"
+  },
+  {
+    "faultId": "CONV-FUSE-CCLS",
+    "text": "• नोट: कन्वेंशनल लोको में VCD तथा IPMV को सप्लाई CCLS से दी गई है।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCLS",
+    "text": "1) सभी पायलट लैम्प बुझ जाएंगे।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCLS",
+    "text": "2) QRS डी-एनर्जाइज हो जाने की वजह से ऑटो रिग्रेशन होगा। कर्षण बल (Tractive Effort) की पूर्ण हानि होगी।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCLS",
+    "text": "4) विजिलेंस कंट्रोल डिवाइस {VCD} डिस्प्ले यूनिट का HEALTHY लैम्प बुझ जाएगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCLS",
+    "text": "• कार्यवाही: CCLS (10A) फ्यूज चेक करें व बदलें। सिग्नलिंग लैम्प व रिले शाखा का निरीक्षण करें।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCA",
+    "text": "1) मेन कम्प्रेशर व ब्लोअर नहीं चलेंगे।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCA",
+    "text": "2) यदि GR पाँच (5) से अधिक नोच पर है तो DJ/VCB ट्रिप हो जाएगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCA",
+    "text": "• कार्यवाही: CCA फ्यूज चेक करें व बदलें। यदि आवश्यक हो तो HOBA स्विच का उपयोग करें (अध्याय 7-फेलियर क्र. 14, 15 पृष्ठ क्र. 53 देखें)।"
+  },
+  {
+    "faultId": "CONV-BLVMT-CCA-MELTS",
+    "text": "i) यदि CCA कायम रहता है तो: HVRH, HVMT-1 और HVMT-2 को एक-एक करके 10 सेकंड के अंतर से “1” पर रखें और खराबी वाले कंट्रोल सर्किट का पता लगाएं, खराब कॉइल के टर्मिनल निकाल दें और कॉन्टैक्टर को वेज कर दें।"
+  },
+  {
+    "faultId": "CONV-BLVMT-CCA-MELTS",
+    "text": "ii) यदि CCA कायम नहीं रहता है तो: सहायता मांगें।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCDJ",
+    "text": "1) DJ/VCB ट्रिप होगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCDJ",
+    "text": "2) ऑटो रिग्रेशन होगा।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCDJ",
+    "text": "• कार्यवाही: CCDJ फ्यूज चेक करें। आवश्यकतानुसार HOBA स्विच का उपयोग करें।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCLSA",
+    "text": "2) सैंडर्स (Sanders) कार्य नहीं करेंगे।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCLSA",
+    "text": "• कार्यवाही: CCLSA फ्यूज चेक करें व बदलें।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCVCD",
+    "text": "• VCD कार्य नहीं करेगी।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCVCD",
+    "text": "• कार्यवाही: CCVCD फ्यूज चेक करें व बदलें।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCINV",
+    "text": "• SI UNIT (स्टैटिक इनवर्टर) नहीं चलेगी।"
+  },
+  {
+    "faultId": "CONV-FUSE-CCINV",
+    "text": "• कार्यवाही: CCINV फ्यूज चेक करें व बदलें।"
+  },
+  {
+    "faultId": "CONV-DJ-TRIP-FIRST-NOTCH",
+    "text": "ii) If DJ/VCB trips: Operate GR manually by hand. (ii) यदि DJ/VCB ट्रिप होता है तो - GR को हाथ से ऑपरेट करें।)"
+  },
+  {
+    "faultId": "CONV-DJ-TRIP-SIXTH-NOTCH",
+    "text": "ii) If not successful: Wedge relay Q118. (ii) यदि सफलता नहीं मिलती है तो Q118 को वेज करें।)"
+  },
+  {
+    "faultId": "CONV-DJ-TRIP-DIFFERENT-NOTCHES",
+    "text": "b) Place HVSI-1 and HVSI-2 to position \"3\". ((b) HVSI-1 और HVSI-2 को \"3\" पर रखें।)"
+  },
+  {
+    "faultId": "CONV-DJ-TRIP-DIFFERENT-NOTCHES",
+    "text": "c) If not successful: Control / operate GR manually by hand. ((c) यदि सफलता नहीं मिलती तो GR को हाथ से कंट्रोल करें।)"
+  },
+  {
+    "faultId": "CONV-QOP1-EARTH-FAULT",
+    "text": "(B) If no defect is found: Reset relay. ((B) यदि कोई खराबी नहीं है तो रिले रीसेट करें।)"
+  },
+  {
+    "faultId": "CONV-QLM-OVERCURRENT",
+    "text": "a) If any defect is noticed or oil is spilled: Demand assistance. (a) यदि कोई खराबी है या तेल बिखरा है तो सहायता मांगें।)"
+  },
+  {
+    "faultId": "CONV-QLM-OVERCURRENT",
+    "text": "a) If any abnormality is noticed: Demand assistance. (a) यदि कोई असामान्यता मिलती है तो सहायता मांगें।)"
+  },
+  {
+    "faultId": "CONV-QRSI-1-TRIP",
+    "text": "b) If no defect is found: Reset relay, close DJ/VCB. Resume traction. ({b} यदि कोई खराबी नहीं मिलती है तो - रिले रीसेट करें, DJ/VCB क्लोज करें। ट्रैक्शन चालू करें।)"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "• सामान्य नियम (General Principle): इनपुट वोल्टेज आउट ऑफ रेंज होने पर DJ/VCB ट्रिप नहीं होता है केवल SIV बंद होता है परंतु यदि GR नोच पर है तो DJ/VCB भी ट्रिप होगा। यदि DJ/VCB ट्रिप है तो LP पहले DJ/VCB क्लोज करें। यदि DJ/VCB क्लोज नहीं होता है तो ICDJ के लिए ट्रबल शूट करें। यदि DJ/VCB क्लोज होता है और SIV कार्य नहीं करता है तो SIV इंडिकेशन पैनल देखें।"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "1. डिस्प्ले पैनल पर संकेत: A यदि इनपुट वोल्टेज आउट ऑफ रेंज {लाल लैम्प} का संकेत आता है - LP द्वारा कार्यवाही:"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "i) रीसेट बटन दबाइए। पुनः VCB क्लोज करें। UA मीटर, SIV पैनल और ESMON स्पीडोमीटर में OHE वोल्टेज का मान चेक करें। OHE वोल्टेज 16.5 से 31 kV के बीच होना चाहिए। SIV का इनपुट वोल्टेज रेंज {608 V - 1144 V}।"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "A} यदि OHE वोल्टेज आउट ऑफ रेंज है तो TPC / TLC से संपर्क करें।"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "B} यदि OHE वोल्टेज 16.5 से 31 kV के बीच है तो:"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "(i) रीसेट बटन दबाइए और लोको एनर्जाइज करें। सफलता मिलती है तो गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "(ii) यदि सफलता नहीं मिलती है तो कुछ सेकंड के लिए बैटरी ऑफ करके ऑन करें {IPMV का COC बंद करने के बाद} और लोको एनर्जाइज करें। सफलता मिलती है तो गाड़ी चलाएं {IPMV का COC खोल दें}।"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "(iii) यदि सफलता नहीं मिलती है तो सहायता मांगें।"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "• नोट: यदि इनपुट वोल्टेज आउट ऑफ रेंज {लाल लैम्प} का संकेत नहीं आता है तो BLVMT देखें।"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "• अतिरिक्त जानकारी (Chapter 17, Page 101):"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "B} यदि BLVMT ओपन है और SIV नहीं चलता है: a) DJ/VCB क्लोज होना सुनिश्चित करें। b) CCINV फ्यूज चेक करें। यदि मेल्ट है तो बदलें। यदि फिर मेल्ट होता है तो HOBA का उपयोग करें।"
+  },
+  {
+    "faultId": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "text": "C} यदि BLVMT क्लोज है और SIV नहीं चलता है: a) CCA फ्यूज चेक करें। यदि मेल्ट है तो बदलें (फिर मेल्ट होता है तो HOBA का उपयोग करें)। b) QSVM रिले का एनर्जाइज होना सुनिश्चित करें। यदि QSVM डी-एनर्जाइज है तो उसे वेज करें। (सावधानी: यदि QSVM वेज किया है तो DJ/VCB क्लोज करने से पहले BLVMT क्लोज करें)।"
+  },
+  {
+    "faultId": "CONV-SIV-BLVMT-OPEN-SIV-NOT-WORKING",
+    "text": "a) DJ/VCB क्लोज होना सुनिश्चित करें। (Ensure DJ/VCB is closed.)"
+  },
+  {
+    "faultId": "CONV-SIV-BLVMT-OPEN-SIV-NOT-WORKING",
+    "text": "• संदर्भ / अतिरिक्त जांच (WR BRC TSD अध्याय 17, पृष्ठ 101/102):"
+  },
+  {
+    "faultId": "CONV-SIV-BLVMT-OPEN-SIV-NOT-WORKING",
+    "text": "- यदि BLVMT क्लोज है और SIV नहीं चलता है तो:"
+  },
+  {
+    "faultId": "CONV-SIV-EXTERNAL-FAULT-OVERCURRENT",
+    "text": "3. यदि कोई खराबी नहीं मिलती है तो (If no defect is found):"
+  },
+  {
+    "faultId": "CONV-SIV-EARTH-FAULT-BYPASS-PROCEDURE",
+    "text": "• सामान्य नियम: यदि फॉल्टी सर्किट को ढूंढना एवं बाईपास करना असंभव है तो LP को अर्थ फॉल्ट बाईपास करके सेक्शन साफ करना चाहिए और TLC को सूचित करना चाहिए।"
+  },
+  {
+    "faultId": "CONV-SIV-EARTH-FAULT-BYPASS-PROCEDURE",
+    "text": "• ⚠️ आवश्यक समय-सीमा: जब अर्थ फॉल्ट को बाईपास किया जाता है तो 45 मिनट के अंदर सेक्शन साफ कर लेना चाहिए, क्योंकि इस दौरान एक 1500 ओम (1500 Ω) की रेजिस्टेंस सर्किट में आती है।"
+  },
+  {
+    "faultId": "CONV-MPCS-MAIN-UNIT-NOT-WORKING",
+    "text": "• MPCS लोको सामान्य नियम: MPCS लोको में कोई फॉल्ट आने पर डिस्प्ले यूनिट पर फॉल्ट मैसेज दिखाई देता है और बजर बजता है। फॉल्ट मैसेज नोट कर TSD अनुसार ट्रबलशूट करें। TSD के बाद “Ack” बटन दबाएं जिससे मैसेज CLEAR होकर मेमोरी में रिकॉर्ड हो जाएगा।"
+  },
+  {
+    "faultId": "CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING",
+    "text": "• MPCS लोको सामान्य नियम: MPCS लोको में कोई फॉल्ट आने पर डिस्प्ले यूनिट पर फॉल्ट मैसेज दिखाई देता है और साथ में बजर सुनाई देता है। मैसेज नोट कर TSD अनुसार ट्रबलशूट करें व अंत में “Ack” बटन दबाएं।"
+  },
+  {
+    "faultId": "CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING",
+    "text": "4. MR तथा RS प्रेशर चेक करें, 8 kg/cm² से कम नहीं होना चाहिए। (Check MR & RS pressure; must not be less than 8 kg/cm².)"
+  },
+  {
+    "faultId": "CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING",
+    "text": "10. HQOA को \"0\" पर रखकर प्रयत्न करें। (Place HQOA to \"0\" and attempt.)"
+  },
+  {
+    "faultId": "CONV-MPCS-DJ-TRIP-ON-6TH-NOTCH-15-SEC",
+    "text": "• MPCS लोको सामान्य नियम: MPCS लोको में कोई खराबी आने पर डिस्प्ले यूनिट पर फॉल्ट मैसेज दिखाई देता है और साथ में बजर सुनाई देता है। TSD अनुसार ट्रबलशूट करें व अंत में “Ack” बटन दबाएं।"
+  },
+  {
+    "faultId": "CONV-MPCS-DJ-TRIP-ON-6TH-NOTCH-15-SEC",
+    "text": "1. डिस्प्ले यूनिट पर दर्शाए गए मैसेज के अनुसार ट्रबलशूट करें। (Troubleshoot according to message displayed on Display Unit.)"
+  },
+  {
+    "faultId": "CONV-MPCS-DJ-TRIP-ON-6TH-NOTCH-15-SEC",
+    "text": "5. यदि सफलता नहीं मिलती है तो HOBA को \"OFF\" पर रखकर प्रयत्न करें। (If unsuccessful, try by keeping HOBA on \"OFF\" position.)"
+  },
+  {
+    "faultId": "CONV-MPCS-MEDHA-RELAY-BYPASS-SOFT-WEDGE",
+    "text": "3. डिस्प्ले पर प्रदर्शित विकल्पों के अनुसार कीज़ दबाएं:"
+  },
+  {
+    "faultId": "CONV-MPCS-MEDHA-RELAY-BYPASS-SOFT-WEDGE",
+    "text": "• Soft Key ‘1’ दबाएं: तात्कालिक बाईपास हेतु (For instantaneous / temporary bypass)."
+  },
+  {
+    "faultId": "CONV-MPCS-MEDHA-RELAY-BYPASS-SOFT-WEDGE",
+    "text": "4. बाईपास समाप्ति एवं रीसेट नियम:"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "a) दूसरे पैंटो का उपयोग करें।"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "b) यदि BPEMS स्विच दबा है तो उसे रीसेट करें। (अध्याय-1, 1.5 II G, पृष्ठ.10)"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "c) यदि लोको में HLS / ZLS स्विच दिया है तो स्विच का ऑन होना सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "d) RS प्रेशर चैक करें, यदि कम है तो CPA द्वारा बनाएं।"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "e) बैटरी वोल्टेज चैक करें।"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "f) CCBA और CCPT चैक करें (यदि आवश्यक हो तो HOBA का उपयोग करें) (अध्याय 7, क्र. 1-12, पृष्ठ-51-53)"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "g) VEPT आइसोलेटिंग कॉक खुले हैं और VEPT टर्मिनल बराबर है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "h) VEPT को हाथ से ऑपरेट करें।"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "i) पीछे वाली कैब से पैंटो उठाने का प्रयत्न करें।"
+  },
+  {
+    "faultId": "CONV-PANTO-NOT-RAISING",
+    "text": "j) VEPT वेज करें, सैक्शन क्लीयर करें और TLC से सम्पर्क करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "a) A-9 हैंडल दोनों कैब में “रिलीज” पोजीशन पर और MR प्रेशर सामान्य है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "b) BLCPD क्लोज करके प्रयत्न करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "c) A-9 के दोनों कट आउट कॉक कार्यरत (Working) कैब में खुले और पीछे वाली कैब में बंद हैं, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "d) BP चार्जिंग कॉक खुला है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "e) MU2B वाल्व “लीड” पोजीशन पर है, सुनिश्चित करें। दो तीन बार ऑपरेट करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "f) MR-4 कट आउट कॉक खुला है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "g) दोनों सिरों पर एंगल कॉक बंद हैं, सुनिश्चित करें। IP वाल्व और RS वाल्व में लीकेज नहीं है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "h) यदि IP वाल्व में लीकेज है तो उसका कट आउट कॉक बंद करें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "text": "i) यदि BP प्रेशर 0 kg/cm² ही रहता है तो चेक करें कि पीछे कैब के नीचे अथवा कैब में एडिशनल कॉक बंद तो नहीं है।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-SURGE-BRAKE-BINDING",
+    "text": "a) A-9 वाल्व के regulator द्वारा समंजित (adjust) करके BP प्रेशर बढ़ाएं ताकि लोको एवं गाड़ी में ब्रेक रिलीज हो जाएं। सैक्शन क्लीयर करके (यदि लेवल सैक्शन है तो) निम्नलिखित कार्यवाही करें - A-9 को “इमरजेंसी” पोजीशन पर लाएं। BP प्रेशर के “0” पर आने तक रुकें। लोको और गाड़ी के बीच BP और FP के एंगल कॉक बंद कर दें।"
+  },
+  {
+    "faultId": "CONV-BP-PRESSURE-SURGE-BRAKE-BINDING",
+    "text": "b) पूरी गाड़ी के ब्रेक रिलीज करें। A-9 को “रिलीज” पोजीशन पर रखें और BP प्रेशर को A-9 वाल्व के regulator द्वारा 5 kg/cm² पर समंजित (adjust) करें। लोको ब्रेक रिलीज करने के लिये लोको के डिस्ट्रीब्यूटर वाल्व का रिलीज वाल्व खींचें। एंगल कॉक खोल दें। जब गार्ड वान में BP प्रेशर बढ़कर 4.8 kg/cm² से 5 kg/cm² हो जाये तो कन्टीन्युइटी टेस्ट करने के बाद गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD",
+    "text": "a) यदि MR प्रेशर कम है तो तीनों कम्प्रेशर चलाएं।"
+  },
+  {
+    "faultId": "CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD",
+    "text": "b) BLCP ओपन करें और BLCPD क्लोज करें।"
+  },
+  {
+    "faultId": "CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD",
+    "text": "c) यदि फिर भी MR प्रेशर नहीं बनता है तो लोको और लोड के बीच BP और FP एंगल कॉक बंद करें:"
+  },
+  {
+    "faultId": "CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD",
+    "text": "i) यदि MR प्रेशर 9.5 kg/cm² तक बन जाता है तो लोड में खराबी है। गाड़ी में लीकेज चेक करें।"
+  },
+  {
+    "faultId": "CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD",
+    "text": "ii) यदि MR प्रेशर नहीं बनता है तो लोको में लीकेज चेक करें। BP प्रेशर चेक करें:"
+  },
+  {
+    "faultId": "CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD",
+    "text": "• यदि BP प्रेशर बढ़ता है तो लोड में खराबी है। वैगनों के बीच सभी एंगल कॉक खुले हैं और होस पाइप बराबर लगे हैं और BP में लीकेज नहीं है, सुनिश्चित करें। लोड की खराबी दूर कर देने के बाद FP और BP के एंगल कॉक खोल दें।"
+  },
+  {
+    "faultId": "CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD",
+    "text": "• यदि BP प्रेशर नहीं बढ़ता है तो लोको में खराबी है। पृष्ठ क्र. 68, 69 पर फेलियर क्र. 3 & 4 के अनुसार ट्रबलशूट करें।"
+  },
+  {
+    "faultId": "CONV-A9-LOCO-BRAKE-NOT-APPLYING",
+    "text": "c) Ensure BP pressure is normal. (सुनिश्चित करें, BP प्रेशर सामान्य है।)"
+  },
+  {
+    "faultId": "CONV-A9-LOCO-BRAKE-NOT-APPLYING",
+    "text": "f) If required, apply brakes by RS or SA-9. (आवश्यकता पड़ने पर RS या SA-9 द्वारा ब्रेक लगाएं।)"
+  },
+  {
+    "faultId": "CONV-SA9-LOCO-BRAKE-NOT-APPLYING",
+    "text": "b) MU2B वाल्व “लीड” (LEAD) पोजीशन पर है, सुनिश्चित करें। उसे 2-3 बार ऑपरेट करें। (Ensure MU2B valve is on \"LEAD\" position. Operate it 2-3 times.)"
+  },
+  {
+    "faultId": "CONV-LOCO-BRAKE-NOT-RELEASING-A9-SA9-RELEASE",
+    "text": "a) सुनिश्चित करें, BP प्रेशर 5 kg/cm² है। (Ensure BP pressure is 5.0 kg/cm².)"
+  },
+  {
+    "faultId": "CONV-LOCO-BRAKE-NOT-RELEASING-A9-SA9-RELEASE",
+    "text": "c) MU2B वाल्व पूरी तरह से “लीड” (LEAD) पर है, सुनिश्चित करें। (Ensure MU2B valve is fully on LEAD position.)"
+  },
+  {
+    "faultId": "CONV-BLCP-MR-PRESSURE-NOT-BUILDING",
+    "text": "• Check MCP. (MCP चेक करें:)"
+  },
+  {
+    "faultId": "CONV-BLCP-MR-PRESSURE-NOT-BUILDING",
+    "text": "c) Check Q100 (start blowers); if Q100 is not energized: ((c) Q100 चेक करें (ब्लोअर चालू करें) यदि इनर्जाइज नहीं है तो:)"
+  },
+  {
+    "faultId": "CONV-BLCP-MR-PRESSURE-NOT-BUILDING",
+    "text": "ii) Wedge relay Q100. (ii) Q100 को वेज करें।)"
+  },
+  {
+    "faultId": "CONV-MR-PRESSURE-LESS-THAN-7",
+    "text": "a) तीनों MCP चालू करें। जब MR प्रेशर 9.5 kg/cm² तक बन जाये तो HCP को आवश्यक पोजीशन पर रख दें।"
+  },
+  {
+    "faultId": "CONV-MR-PRESSURE-LESS-THAN-7",
+    "text": "b) RAL कॉक खोल कर RS गेज चेक करें। यदि RS प्रेशर 8 kg/cm² के लगभग है तो इसका अर्थ है MR प्रेशर बराबर है, गेज में खराबी है। यदि RS प्रेशर MR प्रेशर के बराबर या कम है तो BP चार्जिंग कॉक बंद करें और MR प्रेशर देखें:"
+  },
+  {
+    "faultId": "CONV-MR-PRESSURE-LESS-THAN-7",
+    "text": "i) यदि MR प्रेशर नहीं बनता है तो:- MR ड्रेन कॉक, सेफ्टी वाल्व, अनलोडर वाल्व, सैंडिंग वाल्व, ब्रेक सिलेंडर इत्यादि में लीकेज चेक करें। एयर ड्रायर से लीकेज है तो “C” कॉक खोलें “A” व “B” कॉक बंद करें।"
+  },
+  {
+    "faultId": "CONV-MR-PRESSURE-LESS-THAN-7",
+    "text": "ii) यदि MR प्रेशर बनता है तो:- MR प्रेशर 9.5 kg/cm² बन जाने तक रुकें। उसके बाद BP चार्जिंग कॉक खोल दें। यदि MR प्रेशर फिर से अत्यधिक मात्रा में कम होना शुरू होता है तो IP वाल्व, RS, BP होस पाइप और एंगल कॉक इत्यादि में लीकेज चेक करें।"
+  },
+  {
+    "faultId": "CONV-COMPRESSOR-CONTACTORS-NOT-CLOSING",
+    "text": "• सावधानी (Important Precautions):"
+  },
+  {
+    "faultId": "CONV-HORN-WHISTLE-FAILURE",
+    "text": "a) हवा का लीकेज चैक करें।"
+  },
+  {
+    "faultId": "CONV-HORN-WHISTLE-FAILURE",
+    "text": "b) सैंडिंग कट आउट कॉक बंद करके प्रयत्न करें।"
+  },
+  {
+    "faultId": "CONV-HORN-WHISTLE-FAILURE",
+    "text": "c) अंडर फ्रेम पर डुप्लेक्स चैक वाल्व को टेप करें (कॉरिडोर नं. 2 के बाहर)।"
+  },
+  {
+    "faultId": "CONV-HORN-WHISTLE-FAILURE",
+    "text": "d) यदि सफलता नहीं मिलती है तो सावधानीपूर्वक सैक्शन क्लीयर करें। अगले स्टेशन पर TLC/ASM को लिखित में सूचित करें।"
+  },
+  {
+    "faultId": "CONV-HORN-WHISTLE-FAILURE",
+    "text": "e) यदि TLC लोको को अगले सुविधाजनक स्थान तक जाने के लिए लिखित अनुमति देता है तो दृश्यता साफ होने पर 25 KMPH व दृश्यता साफ नहीं होने पर 8 KMPH के गति प्रतिबंध का पालन करते हुए तीव्र दृष्टि एवं सावधानीपूर्वक हेडलाईट तथा मार्कर लाईट का उपयोग करते हुए G&SR 4.50 (2) के अनुसार गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-HORN-WHISTLE-FAILURE",
+    "text": "नोट:- स्टार्टिंग स्टेशन पर व्हीसल फेल होने पर लोको फेल करें।"
+  },
+  {
+    "faultId": "CONV-LOSS-TRACTIVE-FORCE",
+    "text": "a) If CCLS fuse is melted, replace it. ((a) यदि CCLS पिघल गया है तो बदली करें।)"
+  },
+  {
+    "faultId": "CONV-LOSS-TRACTIVE-FORCE",
+    "text": "a) Check LSB; if glowing: (LSB चेक करें यदि प्रकाशित है तो:)"
+  },
+  {
+    "faultId": "CONV-LOSS-TRACTIVE-FORCE",
+    "text": "b) Check LSP; if glowing: (LSP चेक करें यदि प्रकाशित है तो:)"
+  },
+  {
+    "faultId": "CONV-LOSS-TRACTIVE-FORCE",
+    "text": "l) Open DJ, operate GR manually by hand 2 to 3 times. (DJ ओपन करें, GR को हाथ से 2-3 बार ऑपरेट करें।)"
+  },
+  {
+    "faultId": "CONV-LOSS-TRACTIVE-FORCE",
+    "text": "m) Work train by operating GR manually by hand. (GR को हाथ से ऑपरेट करके गाड़ी चलाएं।)"
+  },
+  {
+    "faultId": "CONV-LOSS-TRACTIVE-FORCE",
+    "text": "b) Check that HT-2 cut-out cock is open. (HT-2 का कट आउट कॉक खुला हुआ है, इसकी जांच करें।)"
+  },
+  {
+    "faultId": "CONV-LOSS-TRACTIVE-FORCE",
+    "text": "c) Perform LT testing to check closing of contactors L1 to L6; verify CTF-1, CTF-2, CTF-3 are in \"Running\" position. If required, wedge contactors L1 to L6. (LT टेस्टिंग करके L1 से L6 तक के कॉन्टैक्टर क्लोज होते हैं, इसकी जांच करें; CTF-1, CTF-2 और CTF-3 “रनिंग” पोजीशन में हैं, इसकी जांच करें। आवश्यकता हो तो L1 से L6 तक के कॉन्टैक्टर वेज करें।)"
+  },
+  {
+    "faultId": "CONV-LSGR-ALREADY-EXTINGUISHED",
+    "text": "a) यदि CCLS पिघल गया है तो बदली करें। ((a) If CCLS fuse is melted, replace it.)"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "• MP द्वारा प्रयत्न करने पर यदि सफलता नहीं मिलती है तो एक बार EEC द्वारा प्रयत्न करें:"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "a) LSB चेक करें यदि प्रकाशित है तो:"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "- Q-50 चेक करें, यदि इनर्जाइज नहीं है तो J-1 और J-2 सेट हो गये हैं, इसकी जांच करें और CTF-1, CTF-2 और CTF-3 “R” पोजीशन में बराबर सेट हो गये हैं, सुनिश्चित करें। यदि वे बराबर सेट नहीं हैं तो उन्हें हाथ से सेट करें। C-145 का ओपन होना चेक करें और LSC-145 का बुझा होना सुनिश्चित करें। यदि आवश्यक हो तो Q-50 को वेज करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "- यदि कोई रिवर्सर सेट नहीं होता है तो रिवर्सर को लॉक करें। संबंधित RSI ब्लॉक आइसोलेट करें तथा LSC-145 का बुझा होना सुनिश्चित करके Q-50 को वेज करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "- यदि कोई रिवर्सर इच्छित दिशा में सेट नहीं होता है तो संबंधित रिवर्सर की कॉइल के टर्मिनल निकालकर टेप करें व रिवर्सर को मैन्युअली सेट करें और रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "b) LSP चेक करें यदि प्रकाशित है तो:"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "- Q-48 चेक करें, यदि इनर्जाइज है तो Q-48 को हाथ से थपथपाएं, अगर सफलता न मिले तो HMCS के द्वारा प्रयत्न करें। अगर फिर भी सफलता नहीं मिलती तो सैंडिंग COC बंद करके GR को हाथ से ऑपरेट करके सेक्शन क्लियर करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "c) यदि ऑटो फ्लैशर की LED प्रकाशित है तो:"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "- सुनिश्चित करें BP प्रेशर 5 kg/cm² है, एयर फ्लो इंडिकेटर (AFI) की सुई पूर्व निर्धारित जगह पर है। CCLSA फ्यूज निकाल कर प्रयत्न करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "- यदि सफलता नहीं मिलती है तो PR-2 को चेक करें। यदि इनर्जाइज है तो PR-2 को ओपन में वेज करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "- माइक्रोप्रोसेसर युक्त लोको में HPAR/HQ-51 को 0 पोजीशन पर रखें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "i) यदि BP प्रेशर कम है और VCD ऑपरेट हुई है तो VCD को रीसेट करें। यदि VCD रीसेट नहीं होती है तो HVCD या टॉगल स्विच द्वारा VCD को आइसोलेट करें। यदि सफलता नहीं मिलती है तो CCVCD फ्यूज निकाल कर प्रयत्न करें। यदि CCVCD फ्यूज नहीं लगा है तो VCD मेन यूनिट के दोनों कनेक्शन निकाल दें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "(नोट :- यदि VCD मालफंक्शन करती है तो सिर्फ एक बार ही रीसेट करेंगे, दूसरी बार में VCD को आइसोलेट करेंगे।)"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "ii) यदि BP प्रेशर कम है और VCD ऑपरेट नहीं हुई है तो लोको तथा गाड़ी में BP लीकेज चेक करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "e) QRS चेक करें: यदि इनर्जाइज नहीं है तो RGEB-2 का कट आउट कॉक खुला होना चेक करें, A9 द्वारा BP प्रेशर 2 kg/cm² तक ड्रॉप करें और A9 को वापस रिलीज पोजीशन पर रख दें। यदि फिर भी QRS इनर्जाइज नहीं होती तो उसे वेज करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "f) सुनिश्चित करें ZSMS “1” पर है।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "g) ZSMGR हैंडल की जांच करें (वह खड़ी स्थिति में होना चाहिए)।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "h) SMGR सिम्पल (केंक कॉक की स्थिति चेक करें)।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "i) SMGR का कंट्रोल प्रेशर चेक करें (वह 2.5 से 3.5 kg/cm² होना चाहिए)।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "j) EEC द्वारा प्रयत्न करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "k) Q-51 और Q-52 डी-इनर्जाइज हैं, इसकी जांच करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "l) DJ ओपन करें, GR को हाथ से 2-3 बार ऑपरेट करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-EXTINGUISHING",
+    "text": "m) GR को हाथ से ऑपरेट करके गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-LSGR-EXTINGUISHES-NO-TE",
+    "text": "b) HT-2 का कट आउट कॉक खुला हुआ है, इसकी जांच करें। ((b) Check that HT-2 cut-out cock is open.)"
+  },
+  {
+    "faultId": "CONV-PARTIAL-LOSS-TRACTIVE-FORCE",
+    "text": "a) If bound, ensure BP pressure is normal (5.0 kg/cm²). ((a) यदि बंधी है तो BP प्रेशर सामान्य होना सुनिश्चित करें।)"
+  },
+  {
+    "faultId": "CONV-PARTIAL-LOSS-TRACTIVE-FORCE",
+    "text": "b) Ensure A-9 handle is in release position. ((b) A-9 का हैंडल रिलीज पोजीशन पर है, सुनिश्चित करें।)"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "a) पीछे वाली कैब की BL बराबर लॉक है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "(आगे वाली कैब की BL लॉक करने पर यदि पायलट लैम्प प्रकाशित रहते हैं तो यह इस बात का संकेत है कि पीछे वाली कैब की BL अनलॉक हालत में है)"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "• यदि पीछे वाली कैब की BL अनलॉक है तो – उसे लॉक करने का प्रयत्न करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "• यदि सफलता नहीं मिलती तो Q118 को वेज करें, ZSMS को “0” पर रखें और EEC द्वारा काम करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "• मोडीफाइड ZSMS वाले लोको में GR को मैनुअल कंट्रोल करके सेक्शन क्लीयर करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "• नोट :- यदि VCD मालफंक्शन करती है तो पहली बार में ही रीसेट करें तथा आइसोलेट करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "c) मोडीफाइड ZSMS वाले लोको में, BPR दबी अवस्था में अटक गया है तो उसे नॉर्मल करने का प्रयत्न करें:"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "(i) यदि सफलता नहीं मिलती है तो ZSMS की पोजीशन बदलें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "text": "(ii) यदि फिर भी सफलता नहीं मिलती है तो GR को मैनुअल कंट्रोल करके सेक्शन क्लीयर करें।"
+  },
+  {
+    "faultId": "CONV-MPJ-F-R-LSB-GLOWS",
+    "text": "a) CTF-1, CTF-2 और CTF-3 “रनिंग” पोजीशन पर हैं, सुनिश्चित करें। यदि सेट नहीं हैं तो उन्हें हाथ से सेट करें।"
+  },
+  {
+    "faultId": "CONV-MPJ-F-R-LSB-GLOWS",
+    "text": "b) J-1 और J-2 चेक करें। यदि वांछित स्थिति (Desired Position) में नहीं हैं तो उन्हें हाथ से सेट करें। HT-1 और HT-2 के न्यूमैटिक कट आउट कॉक खुले हैं, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-MPJ-F-R-LSB-GLOWS",
+    "text": "c) C-145 का ओपन होना चेक करें और LSC-145 का बुझा होना सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-MPJ-F-R-LSB-GLOWS",
+    "text": "d) यदि रिवर्सर और CTF बराबर सेट हैं और C-145 ओपन है (LSC-145 बुझा है) तो Q-50 को वेज करें।"
+  },
+  {
+    "faultId": "CONV-MPJ-F-R-LSB-GLOWS",
+    "text": "• यदि रिवर्सर क्षतिग्रस्त हो गया है या यदि कोई रिवर्सर सेट नहीं होता है तो:"
+  },
+  {
+    "faultId": "CONV-MPJ-F-R-LSB-GLOWS",
+    "text": "- संबंधित RSI ब्लॉक आइसोलेट करें तथा LSC-145 का बुझा होना सुनिश्चित करके Q-50 को वेज करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING",
+    "text": "a) Q-50 इनर्जाइज है, सुनिश्चित करें। (LSB बुझा होना चाहिए)।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING",
+    "text": "b) दोनों HVSI और HVMT सामान्य स्थिति में हैं, जांच करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING",
+    "text": "c) HT-2 कट आउट कॉक खुला है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING",
+    "text": "d) DJ/VCB ओपन करें, लोको ग्राउंड करें, CTF-1, CTF-2 व CTF-3 को हाथ से दो-तीन बार ऑपरेट करके उन्हें वापस “रनिंग” पोजीशन पर रखें। सभी कॉन्टैक्टरों को न्यूमैटिकली हाथ से ऑपरेट करें। कॉइलों के टर्मिनल इत्यादि चेक करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING",
+    "text": "e) यदि सफलता नहीं मिलती तो सभी कॉन्टैक्टरों को वेज करें।"
+  },
+  {
+    "faultId": "CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING",
+    "text": "f) रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+  },
+  {
+    "faultId": "CONV-L1-L3-OR-L4-L6-NOT-CLOSING",
+    "text": "a) संबंधित HVSI और HVMT सामान्य स्थिति में हैं, जांच करें। उन्हें 2-3 बार ऑपरेट करें। संबंधित RSI ब्लॉक आइसोलेट करें।"
+  },
+  {
+    "faultId": "CONV-L1-L3-OR-L4-L6-NOT-CLOSING",
+    "text": "b) सुविधाजनक स्टॉप पर कॉन्टैक्टरों को वेज करें और स्विचों को सामान्य स्थिति में रखें।"
+  },
+  {
+    "faultId": "CONV-L1-L3-OR-L4-L6-NOT-CLOSING",
+    "text": "c) रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+  },
+  {
+    "faultId": "CONV-ONE-LINE-CONTACTOR-NOT-CLOSING",
+    "text": "a) संबंधित HMCS पोजीशन “1” पर है, इसकी जांच करें।"
+  },
+  {
+    "faultId": "CONV-ONE-LINE-CONTACTOR-NOT-CLOSING",
+    "text": "b) HMCS द्वारा संबंधित ट्रैक्शन मोटर को आइसोलेट करके गाड़ी चलाएं। परंतु यदि भार खींचने में कठिनाई पड़ती हो तो सुविधाजनक स्टॉप पर कॉन्टैक्टर के क्लोज न होने के लिये ट्रबलशूट करें। यदि सफलता नहीं मिलती तो उसे वेज करें।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "a) यदि एक भुजा में अथवा प्रत्येक भुजा में एक-एक टेल-टेल फ्यूज पिघल गया है तो: फ्यूज निकाल दें और ट्रैक्शन चालू करें।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "b) यदि एक भुजा में दो फ्यूज पिघल गये हैं तो: फ्यूज निकाल दें और RSI ब्लॉक आइसोलेट करें।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "c) यदि कोई भी फ्यूज नहीं पिघला है और LSRSI प्रकाशित है तो: LSRSI की परवाह न करें।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "• यदि एक ही RSI ब्लॉक में एक LED प्रकाशित होती है तो: संबंधित RSI ब्लॉक आइसोलेट करें। अधिकतम अनुमत लोड (Permissible Load) का आधा करके गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "a) चलती गाड़ी में LSRSI प्रकाशित होता है, साथ ही RSI ब्लॉक में LED भी प्रकाशित होती है तो: MP को “0” पर लाएं।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "b) यदि एक LED प्रकाशित होती है एवं टॉगल स्विच है तो: उसे ऑफ करें और सामान्य रूप से गाड़ी चलाएं। यदि टॉगल स्विच नहीं है तो: संबंधित RSI ब्लॉक की जांच करते हुए गाड़ी सामान्य रूप से चलाएं।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "c) यदि दोनों RSI ब्लॉक में एक-एक LED प्रकाशित होती है तो: उपरोक्त (b) में दी गई विधि से सामान्य रूप से गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "d) यदि एक ही RSI ब्लॉक में दो LED प्रकाशित होती हैं तो: संबंधित RSI ब्लॉक में से कोई एक ट्रैक्शन मोटर आइसोलेट करें।"
+  },
+  {
+    "faultId": "CONV-LSRSI-GLOWS",
+    "text": "e) यदि एक ही RSI ब्लॉक में दो से ज्यादा LED प्रकाशित होती हैं तो: संबंधित RSI ब्लॉक आइसोलेट करें। अधिकतम अनुमत लोड का आधा करके गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-NOTCH-AUTOREGRESSION-LSP-GLOWS",
+    "text": "a) यदि पहली नोच पर LSP प्रकाशित होता है तो: अध्याय 8-पृष्ठ 56 पर फेलियर सं. 3(I) देखें। (अर्थात: व्हील स्लिप जांचें, सैंडिंग व ZQWC/BPQD का उपयोग करें; एमीटर न हिलने पर HMCS से संबंधित TM आइसोलेट करें; दोनों एमीटर हिलने पर TM-2 व TM-5 को बारी-बारी आइसोलेट करें; शंटिंग कॉन्टैक्टर चेक करें।)"
+  },
+  {
+    "faultId": "CONV-NOTCH-AUTOREGRESSION-LSP-GLOWS",
+    "text": "b) यदि अन्य नोचों पर LSP प्रकाशित होता है तो: जांच करें कि कोई शंटिंग कॉन्टैक्टर तो क्लोज हालत में नहीं अटक गया है और उसे LT में ओपन करने का प्रयत्न करें। यदि सफलता नहीं मिलती तो HMCS के द्वारा संबंधित ट्रैक्शन मोटर को आइसोलेट करें।"
+  },
+  {
+    "faultId": "CONV-LSP-GLOWS-WITHOUT-NOTCH",
+    "text": "a) Q-48 चेक करें (LSP): यदि इनर्जाइज है तो Q-48 को हाथ से थपथपाएं।"
+  },
+  {
+    "faultId": "CONV-LSP-GLOWS-WITHOUT-NOTCH",
+    "text": "b) अगर सफलता न मिले तो: HMCS के द्वारा प्रयत्न करें (संबंधित ट्रैक्शन मोटर आइसोलेट करके देखें)।"
+  },
+  {
+    "faultId": "CONV-LSP-GLOWS-WITHOUT-NOTCH",
+    "text": "c) अगर फिर भी सफलता नहीं मिलती तो: सैंडिंग COC बंद करें और GR को हाथ से ऑपरेट करके सेक्शन क्लीयर करें।"
+  },
+  {
+    "faultId": "CONV-WHEEL-SLIP-LSP-NOT-GLOWING",
+    "text": "a) यदि आटो रिग्रेशन और सैंडिंग नहीं होता: तो आवश्यक होने पर GR रिग्रेस करें और PSA को दबाएं (यदि आवश्यक हो तो ZQWC को दबाएं)।"
+  },
+  {
+    "faultId": "CONV-WHEEL-SLIP-LSP-NOT-GLOWING",
+    "text": "b) यदि आटो रिग्रेशन और सैंडिंग होता है: तो व्हील स्लिप के संकेतों का ध्यान रखते हुए गाड़ी चलाएं। ZQWC का उपयोग करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-GLOWING",
+    "text": "a) MP “0” पर है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-GLOWING",
+    "text": "b) SMGR ड्रम चेक करें। यदि GR “0” पर नहीं है तो उसे हाथ से “0” पर लाएं। यदि GR “0” पर है तो भी उसे 2-3 बार ऑपरेट करें और वापस “0” पर लाएं।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-GLOWING",
+    "text": "c) दूसरी कैब का लैम्प चेक करें। यदि प्रकाशित नहीं है तो QV62 चेक करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-GLOWING",
+    "text": "d) नोच रिपीटर का ध्यान रखते हुए गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-TRACTION-VOLTMETER-NOT-DEVIATING",
+    "text": "a) ट्रैक्शन चालू रखें।"
+  },
+  {
+    "faultId": "CONV-TRACTION-VOLTMETER-NOT-DEVIATING",
+    "text": "b) 28 नोच से आगे न बढ़ें।"
+  },
+  {
+    "faultId": "CONV-NOTCH-REPEATER-NOT-WORKING",
+    "text": "a) वोल्टमीटर और एमीटर पर ध्यान रखते हुये ट्रैक्शन चालू रखें।"
+  },
+  {
+    "faultId": "CONV-NOTCH-REPEATER-NOT-WORKING",
+    "text": "b) CHBA का काम चेक करें। यदि CHBA काम नहीं करता तो उसके लिये ट्रबलशूट करें।"
+  },
+  {
+    "faultId": "CONV-NOTCH-REPEATER-NOT-WORKING",
+    "text": "c) यदि CHBA काम करता है और दोनों कैब के नोच रिपीटर काम नहीं करते हैं तो: CCTFS / CCNR फ्यूज / MCB चेक करें।"
+  },
+  {
+    "faultId": "CONV-NOTCH-REPEATER-NOT-WORKING",
+    "text": "d) यदि CCTFS / CCNR बार-बार पिघलता है तो: वोल्टमीटर और एमीटर पर ध्यान रखते हुये ट्रैक्शन चालू रखें।"
+  },
+  {
+    "faultId": "CONV-NOTCH-REPEATER-NOT-WORKING",
+    "text": "e) SI UNIT लोको है तो: HRAVT नॉर्मल होना चेक करें।"
+  },
+  {
+    "faultId": "CONV-HEADLIGHT-NOT-GLOWING",
+    "text": "a) BL अनलॉक और ZRT/ ZPR का ऑन होना, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-HEADLIGHT-NOT-GLOWING",
+    "text": "b) BLPRD क्लोज करें।"
+  },
+  {
+    "faultId": "CONV-HEADLIGHT-NOT-GLOWING",
+    "text": "c) BLPRD/ BLPRF ओपन करें और BLPRR क्लोज करें।"
+  },
+  {
+    "faultId": "CONV-HEADLIGHT-NOT-GLOWING",
+    "text": "- यदि पीछे वाली हेड लाइट भी प्रकाशित नहीं होती है तो DC to DC कन्वर्टर के टॉगल स्विच की पोजीशन बदलकर प्रयत्न करें।"
+  },
+  {
+    "faultId": "CONV-HEADLIGHT-NOT-GLOWING",
+    "text": "- यदि पीछे वाली हेड लाइट प्रकाशित होती है तो बल्ब बदली करें।"
+  },
+  {
+    "faultId": "CONV-HEADLIGHT-NOT-GLOWING",
+    "text": "d) यदि सफलता नहीं मिलती तो मार्कर लाइटों की सहायता से 40 KMPH के गति प्रतिबंध (Speed Restriction) से G & SR 4.14 के अनुसार गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-HEADLIGHT-NOT-GLOWING",
+    "text": "नोट:- यदि HRTPR है तो उसे पोजीशन “0” पर रखकर RTPR का उपयोग करें। परिचालन संबंधी निर्देश कंडिका 3.7 पृष्ठ 29 देखें।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "A) यदि दूसरी कैब में पायलट लैम्प प्रकाशित है तो पीछे वाली कैब के और दूसरे मापक यंत्रों पर ध्यान रखते हुए गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "B) यदि दूसरी कैब में भी पायलट लैम्प प्रकाशित नहीं है तो -"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "a) BL को 2-3 बार ऑपरेट करें।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "b) यदि लोको में HLS/ZLS स्विच दिया है तो उसका ऑन होना चेक करें।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "c) यदि बैटरी वोल्टेज “0” है तो एडिशनल CCBA / CCMCB (BA बॉक्स-1 पर) चेक करें, यदि मेल्ट होता है तो HOBA का उपयोग करें। बैटरी कनेक्शन चेक करें और खराब बैटरी आइसोलेट करें।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "d) CCLS चेक करें - यदि पिघल गया है तो उसे बदल दें - यदि फिर से पिघलता है तो HOBA को “ऑफ” पर रखकर फ्यूज बदली करें।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "e) यदि CCLS बराबर है तो A कॉक कनेक्शन चेक करें (TB Panel के नीचे)।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "नोट:-"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "i) यदि CCLS कायम नहीं रहता है तो गाड़ी चलाने के लिए QRS को वेज करें।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "ii) IP MAGNET VALVE का COC बंद करें।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "iii) बिना पायलट लैम्प के गाड़ी चलाएं। अन्य मापक यंत्रों जैसे UA, नोच रिपीटर, एमीटर, CHBA एमीटर, रिले टारगेट इत्यादि पर ध्यान रखते हुए गाड़ी चलाएं (पृष्ठ 29 पर कंडिका 3.6 देखें)।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "iv) विजिलेंस कंट्रोल डिवाइस {VCD} कार्य नहीं करेगी।"
+  },
+  {
+    "faultId": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "text": "v) रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+  },
+  {
+    "faultId": "CONV-LSDJ-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "a) दूसरी कैब में LSDJ चेक करें।"
+  },
+  {
+    "faultId": "CONV-LSDJ-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "b) यदि दोनों कैब में प्रकाशित नहीं है तो: RS में प्रेशर चेक करें। यदि कम है तो CPA द्वारा 8 Kg/cm² प्रेशर बनाएं।"
+  },
+  {
+    "faultId": "CONV-LSDJ-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "c) QV60 को दो-तीन बार ऑपरेट करें। लैम्पों को चेक करें।"
+  },
+  {
+    "faultId": "CONV-LSCHBA-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "a) दूसरी कैब में LSCHBA चेक करें।"
+  },
+  {
+    "faultId": "CONV-LSCHBA-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "b) यदि दोनों कैब में प्रकाशित नहीं है तो निम्न सावधानी रखें -"
+  },
+  {
+    "faultId": "CONV-LSCHBA-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "i) जब कभी DJ/VCB क्लोज करना हो BLRDJ को 3-4 सेकंड में छोड़ दें।"
+  },
+  {
+    "faultId": "CONV-LSCHBA-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "ii) CHBA काम कर रहा है, सुनिश्चित करने के लिये CHBA एमीटर पर ध्यान रखें।"
+  },
+  {
+    "faultId": "CONV-LSB-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "a) दूसरी कैब में LSB चेक करें।"
+  },
+  {
+    "faultId": "CONV-LSB-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "b) यदि दोनों कैबों में LSB प्रकाशित नहीं है तो निम्न सावधानी रखें:-"
+  },
+  {
+    "faultId": "CONV-LSB-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "• जब कभी MPJ को ऑपरेट करें, सुनिश्चित करें कि दोनों रिवर्सर (J1, J2) वांछित दिशा में सेट हो गये हैं और Q50 इनर्जाइज हो गई है।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "a) SMGR ड्रम चेक करें और GR “0” पर है, सुनिश्चित करें। यदि GR “0” पर नहीं है तो उसे हाथ से “0” पर लाएं। लैम्प चेक करें।"
+  },
+  {
+    "faultId": "CONV-LSGR-NOT-GLOWING-ON-UNLOCKING-BL",
+    "text": "b) यदि GR “0” पर है तो एमीटर और नोच रिपीटर की ओर ध्यान रखते हुये गाड़ी चलाएं।"
+  },
+  {
+    "faultId": "CONV-LSP-GLOWS-ON-UNLOCKING-BL",
+    "text": "a) Q-48 चेक करें (LSP): यदि इनर्जाइज है तो Q-48 को हाथ से थपथपाएं, अगर सफलता न मिले तो HMCS के द्वारा प्रयत्न करें, अगर फिर भी सफलता नहीं मिलती तो सैंडिंग COC बंद करें और GR को हाथ से ऑपरेट करके सेक्शन क्लीयर करें।"
+  },
+  {
+    "faultId": "CONV-LSP-GLOWS-ON-UNLOCKING-BL",
+    "text": "b) यदि Q-48 रिले डी-इनर्जाइज है तो: BPT को 2-3 बार ऑपरेट करें।"
+  },
+  {
+    "faultId": "CONV-BPT-LSP-LSRSI-NOT-GLOWING",
+    "text": "• LSP / LSRSI को टेस्ट करने के लिये पीछे वाली कैब की BPT दबाएं।"
+  },
+  {
+    "faultId": "CONV-BPT-LSP-LSRSI-NOT-GLOWING",
+    "text": "• यदि LSP / LSRSI प्रकाशित नहीं होते हैं तो सावधानीपूर्वक गाड़ी चलाएं:"
+  },
+  {
+    "faultId": "CONV-BPT-LSP-LSRSI-NOT-GLOWING",
+    "text": "a) व्हील स्लिप के साथ एमीटरों में उतार-चढ़ाव चेक करते रहें।"
+  },
+  {
+    "faultId": "CONV-BPT-LSP-LSRSI-NOT-GLOWING",
+    "text": "b) समय-समय पर RSI ब्लॉक पर टेल-टेल फ्यूज चेक करते रहें।"
+  },
+  {
+    "faultId": "CONV-BPT-LSP-LSRSI-NOT-GLOWING",
+    "text": "c) यदि LED वाले RSI ब्लॉक हैं तो सभी LED का बुझा होना चेक करते रहें।"
+  },
+  {
+    "faultId": "CONV-CPA-NOT-STARTING",
+    "text": "a) HBA “1” पर है और बैटरी वोल्टेज 80 वोल्ट से अधिक है, सुनिश्चित करें (ZCPA को “1” पर रखने के बाद)।"
+  },
+  {
+    "faultId": "CONV-CPA-NOT-STARTING",
+    "text": "b) CCBA चेक करें। यदि आवश्यक हो तो HOBA का उपयोग करें।"
+  },
+  {
+    "faultId": "CONV-CPA-NOT-STARTING",
+    "text": "c) ZCPA को 2-3 बार ऑपरेट करें।"
+  },
+  {
+    "faultId": "CONV-CPA-NOT-STARTING",
+    "text": "d) ZCPA के टर्मिनल वायर कनेक्शन चेक करें।"
+  },
+  {
+    "faultId": "CONV-CPA-NOT-STARTING",
+    "text": "e) MCPA के टर्मिनल वायर कनेक्शन चेक करें।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "a) सुनिश्चित करें कि RAL कॉक खुला है (उसे टैप करें)।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "b) RS और MCPA के ड्रेन कॉक बंद हैं, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "c) RDJ और DJ ऑयल सेपरेटर के ड्रेन कॉक बंद हैं।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "d) पैंटो पाइपिंग ड्रेन कॉक बंद है और पैंटो पाइप में कोई लीकेज नहीं है और BV बॉक्स में कोई लीकेज नहीं है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "e) DJ/VCB कंट्रोल बॉक्स में कोई लीकेज नहीं है, सुनिश्चित करें।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "f) यदि CPA का सेफ्टी वाल्व लीक कर रहा है तो उसे ब्लैंक करें। यदि संबंधित COC दिया है तो उसे बंद करें।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "g) R-1 COC को क्लोज करके प्रयत्न करें।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "h) CPA को चालू रखें और लोको इनर्जाइज करने का प्रयत्न करें। जब MR प्रेशर 7 kg/cm² हो जाये तो CPA बंद कर दें।"
+  },
+  {
+    "faultId": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "text": "• नोट: CPA चार्जिंग रेट चेक करें - 1 kg/cm² प्रति मिनट होना चाहिए।"
+  }
+]

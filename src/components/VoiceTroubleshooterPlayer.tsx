@@ -4,6 +4,31 @@ import { isActionableStep, getSpokenHindi, getSpokenEnglish, containsDevanagari 
 
 export type SpeechLanguageMode = 'hi' | 'en' | 'both';
 
+function applySpeechPronunciation(text: string, lang: 'hi' | 'en'): string {
+  if (!text) return '';
+  if (lang === 'hi') {
+    return text
+      .replace(/(?:MR|एम\s*आर|एमआर)\s*[-_]?\s*([0-9]+)/gi, 'एम आर $1')
+      .replace(/(?:RS|आर\s*एस|आरएस)\s*[-_]?\s*([0-9]+)/gi, 'आर एस $1')
+      .replace(/(?:MR|एम\s*आर|एमआर)\s*(?:प्रेशर|presar|pressure)/gi, 'एम आर प्रेशर')
+      .replace(/(?:^|[\s,.\/()\-–—:;\"'\[\]])(?:MR|एम\s*आर|एमआर)(?=$|[\s,.\/()\-–—:;\"'\[\]])/g, ' एम आर प्रेशर ')
+      .replace(/एम\s*आर\s*प्रेशर\s*प्रेशर/gi, 'एम आर प्रेशर')
+      .replace(/(?:^|[\s,.\/()\-–—:;\"'\[\]])(?:RS|आर\s*एस|आरएस)(?=$|[\s,.\/()\-–—:;\"'\[\]])/g, ' आर एस ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  } else {
+    return text
+      .replace(/\b(?:MR|M\s*R)\s*[-_]?\s*([0-9]+)\b/gi, 'M R $1')
+      .replace(/\b(?:RS|R\s*S)\s*[-_]?\s*([0-9]+)\b/gi, 'R S $1')
+      .replace(/\b(?:MR|M\s*R)\s*pressure\b/gi, 'M R pressure')
+      .replace(/\bMR\b/g, 'M R pressure')
+      .replace(/\bM\s*R\s*pressure\s*pressure\b/gi, 'M R pressure')
+      .replace(/\bRS\b/g, 'R S')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+}
+
 interface VoiceTroubleshooterPlayerProps {
   steps: string[];
   faultTitle?: string;
@@ -217,7 +242,7 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
     if (useLang === 'both') {
       // DUAL MODE: First speak Hindi, then speak English
       setCurrentlySpeakingSubPart('hi');
-      const hiText = stepItem.hindi;
+      const hiText = applySpeechPronunciation(stepItem.hindi, 'hi');
       const hiUtterance = new SpeechSynthesisUtterance(hiText);
       hiUtterance.rate = rateRef.current;
       hiUtterance.pitch = 1.0;
@@ -231,7 +256,7 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
         setTimeout(() => {
           if (!isPlayingRef.current) return;
           setCurrentlySpeakingSubPart('en');
-          const enText = stepItem.english;
+          const enText = applySpeechPronunciation(stepItem.english, 'en');
           const enUtterance = new SpeechSynthesisUtterance(enText);
           enUtterance.rate = rateRef.current;
           enUtterance.pitch = 1.0;
@@ -256,13 +281,14 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
     } else if (useLang === 'hi') {
       // HINDI ONLY MODE
       setCurrentlySpeakingSubPart('hi');
-      let spokenText = stepItem.hindi
+      let cleaned = stepItem.hindi
         .replace(/\(\([^\)]*\)\)/g, '')
         .replace(/\[\[[^\]]*\]\]/g, '')
         .replace(/\([A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{7,}\)/g, '')
         .replace(/\[[A-Za-z0-9\s,.\/–—\-:;'"&%@#\+=\<\>]{7,}\]/g, '')
         .replace(/\s*\(\s*\)\s*/g, ' ')
         .trim();
+      let spokenText = applySpeechPronunciation(cleaned, 'hi');
 
       const utterance = new SpeechSynthesisUtterance(spokenText);
       utterance.rate = rateRef.current;
@@ -280,7 +306,7 @@ export const VoiceTroubleshooterPlayer: React.FC<VoiceTroubleshooterPlayerProps>
     } else {
       // ENGLISH ONLY MODE
       setCurrentlySpeakingSubPart('en');
-      let spokenText = stepItem.english;
+      let spokenText = applySpeechPronunciation(stepItem.english, 'en');
       // Prepend "Step X" or "Next," cleanly if not the first step
       const utterance = new SpeechSynthesisUtterance(spokenText);
       utterance.rate = rateRef.current;

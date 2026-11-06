@@ -1,0 +1,2331 @@
+[
+  {
+    "index": 0,
+    "id": "CONV-DJ-NOT-CLOSING",
+    "title": "LSDJ नहीं बुझता है / DJ-VCB क्लोज़ नहीं होता है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 7,
+        "text": "b) Ensure GR is at \"0\". If GR is not at \"0\", bring it to \"0\" manually by hand. (b) GR \"0\" पर है, सुनिश्चित करें। यदि GR \"0\" पर नहीं है तो उसे हाथ से \"0\" पर लाएं।)"
+      },
+      {
+        "idx": 12,
+        "text": "a) Ensure ZPT is at \"1\" or \"2\" and BLDJ is closed. (a) ZPT \"1\" या \"2\" पर और BLDJ क्लोज है, सुनिश्चित करें।)"
+      },
+      {
+        "idx": 28,
+        "text": "c) Check terminals of normally open (N/O) interlock of C-118. (c) C-118 के N/O इंटरलॉक के टर्मिनल चेक करें।)"
+      }
+    ],
+    "lamp": "LSDJ जलता रहेगा, UA मीटर शून्य रहेगा (LSDJ remains glowing, UA meter zero)",
+    "effect": "DJ/VCB क्लोज नहीं होगा, लोको में OHE सप्लाई नहीं आएगी (DJ/VCB will not close; OHE supply will not enter loco)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 1,
+    "id": "CONV-LSDJ-EXTINGUISHED-UA-ZERO",
+    "title": "LSDJ बुझता है, UA डेविएट नहीं होता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• Inspection: Check Pantograph. (जांच: पैंटो चेक करें।)"
+      }
+    ],
+    "lamp": "LSDJ बुझ जाएगा, UA मीटर शून्य (0 KV) दर्शाएगा (LSDJ extinguishes, UA meter remains at 0 KV)",
+    "effect": "DJ/VCB क्लोज है परंतु OHE वोल्टेज नहीं मिल रहा है; लोको ट्रैक्शन एवं ऑक्सिलरी कार्य नहीं करेंगे (DJ/VCB closed but no OHE supply available; traction & auxiliaries will not work)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 2,
+    "id": "CONV-LSDJ-BEFORE-LSCHBA",
+    "title": "LSCHBA के बुझने से पहले LSDJ फिर से प्रकाशित होता है।",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) आर्नो चेक करें। (Check ARNO.)"
+      },
+      {
+        "idx": 3,
+        "text": "• विस्तृत प्रक्रिया (Detailed Procedure): HQCVAR को पोजीशन \"0\" पर रखें, DJ/VCB क्लोज करें और BLRDJ को 3-4 सेकंड में छोड़ दें। LSCHBA नहीं बुझेगा: आर्नो चेक करें।"
+      }
+    ],
+    "lamp": "LSDJ क्षणिक बुझकर पुनः प्रकाशित हो जाएगा, LSCHBA जलता रहेगा (LSDJ extinguishes momentarily and glows again, LSCHBA remains glowing)",
+    "effect": "DJ/VCB ट्रिप होगा, आर्नो व सहायक मोटरें चालू नहीं होंगी, लोको में सप्लाई नहीं आएगी (DJ/VCB trips, ARNO and auxiliaries will not start)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 3,
+    "id": "CONV-LSDJ-AFTER-LSCHBA",
+    "title": "LSCHBA के बुझने के बाद LSDJ फिर से प्रकाशित होता है।",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "• Place HPH, HVSL-1 and HVSL-2 to position \"3\" and close DJ/VCB: (HPH, HVSL-1 और HVSL-2 को \"3\" पर रखें और DJ/VCB क्लोज करें:)"
+      },
+      {
+        "idx": 2,
+        "text": "a) If DJ/VCB holds: Check operation of MPH, MVSL-1 and MVSL-2 auxiliaries. ((a) यदि DJ/VCB कायम रहता है तो : MPH, MVSL-1 और MVSL-2 ऑग्जीलरीयों का कार्य चेक करें।)"
+      },
+      {
+        "idx": 3,
+        "text": "i) If MPH is not working: Place HPH to \"0\" and isolate it. (i) यदि MPH काम नहीं कर रहा है तो - HPH को \"0\" पर रखकर उसे आइसोलेट करें।)"
+      }
+    ],
+    "lamp": "LSDJ बुझता है, LSCHBA भी बुझता है, परंतु उसके बाद LSDJ फिर से प्रकाशित हो जाता है (LSDJ extinguishes, LSCHBA also extinguishes, but thereafter LSDJ glows again)",
+    "effect": "DJ/VCB ट्रिप हो जाएगा, सभी चालू सहायक मोटरें बंद हो जाएंगी (DJ/VCB trips, running auxiliary motors stop)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 4,
+    "id": "CONV-BLVMT-DJ-TRIP",
+    "title": "BLVMT क्लोज करने पर DJ/VCB ट्रिप होता है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "• Place HVRH, HVMT-1 and HVMT-2 to position \"3\" and close DJ/VCB: (HVRH, HVMT-1 और HVMT-2 को \"3\" पर रखकर DJ/VCB क्लोज करें:)"
+      },
+      {
+        "idx": 2,
+        "text": "a) If DJ/VCB holds: Check operation of MVRH, MVMT-1 and MVMT-2 blowers. ((a) यदि DJ/VCB कायम रहता है तो : MVRH, MVMT-1 और MVMT-2 ब्लोअरों का कार्य चेक करें।)"
+      },
+      {
+        "idx": 3,
+        "text": "i) If any blower is not working: Isolate it. (i) यदि कोई ब्लोअर काम नहीं करता तो – उसे आइसोलेट करें।)"
+      }
+    ],
+    "lamp": "LSDJ जल जाएगा, BLVMT क्लोज करते ही DJ ट्रिप होगा (LSDJ will glow, DJ trips as soon as BLVMT is closed)",
+    "effect": "DJ/VCB खुल जाएगा, ब्लोअर मोटरें और ट्रैक्शन बंद हो जाएंगे (DJ/VCB trips, blower motors and traction will stop)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 5,
+    "id": "CONV-MPH-NOT-WORKING",
+    "title": "MPH काम नहीं करता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) Ensure HPH is at position \"1\". ((a) HPH \"1\" पर है, सुनिश्चित करें।)"
+      }
+    ],
+    "lamp": "तेल सर्कुलेशन नहीं होगा, रिले QPH इनर्जाइज नहीं होगी (No oil circulation, relay QPH will not energize)",
+    "effect": "ट्रांसफॉर्मर तेल गर्म हो सकता है; MPH आइसोलेट करने पर ट्रैक्शन करंट 450A तक सीमित (Transformer oil temperature may rise; traction current limited to 450A)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 10,
+    "id": "CONV-AUX-DAMAGED-BURNT",
+    "title": "यदि कोई ऑक्सिलरी क्षतिग्रस्त (Damage) हो गई है अथवा जल गई है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 12,
+        "text": "c) If DJ/VCB trips on 6th notch, wedge relay Q118. ((c) यदि छठी नोच पर DJ/VCB ट्रिप होता है तो Q118 को वेज करें।)"
+      },
+      {
+        "idx": 16,
+        "text": "c) If DJ/VCB trips on 6th notch, wedge relay Q118. ((c) यदि छठी नोच पर DJ/VCB ट्रिप होता है तो Q118 को वेज करें।)"
+      },
+      {
+        "idx": 21,
+        "text": "b) Wedge relay Q118. ((b) Q118 को वेज करें।)"
+      }
+    ],
+    "lamp": "धुआं या आग दिखाई दे सकती है, LSDJ / QOA / QLA / QRSI ट्रिप हो सकता है (Smoke/fire visible, LSDJ/QOA/QLA/QRSI may trip)",
+    "effect": "संबंधित ऑक्सिलरी ठप; बोगी/मोटर आइसोलेट करनी होगी, आधा लोड या 450A सीमा में कार्य करना होगा (Auxiliary damaged; isolate unit, work with half load or 450A limit)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 11,
+    "id": "CONV-CHBA-NOT-WORKING",
+    "title": "CHBA काम नहीं करता है (DJ ट्रिप हुये बिना LSCHBA लैम्प प्रकाशित रहता है)",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) Check position of switch HCHBA, it must be on \"1\". ((a) HCHBA की पोजीशन चेक करें, \"1\" पर होनी चाहिये।)"
+      }
+    ],
+    "lamp": "LSCHBA लैम्प लगातार प्रकाशित रहेगा (DJ ट्रिप हुए बिना) (LSCHBA lamp remains glowing without DJ tripping)",
+    "effect": "बैटरी चार्ज नहीं होगी; यदि डिस्चार्जिंग रही तो बैटरी वोल्टेज कम हो सकता है (Battery will not charge; battery voltage may drop if discharging)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 12,
+    "id": "CONV-FUSES-MELTING-FAILURES",
+    "title": "फ्यूज पिघलने के फेलियर (विभिन्न फ्यूज के पिघलने पर मिलने वाले संकेत)",
+    "missingActionsCount": 5,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "• चालू गाड़ी में जब तक DJ/VCB क्लोज है, एडिशनल CCBA पिघलने का पता नहीं चलता है। बैटरी चार्ज होना बंद हो जाती है।"
+      },
+      {
+        "idx": 3,
+        "text": "• जब DJ/VCB ओपन होता है या किया जाता है तब निम्नलिखित संकेत मिलते हैं:"
+      },
+      {
+        "idx": 13,
+        "text": "• चालू गाड़ी में जब तक DJ/VCB क्लोज है, CCBA पिघलने का पता नहीं चलता है। बैटरी चार्ज होना बंद हो जाती है।"
+      },
+      {
+        "idx": 14,
+        "text": "• जब DJ/VCB ओपन होता है या किया जाता है तब निम्नलिखित संकेत मिलते हैं:"
+      },
+      {
+        "idx": 47,
+        "text": "• नोट :- CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से “0” पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें।"
+      }
+    ],
+    "lamp": "पायलट लैम्प बुझना, LSGR / LSDBR बुझना, VCD हेल्दी लैम्प बुझना, UBA बैटरी वोल्टेज शून्य (Pilot lamps extinguish, LSGR/LSDBR extinguish, VCD healthy lamp extinguishes, UBA battery voltage \"0\" or normal)",
+    "effect": "कंट्रोल सर्किट व ऑक्ज़ीलरी सप्लाई बाधित; VCB/DJ ट्रिप, ऑटो रिग्रेशन, पैंटो लोअर, कंप्रेसर/ब्लोअर बंद, या इमरजेंसी ब्रेक (Control circuit & auxiliary supply interrupted; VCB/DJ trip, auto regression, panto drops, compressors/blowers stop, or emergency brake application)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 13,
+    "id": "CONV-CCBA-MELTED-ACTION",
+    "title": "CCBA पिघलता है (फ्यूज बदलना व HOBA स्विच नियम)",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 4,
+        "text": "• नोट :- CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से “0” पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें।"
+      }
+    ],
+    "lamp": "LSGR को छोड़कर सभी पायलट लैम्प जलते रहेंगे, LSDBR बुझ जाएगा, UBA सामान्य वोल्टेज",
+    "effect": "बैटरी चार्जिंग बंद; DJ ओपन होने पर पैंटो लोअर, नोच पर रिग्रेशन नहीं",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 14,
+    "id": "CONV-ADD-CCBA-MELTED-ACTION",
+    "title": "ADD CCBA (एडिशनल CCBA) पिघलता है (फ्यूज बदलना व HOBA स्विच नियम)",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 4,
+        "text": "• नोट :- CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से “0” पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें।"
+      }
+    ],
+    "lamp": "सभी पायलट लैम्प बुझ जाएंगे, LSGR/LSDBR बुझ जाएगा, VCD HEALTHY लैम्प बुझ जाएगा, UBA वोल्टेज 0",
+    "effect": "बैटरी चार्जिंग बंद; DJ ओपन होने पर पैंटो लोअर, नोच पर रिग्रेशन नहीं, इमरजेंसी ब्रेक लग जाना",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 15,
+    "id": "CONV-FUSE-ADDITIONAL-CCBA",
+    "title": "एडिशनल CCBA पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 10,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• चालू गाड़ी में जब तक DJ/VCB क्लोज है, एडिशनल CCBA पिघलने का पता नहीं चलता है। बैटरी चार्ज होना बंद हो जाती है।"
+      },
+      {
+        "idx": 1,
+        "text": "• जब DJ/VCB ओपन होता है या किया जाता है तब:"
+      },
+      {
+        "idx": 2,
+        "text": "1) पैंटो लोअर हो जाएगा।"
+      },
+      {
+        "idx": 3,
+        "text": "2) यदि GR नोच पर है तो रिग्रेशन नहीं होगा। LSGR पायलट लैम्प बुझा रहेगा।"
+      },
+      {
+        "idx": 4,
+        "text": "3) सभी पायलट लैम्प बुझ जाएंगे।"
+      },
+      {
+        "idx": 5,
+        "text": "4) LSDBR लैम्प बुझ जाएगा।"
+      },
+      {
+        "idx": 6,
+        "text": "5) ZUBA दबाने पर UBA बैटरी वोल्टेज ‘0’ बताएगी।"
+      },
+      {
+        "idx": 7,
+        "text": "6) फ्यूज टेस्टर ECC कार्य नहीं करेगा।"
+      },
+      {
+        "idx": 9,
+        "text": "8) विजिलेंस कंट्रोल डिवाइस {VCD} डिस्प्ले यूनिट का HEALTHY लैम्प बुझ जाएगा।"
+      },
+      {
+        "idx": 11,
+        "text": "• नोट :- CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से “0” पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें।"
+      }
+    ],
+    "lamp": "सभी पायलट लैम्प बुझ जाएंगे, LSGR/LSDBR बुझ जाएगा, VCD HEALTHY लैम्प बुझ जाएगा, UBA वोल्टेज 0",
+    "effect": "बैटरी चार्जिंग बंद; DJ ओपन होने पर पैंटो लोअर, नोच पर रिग्रेशन नहीं, इमरजेंसी ब्रेक लग जाना",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 16,
+    "id": "CONV-FUSE-CCBA",
+    "title": "CCBA पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 9,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• चालू गाड़ी में जब तक DJ/VCB क्लोज है, CCBA पिघलने का पता नहीं चलता है। बैटरी चार्ज होना बंद हो जाती है।"
+      },
+      {
+        "idx": 1,
+        "text": "• जब DJ/VCB ओपन होता है या किया जाता है तब:"
+      },
+      {
+        "idx": 2,
+        "text": "1) पैंटो लोअर हो जाएगा।"
+      },
+      {
+        "idx": 3,
+        "text": "2) यदि GR नोच पर है तो रिग्रेशन नहीं होगा। LSGR पायलट लैम्प बुझा रहेगा।"
+      },
+      {
+        "idx": 4,
+        "text": "3) LSGR लैम्प को छोड़कर सभी पायलट लैम्प प्रकाशित रहेंगे।"
+      },
+      {
+        "idx": 5,
+        "text": "4) LSDBR लैम्प बुझ जाएगा।"
+      },
+      {
+        "idx": 6,
+        "text": "5) ZUBA दबाने पर UBA सामान्य बैटरी वोल्टेज बताएगी।"
+      },
+      {
+        "idx": 7,
+        "text": "6) फ्यूज टेस्टर ECC कार्य करेगा।"
+      },
+      {
+        "idx": 9,
+        "text": "• नोट :- CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से “0” पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें।"
+      }
+    ],
+    "lamp": "LSGR लैम्प को छोड़कर सभी पायलट लैम्प प्रकाशित रहेंगे, LSDBR बुझ जाएगा, UBA सामान्य वोल्टेज",
+    "effect": "बैटरी चार्जिंग बंद; DJ ओपन होने पर पैंटो लोअर, नोच पर रिग्रेशन नहीं",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 17,
+    "id": "CONV-FUSE-CCPT",
+    "title": "CCPT पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 8,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "1) DJ/VCB ओपन हो जाएगा।"
+      },
+      {
+        "idx": 1,
+        "text": "2) पैंटो लोअर हो जाएगा।"
+      },
+      {
+        "idx": 2,
+        "text": "3) यदि GR नोच पर है तो रिग्रेशन नहीं होगा। LSGR पायलट लैम्प बुझा रहेगा।"
+      },
+      {
+        "idx": 3,
+        "text": "4) बाकी सभी पायलट लैम्प प्रकाशित रहेंगे।"
+      },
+      {
+        "idx": 4,
+        "text": "5) LSDBR लैम्प बुझ जाएगा।"
+      },
+      {
+        "idx": 5,
+        "text": "6) ZUBA दबाने पर UBA सामान्य बैटरी वोल्टेज बताता है।"
+      },
+      {
+        "idx": 6,
+        "text": "7) फ्यूज टेस्टर ECC कार्य करेगा।"
+      },
+      {
+        "idx": 8,
+        "text": "• नोट :- CCBA / ADD CCBA / CCPT पिघलता है तो पहले GR को हाथ से “0” पर लाएं। MP, MPJ व ZPT को पोजीशन 0 पर रखें, IP MAGNET VALVE का COC बंद करें, HBA को ऑफ (OFF) पर रखें और उसके बाद फ्यूज बदली करें।"
+      }
+    ],
+    "lamp": "बाकी सभी पायलट लैम्प प्रकाशित रहेंगे, LSGR व LSDBR बुझ जाएगा, UBA सामान्य वोल्टेज",
+    "effect": "DJ/VCB तुरंत ओपन हो जाएगा, पैंटो लोअर हो जाएगा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 18,
+    "id": "CONV-HBA-ON-CCPT-MELTS",
+    "title": "HBA को ऑन पर रखने पर CCPT पिघलता है",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) Q118 की कॉइल चेक करें, यदि कॉइल में खराबी है तो सहायता मांगें। ((a) Check coil of relay Q118; if defect is found in coil, demand assistance.)"
+      },
+      {
+        "idx": 3,
+        "text": "• नोट: फ्यूज बदलने से पहले GR को हाथ से “0” पर लाएं, MP, MPJ व ZPT को “0” पर रखें, IP MAGNET VALVE का COC बंद करें और HBA को “ऑफ” पर रखें।"
+      }
+    ],
+    "lamp": "LSDJ व सभी लैम्प निष्क्रिय, पैंटो नहीं उठेगा (LSDJ inactive, panto will not raise)",
+    "effect": "CCPT तुरंत पिघल जाता है, पैंटो व DJ कंट्रोल सर्किट एनर्जाइज नहीं होगा (CCPT melts immediately, panto & DJ circuit will not energize)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 21,
+    "id": "CONV-REGRESSION-CCPT-MELTS",
+    "title": "रिग्रेशन करने पर CCPT पिघलता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) GR को हाथ से “0” पर लाएं। ((a) Bring GR manually by hand to \"0\".)"
+      }
+    ],
+    "lamp": "DJ ट्रिप, पैंटो लोअर होगा, LSDJ जल जाएगा (DJ trips, panto lowers, LSDJ glows)",
+    "effect": "SMGR रिग्रेशन सर्किट में शॉर्ट सर्किट/दोष; रिग्रेशन लेते ही CCPT पिघलकर DJ खुल जाना",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 23,
+    "id": "CONV-6TH-NOTCH-CCPT-MELTS",
+    "title": "6 नोच लेने पर CCPT पिघलता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "1. GR को हाथ से “0” पर लाएं। (Bring GR manually by hand to \"0\".)"
+      }
+    ],
+    "lamp": "DJ ट्रिप, पैंटो लोअर होगा, LSDJ जल जाएगा (DJ trips, panto lowers, LSDJ glows)",
+    "effect": "EVPHGR कॉइल या सर्किट में शॉर्ट सर्किट; 6th नोच पर EVPHGR इनर्जाइज होते ही CCPT पिघल जाना",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 24,
+    "id": "CONV-MPS-OPERATE-CCPT-MELTS",
+    "title": "MPS ऑपरेट करने पर CCPT पिघलता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "1. GR को हाथ से “0” पर लाएं। (Bring GR manually by hand to \"0\".)"
+      }
+    ],
+    "lamp": "DJ ट्रिप, पैंटो लोअर होगा, LSDJ जल जाएगा (DJ trips, panto lowers, LSDJ glows)",
+    "effect": "शंटिंग कॉन्टैक्टर या MPS फील्ड वीकिंग रेजिस्टेंस सर्किट में शॉर्ट सर्किट",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 27,
+    "id": "CONV-MP-P-CCPT-MELTS",
+    "title": "MP को “P” पर रखने पर CCPT पिघलता है",
+    "missingActionsCount": 0,
+    "missingActions": [],
+    "lamp": "DJ ट्रिप, पैंटो लोअर होगा, LSDJ जल जाएगा (DJ trips, panto lowers, LSDJ glows)",
+    "effect": "रेहियोस्टैटिक ब्रेकिंग एक्साइटेशन व कंट्रोल सर्किट में शॉर्ट सर्किट",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 28,
+    "id": "CONV-FUSE-CCLS",
+    "title": "CCLS (10A) पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 5,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• नोट: कन्वेंशनल लोको में VCD तथा IPMV को सप्लाई CCLS से दी गई है।"
+      },
+      {
+        "idx": 1,
+        "text": "1) सभी पायलट लैम्प बुझ जाएंगे।"
+      },
+      {
+        "idx": 2,
+        "text": "2) QRS डी-एनर्जाइज हो जाने की वजह से ऑटो रिग्रेशन होगा। कर्षण बल (Tractive Effort) की पूर्ण हानि होगी।"
+      },
+      {
+        "idx": 4,
+        "text": "4) विजिलेंस कंट्रोल डिवाइस {VCD} डिस्प्ले यूनिट का HEALTHY लैम्प बुझ जाएगा।"
+      },
+      {
+        "idx": 5,
+        "text": "• कार्यवाही: CCLS (10A) फ्यूज चेक करें व बदलें। सिग्नलिंग लैम्प व रिले शाखा का निरीक्षण करें।"
+      }
+    ],
+    "lamp": "सभी पायलट लैम्प बुझ जाएंगे, VCD डिस्प्ले का HEALTHY लैम्प बुझ जाएगा",
+    "effect": "ऑटो रिग्रेशन, कर्षण बल की पूर्ण हानि, BP प्रेशर ड्रॉप व इमरजेंसी ब्रेक लगना",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 29,
+    "id": "CONV-FUSE-CCA",
+    "title": "CCA पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "1) मेन कम्प्रेशर व ब्लोअर नहीं चलेंगे।"
+      },
+      {
+        "idx": 1,
+        "text": "2) यदि GR पाँच (5) से अधिक नोच पर है तो DJ/VCB ट्रिप हो जाएगा।"
+      },
+      {
+        "idx": 2,
+        "text": "• कार्यवाही: CCA फ्यूज चेक करें व बदलें। यदि आवश्यक हो तो HOBA स्विच का उपयोग करें (अध्याय 7-फेलियर क्र. 14, 15 पृष्ठ क्र. 53 देखें)।"
+      }
+    ],
+    "lamp": "LSDJ जल सकता है (5वीं नोच के बाद DJ ट्रिप पर), Q100 डी-एनर्जाइज",
+    "effect": "मेन कंप्रेसर और ब्लोअर काम नहीं करेंगे; GR 5 नोच से आगे बढ़ने पर DJ ट्रिप",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 30,
+    "id": "CONV-CCA-MELTS-BL-CLOSED",
+    "title": "BL स्विचों की क्लोज हालत में CCA पिघलता है (लोको इनर्जाइज हालत में)",
+    "missingActionsCount": 0,
+    "missingActions": [],
+    "lamp": "Q100 डी-एनर्जाइज, मेन कंप्रेसर व ब्लोअर बंद, 5 नोच से अधिक पर DJ ट्रिप",
+    "effect": "BLCP/BLCPD/BLVMT या संबंधित ऑक्सिलरी कॉन्टैक्टर (C101, C102, C103, C105, C106, C107) कंट्रोल सर्किट में अर्थ फॉल्ट / शॉर्ट सर्किट",
+    "needsLampEn": true,
+    "needsEffectEn": false
+  },
+  {
+    "index": 31,
+    "id": "CONV-BLCP-CCA-MELTS",
+    "title": "BLCP क्लोज करने पर CCA पिघलता है",
+    "missingActionsCount": 0,
+    "missingActions": [],
+    "lamp": "Q100 डी-एनर्जाइज, मेन कंप्रेसर बंद, 5 नोच से अधिक पर DJ ट्रिप",
+    "effect": "C101, C102, C103 या VEAD अनलोडर वाल्व कॉइल में शॉर्ट सर्किट; BLCP क्लोज करते ही CCA पिघलना",
+    "needsLampEn": true,
+    "needsEffectEn": false
+  },
+  {
+    "index": 32,
+    "id": "CONV-BLVMT-CCA-MELTS",
+    "title": "BLVMT क्लोज करने पर CCA पिघलता है",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 7,
+        "text": "  i) यदि CCA कायम रहता है तो: HVRH, HVMT-1 और HVMT-2 को एक-एक करके 10 सेकंड के अंतर से “1” पर रखें और खराबी वाले कंट्रोल सर्किट का पता लगाएं, खराब कॉइल के टर्मिनल निकाल दें और कॉन्टैक्टर को वेज कर दें।"
+      },
+      {
+        "idx": 8,
+        "text": "  ii) यदि CCA कायम नहीं रहता है तो: सहायता मांगें।"
+      }
+    ],
+    "lamp": "ब्लोअर नहीं चलेंगे, 5वीं नोच से अधिक पर DJ ट्रिप, Q100 प्रभावित",
+    "effect": "ब्लोअर कॉन्टैक्टर C105, C106, C107 या टाइम डिले रिले शाखा में शॉर्ट सर्किट",
+    "needsLampEn": true,
+    "needsEffectEn": true
+  },
+  {
+    "index": 33,
+    "id": "CONV-FUSE-CCDJ",
+    "title": "CCDJ पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "1) DJ/VCB ट्रिप होगा।"
+      },
+      {
+        "idx": 1,
+        "text": "2) ऑटो रिग्रेशन होगा।"
+      },
+      {
+        "idx": 2,
+        "text": "• कार्यवाही: CCDJ फ्यूज चेक करें। आवश्यकतानुसार HOBA स्विच का उपयोग करें।"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, LSGR 0 पर आएगा",
+    "effect": "DJ/VCB ट्रिप, ऑटो रिग्रेशन",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 34,
+    "id": "CONV-FUSE-CCLSA",
+    "title": "CCLSA पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "2) सैंडर्स (Sanders) कार्य नहीं करेंगे।"
+      },
+      {
+        "idx": 2,
+        "text": "• कार्यवाही: CCLSA फ्यूज चेक करें व बदलें।"
+      }
+    ],
+    "lamp": "AFL संकेत निष्क्रिय",
+    "effect": "ऑटो फ्लैशर लाइट (AFL) व सैंडर्स काम नहीं करेंगे",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 35,
+    "id": "CONV-FUSE-CCVCD",
+    "title": "CCVCD पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• VCD कार्य नहीं करेगी।"
+      },
+      {
+        "idx": 1,
+        "text": "• कार्यवाही: CCVCD फ्यूज चेक करें व बदलें।"
+      }
+    ],
+    "lamp": "VCD डिस्प्ले यूनिट कार्य नहीं करेगी",
+    "effect": "विजिलेंस कंट्रोल डिवाइस (VCD) कार्य नहीं करेगी",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 36,
+    "id": "CONV-FUSE-CCINV",
+    "title": "CCINV पिघलने पर मिलने वाले संकेत",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• SI UNIT (स्टैटिक इनवर्टर) नहीं चलेगी।"
+      },
+      {
+        "idx": 1,
+        "text": "• कार्यवाही: CCINV फ्यूज चेक करें व बदलें।"
+      }
+    ],
+    "lamp": "SIV फॉल्ट लैम्प / SI UNIT बंद",
+    "effect": "SI UNIT (Static Inverter) नहीं चलेगी",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 40,
+    "id": "CONV-DJ-TRIP-FIRST-NOTCH",
+    "title": "पहली नोच पर DJ/VCB ट्रिप होता है।",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 5,
+        "text": "ii) If DJ/VCB trips: Operate GR manually by hand. (ii) यदि DJ/VCB ट्रिप होता है तो - GR को हाथ से ऑपरेट करें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, LSGR बुझकर पुनः प्रकाशित होगा (LSDJ will glow, LSGR will extinguish and glow again)",
+    "effect": "DJ/VCB ट्रिप होगा, गाड़ी में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction power will cut off)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 41,
+    "id": "CONV-DJ-TRIP-SIXTH-NOTCH",
+    "title": "छठी नोच पर DJ/VCB ट्रिप होता है।",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 6,
+        "text": "ii) If not successful: Wedge relay Q118. (ii) यदि सफलता नहीं मिलती है तो Q118 को वेज करें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, 6 नोच लेते ही DJ ट्रिप होगा (LSDJ will glow, DJ trips on taking 6th notch)",
+    "effect": "DJ/VCB ट्रिप होगा, गाड़ी में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction power will cut off)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 42,
+    "id": "CONV-DJ-TRIP-DIFFERENT-NOTCHES",
+    "title": "भिन्न-भिन्न नोच पर DJ/VCB ट्रिप होता है – अर्थात बिना किसी स्पष्ट कारण के DJ/VCB ट्रिप होता है।",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "b) Place HVSI-1 and HVSI-2 to position \"3\". ((b) HVSI-1 और HVSI-2 को \"3\" पर रखें।)"
+      },
+      {
+        "idx": 3,
+        "text": "c) If not successful: Control / operate GR manually by hand. ((c) यदि सफलता नहीं मिलती तो GR को हाथ से कंट्रोल करें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, किसी भी नोच पर अचानक DJ ट्रिप होगा (LSDJ will glow, DJ trips unexpectedly on random notches)",
+    "effect": "DJ/VCB ट्रिप होगा, गाड़ी में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction power will cut off)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 43,
+    "id": "CONV-QOP1-EARTH-FAULT",
+    "title": "QOP-1 ड्रॉप होती है और DJ/VCB ट्रिप होता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "(B) If no defect is found: Reset relay. ((B) यदि कोई खराबी नहीं है तो रिले रीसेट करें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, रिले पैनल पर QOP-1 का लाल टारगेट गिरेगा (LSDJ will glow, red target of QOP-1 drops)",
+    "effect": "DJ/VCB ट्रिप होगा, बोगी-1 में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction cut off in Bogie-1)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 44,
+    "id": "CONV-QOP2-EARTH-FAULT",
+    "title": "QOP-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "(B) If no defect is found: Reset relay. ((B) यदि कोई खराबी नहीं है तो रिले रीसेट करें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, रिले पैनल पर QOP-2 का लाल टारगेट गिरेगा (LSDJ will glow, red target of QOP-2 drops)",
+    "effect": "DJ/VCB ट्रिप होगा, बोगी-2 में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction cut off in Bogie-2)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 45,
+    "id": "CONV-QOP-EARTH-FAULT",
+    "title": "QOP1 / QOP2 रिले का ड्रॉप होना",
+    "missingActionsCount": 0,
+    "missingActions": [],
+    "lamp": "LSDJ जल जाएगा, QOP रिले का लाल टारगेट गिरेगा",
+    "effect": "DJ ट्रिप हो जाएगा, ट्रैक्शन बाधित होगा",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 48,
+    "id": "CONV-QLM-OVERCURRENT",
+    "title": "QLM रिले ड्रॉप होना एवं DJ/VCB ट्रिप होना",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "a) If any defect is noticed or oil is spilled: Demand assistance. (a) यदि कोई खराबी है या तेल बिखरा है तो सहायता मांगें।)"
+      },
+      {
+        "idx": 8,
+        "text": "a) If any abnormality is noticed: Demand assistance. (a) यदि कोई असामान्यता मिलती है तो सहायता मांगें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, QLM व संबंधित रिले का टारगेट गिरेगा (LSDJ will glow, QLM target drops)",
+    "effect": "DJ/VCB ट्रिप होगा, लोको पावर कट जाएगी (DJ/VCB will trip, loco power will cut off)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 49,
+    "id": "CONV-QLM-ALONE-DROP",
+    "title": "1. QLM अकेली ड्रॉप होती है और DJ/VCB ट्रिप होता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) If any defect is noticed or oil is spilled: Demand assistance. (a) यदि कोई खराबी है या तेल बिखरा है तो सहायता मांगें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, रिले पैनल पर QLM का लाल टारगेट गिरेगा (LSDJ will glow, red target of QLM relay drops)",
+    "effect": "DJ/VCB ट्रिप होगा, लोको पावर कट जाएगी (DJ/VCB will trip, loco power cut off)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 50,
+    "id": "CONV-QLM-WITH-OTHER-RELAYS",
+    "title": "(A) QLM किसी अन्य रिले के साथ ड्रॉप होती है और DJ/VCB ट्रिप होता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) If any abnormality is noticed: Demand assistance. (a) यदि कोई असामान्यता मिलती है तो सहायता मांगें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, QLM व संबंधित रिले का टारगेट गिरेगा (LSDJ will glow, QLM and related relay flag drops)",
+    "effect": "DJ/VCB ट्रिप होगा, लोको पावर कट जाएगी (DJ/VCB will trip, loco power will cut off)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 52,
+    "id": "CONV-QRSI-1-TRIP",
+    "title": "QRSI-1 ड्रॉप होती है और DJ/VCB ट्रिप होता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "b) If no defect is found: Reset relay, close DJ/VCB. Resume traction. ({b} यदि कोई खराबी नहीं मिलती है तो - रिले रीसेट करें, DJ/VCB क्लोज करें। ट्रैक्शन चालू करें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, रिले पैनल पर QRSI-1 का लाल टारगेट गिरेगा (LSDJ will glow, red target of QRSI-1 relay will drop)",
+    "effect": "DJ/VCB ट्रिप होगा, बोगी-1 / TM 1-2-3 में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction cut off in Bogie-1)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 53,
+    "id": "CONV-QRSI-2-TRIP",
+    "title": "QRSI-2 ड्रॉप होती है और DJ/VCB ट्रिप होता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "b) If no defect is found: Reset relay, close DJ/VCB. Resume traction. ({b} यदि कोई खराबी नहीं मिलती है तो - रिले रीसेट करें, DJ/VCB क्लोज करें। ट्रैक्शन चालू करें।)"
+      }
+    ],
+    "lamp": "LSDJ प्रकाशित होगा, रिले पैनल पर QRSI-2 का लाल टारगेट गिरेगा (LSDJ will glow, red target of QRSI-2 relay will drop)",
+    "effect": "DJ/VCB ट्रिप होगा, बोगी-2 / TM 4-5-6 में ट्रैक्शन कट जाएगा (DJ/VCB will trip, traction cut off in Bogie-2)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 55,
+    "id": "CONV-SIV-INPUT-VOLTAGE-OUT-OF-RANGE",
+    "title": "SI UNIT में लोको पायलट द्वारा ट्रबल शूटिंग (इनपुट वोल्टेज आउट ऑफ रेंज)",
+    "missingActionsCount": 12,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• सामान्य नियम (General Principle): इनपुट वोल्टेज आउट ऑफ रेंज होने पर DJ/VCB ट्रिप नहीं होता है केवल SIV बंद होता है परंतु यदि GR नोच पर है तो DJ/VCB भी ट्रिप होगा। यदि DJ/VCB ट्रिप है तो LP पहले DJ/VCB क्लोज करें। यदि DJ/VCB क्लोज नहीं होता है तो ICDJ के लिए ट्रबल शूट करें। यदि DJ/VCB क्लोज होता है और SIV कार्य नहीं करता है तो SIV इंडिकेशन पैनल देखें।"
+      },
+      {
+        "idx": 1,
+        "text": "1. डिस्प्ले पैनल पर संकेत: A यदि इनपुट वोल्टेज आउट ऑफ रेंज {लाल लैम्प} का संकेत आता है - LP द्वारा कार्यवाही:"
+      },
+      {
+        "idx": 2,
+        "text": "   i) रीसेट बटन दबाइए। पुनः VCB क्लोज करें। UA मीटर, SIV पैनल और ESMON स्पीडोमीटर में OHE वोल्टेज का मान चेक करें। OHE वोल्टेज 16.5 से 31 kV के बीच होना चाहिए। SIV का इनपुट वोल्टेज रेंज {608 V - 1144 V}।"
+      },
+      {
+        "idx": 3,
+        "text": "   A} यदि OHE वोल्टेज आउट ऑफ रेंज है तो TPC / TLC से संपर्क करें।"
+      },
+      {
+        "idx": 4,
+        "text": "   B} यदि OHE वोल्टेज 16.5 से 31 kV के बीच है तो:"
+      },
+      {
+        "idx": 5,
+        "text": "      (i) रीसेट बटन दबाइए और लोको एनर्जाइज करें। सफलता मिलती है तो गाड़ी चलाएं।"
+      },
+      {
+        "idx": 6,
+        "text": "      (ii) यदि सफलता नहीं मिलती है तो कुछ सेकंड के लिए बैटरी ऑफ करके ऑन करें {IPMV का COC बंद करने के बाद} और लोको एनर्जाइज करें। सफलता मिलती है तो गाड़ी चलाएं {IPMV का COC खोल दें}।"
+      },
+      {
+        "idx": 7,
+        "text": "      (iii) यदि सफलता नहीं मिलती है तो सहायता मांगें।"
+      },
+      {
+        "idx": 8,
+        "text": "• नोट: यदि इनपुट वोल्टेज आउट ऑफ रेंज {लाल लैम्प} का संकेत नहीं आता है तो BLVMT देखें।"
+      },
+      {
+        "idx": 10,
+        "text": "• अतिरिक्त जानकारी (Chapter 17, Page 101):"
+      },
+      {
+        "idx": 11,
+        "text": "  B} यदि BLVMT ओपन है और SIV नहीं चलता है: a) DJ/VCB क्लोज होना सुनिश्चित करें। b) CCINV फ्यूज चेक करें। यदि मेल्ट है तो बदलें। यदि फिर मेल्ट होता है तो HOBA का उपयोग करें।"
+      },
+      {
+        "idx": 12,
+        "text": "  C} यदि BLVMT क्लोज है और SIV नहीं चलता है: a) CCA फ्यूज चेक करें। यदि मेल्ट है तो बदलें (फिर मेल्ट होता है तो HOBA का उपयोग करें)। b) QSVM रिले का एनर्जाइज होना सुनिश्चित करें। यदि QSVM डी-एनर्जाइज है तो उसे वेज करें। (सावधानी: यदि QSVM वेज किया है तो DJ/VCB क्लोज करने से पहले BLVMT क्लोज करें)।"
+      }
+    ],
+    "lamp": "SIV डिस्प्ले पैनल पर इनपुट वोल्टेज आउट ऑफ रेंज {लाल लैम्प / Red Lamp} का संकेत, LSSIT प्रकाशित",
+    "effect": "इनपुट वोल्टेज आउट ऑफ रेंज होने पर DJ/VCB ट्रिप नहीं होता है, केवल SIV बंद होता है; परंतु यदि GR नोच पर है तो DJ/VCB भी ट्रिप होगा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 56,
+    "id": "CONV-SIV-BLVMT-OPEN-SIV-NOT-WORKING",
+    "title": "यदि BLVMT ओपन है और SIV नहीं चलता है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) DJ/VCB क्लोज होना सुनिश्चित करें। (Ensure DJ/VCB is closed.)"
+      },
+      {
+        "idx": 2,
+        "text": "• संदर्भ / अतिरिक्त जांच (WR BRC TSD अध्याय 17, पृष्ठ 101/102):"
+      },
+      {
+        "idx": 3,
+        "text": "  - यदि BLVMT क्लोज है और SIV नहीं चलता है तो:"
+      }
+    ],
+    "lamp": "BLVMT ओपन स्थिति, SIV नहीं चलता / LSSIT लैम्प",
+    "effect": "BLVMT ओपन होने पर SIV चालू नहीं होता; 3-फेज ऑक्जीलरी मोटरें कार्य नहीं करती हैं",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 57,
+    "id": "CONV-SIV-EXTERNAL-FAULT-OVERCURRENT",
+    "title": "SIV डिस्प्ले पैनल पर EXTERNAL FAULT का लैम्प (LED) प्रकाशित होता है, LSSIT प्रकाशित होता है (एक्सटर्नल फॉल्ट के साथ ओवरकरंट)",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "3. यदि कोई खराबी नहीं मिलती है तो (If no defect is found):"
+      }
+    ],
+    "lamp": "SIV डिस्प्ले पैनल पर EXTERNAL FAULT लैम्प (LED) प्रकाशित, LSSIT प्रकाशित, ओवरकरंट का संकेत (External Fault LED & LSSIT Glows, Overcurrent Indication)",
+    "effect": "SIV ट्रिप हो जाता है, 3-फेज ऑक्सिलरी मोटरें बंद हो जाती हैं (SIV trips, 3-phase auxiliary motors stop working)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 58,
+    "id": "CONV-SIV-EXTERNAL-FAULT-EARTH-FAULT",
+    "title": "SIV डिस्प्ले पैनल पर EXTERNAL FAULT का लैम्प (LED) प्रकाशित होता है, LSSIT प्रकाशित होता है, एक्सटर्नल फॉल्ट के साथ अर्थ फॉल्ट का संकेत आता है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "3. यदि कोई खराबी नहीं मिलती है तो (If no defect is found):"
+      }
+    ],
+    "lamp": "SIV डिस्प्ले पैनल पर EXTERNAL FAULT लैम्प (LED) प्रकाशित, LSSIT प्रकाशित, एक्सटर्नल फॉल्ट के साथ अर्थ फॉल्ट का संकेत (External Fault LED & LSSIT Glows, Earth Fault Indication)",
+    "effect": "SIV ट्रिप हो जाता है, 3-फेज ऑक्सिलरी मोटरें बंद हो जाती हैं (SIV trips, 3-phase auxiliary motors stop working)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 60,
+    "id": "CONV-SIV-LSCHBA-GLOWS-WITHOUT-VCB-TRIP",
+    "title": "बिना VCB ट्रिप हुए LSCHBA प्रकाशित होता है (SIV लोको में बैटरी चार्जर कार्य न करना)",
+    "missingActionsCount": 0,
+    "missingActions": [],
+    "lamp": "LSCHBA लैम्प लगातार प्रकाशित रहता है (VCB/DJ ट्रिप हुए बिना) (LSCHBA lamp remains glowing without VCB tripping)",
+    "effect": "बैटरी चार्ज होना बंद हो जाती है; बैटरी वोल्टेज 90V से नीचे जाने पर लोको ट्रिप हो सकता है",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 61,
+    "id": "CONV-SIV-EARTH-FAULT-BYPASS-PROCEDURE",
+    "title": "अर्थ फॉल्ट बाईपास करने की विधि (SIV लोको में अर्थ फॉल्ट बाईपास)",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• सामान्य नियम: यदि फॉल्टी सर्किट को ढूंढना एवं बाईपास करना असंभव है तो LP को अर्थ फॉल्ट बाईपास करके सेक्शन साफ करना चाहिए और TLC को सूचित करना चाहिए।"
+      },
+      {
+        "idx": 1,
+        "text": "• ⚠️ आवश्यक समय-सीमा: जब अर्थ फॉल्ट को बाईपास किया जाता है तो 45 मिनट के अंदर सेक्शन साफ कर लेना चाहिए, क्योंकि इस दौरान एक 1500 ओम (1500 Ω) की रेजिस्टेंस सर्किट में आती है।"
+      }
+    ],
+    "lamp": "SIV अर्थ फॉल्ट बाईपास का लाल लैम्प (Red Lamp) प्रकाशित, 45 मिनट का टाइमर सक्रिय",
+    "effect": "अर्थ फॉल्ट करंट सीमित करने हेतु सर्किट में 1500 ओम की रेजिस्टेंस सम्मिलित; 45 मिनट में सेक्शन क्लियर करना अनिवार्य",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 62,
+    "id": "CONV-MPCS-MAIN-UNIT-NOT-WORKING",
+    "title": "MPCS लोको में मेन यूनिट कार्य नहीं करती है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• MPCS लोको सामान्य नियम: MPCS लोको में कोई फॉल्ट आने पर डिस्प्ले यूनिट पर फॉल्ट मैसेज दिखाई देता है और बजर बजता है। फॉल्ट मैसेज नोट कर TSD अनुसार ट्रबलशूट करें। TSD के बाद “Ack” बटन दबाएं जिससे मैसेज CLEAR होकर मेमोरी में रिकॉर्ड हो जाएगा।"
+      }
+    ],
+    "lamp": "सभी पायलट लैम्प बुझे रहेंगे, डिस्प्ले यूनिट पर कोई मैसेज नहीं आएगा, लोको इनर्जाइज नहीं होगा (All pilot lamps extinguish, no display message, loco does not energize)",
+    "effect": "MPCS मेन यूनिट बंद रहने से लोको इनर्जाइज नहीं हो सकता, DJ/VCB क्लोज नहीं होगा तथा कोई ऑक्सिलरी चालू नहीं होगी",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 63,
+    "id": "CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING",
+    "title": "DJ/VCB क्लोज नहीं होता / ICDJ",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• MPCS लोको सामान्य नियम: MPCS लोको में कोई फॉल्ट आने पर डिस्प्ले यूनिट पर फॉल्ट मैसेज दिखाई देता है और साथ में बजर सुनाई देता है। मैसेज नोट कर TSD अनुसार ट्रबलशूट करें व अंत में “Ack” बटन दबाएं।"
+      },
+      {
+        "idx": 5,
+        "text": "4. MR तथा RS प्रेशर चेक करें, 8 kg/cm² से कम नहीं होना चाहिए। (Check MR & RS pressure; must not be less than 8 kg/cm².)"
+      },
+      {
+        "idx": 11,
+        "text": "10. HQOA को \"0\" पर रखकर प्रयत्न करें। (Place HQOA to \"0\" and attempt.)"
+      }
+    ],
+    "lamp": "LSDJ लैम्प प्रकाशित रहता है, DJ/VCB क्लोज नहीं होता (LSDJ glows, DJ/VCB does not close / ICDJ in MPCS)",
+    "effect": "DJ/VCB क्लोज न होने से मुख्य ट्रांसफार्मर एनर्जाइज नहीं होगा, ट्रैक्शन व ऑक्सिलरी कार्य नहीं करेंगी",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 64,
+    "id": "CONV-MPCS-DJ-TRIP-ON-6TH-NOTCH-15-SEC",
+    "title": "6 नोच लेने पर 15 सेकंड के अंदर ही DJ/VCB ट्रिप होता है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• MPCS लोको सामान्य नियम: MPCS लोको में कोई खराबी आने पर डिस्प्ले यूनिट पर फॉल्ट मैसेज दिखाई देता है और साथ में बजर सुनाई देता है। TSD अनुसार ट्रबलशूट करें व अंत में “Ack” बटन दबाएं।"
+      },
+      {
+        "idx": 2,
+        "text": "1. डिस्प्ले यूनिट पर दर्शाए गए मैसेज के अनुसार ट्रबलशूट करें। (Troubleshoot according to message displayed on Display Unit.)"
+      },
+      {
+        "idx": 6,
+        "text": "5. यदि सफलता नहीं मिलती है तो HOBA को \"OFF\" पर रखकर प्रयत्न करें। (If unsuccessful, try by keeping HOBA on \"OFF\" position.)"
+      }
+    ],
+    "lamp": "LSDJ लैम्प प्रकाशित होता है, 6 नोच लेते ही 15 सेकंड के अंदर DJ/VCB ट्रिप हो जाता है",
+    "effect": "गाड़ी 6 नोच से आगे नहीं बढ़ाई जा सकती, ट्रैक्शन पावर कट हो जाती है",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 67,
+    "id": "CONV-MPCS-MEDHA-RELAY-BYPASS-SOFT-WEDGE",
+    "title": "MEDHA Make MPCS में रिले को वेज / बाईपास करना [Medha MPCS]",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "3. डिस्प्ले पर प्रदर्शित विकल्पों के अनुसार कीज़ दबाएं:"
+      },
+      {
+        "idx": 3,
+        "text": "   • Soft Key ‘1’ दबाएं: तात्कालिक बाईपास हेतु (For instantaneous / temporary bypass)."
+      },
+      {
+        "idx": 6,
+        "text": "4. बाईपास समाप्ति एवं रीसेट नियम:"
+      }
+    ],
+    "lamp": "MEDHA MPCS डिस्प्ले स्क्रीन पर रिले बाईपास विकल्प (Relay Bypass Options on Medha MPCS Screen)",
+    "effect": "MEDHA MPCS सिस्टम में दोषयुक्त रिले सॉफ्टवेयर द्वारा सुरक्षित तात्कालिक (Instantaneous) अथवा स्थायी (Permanent) रूप से बाईपास हो जाती है",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 69,
+    "id": "CONV-PANTO-NOT-RAISING",
+    "title": "पैंटो नहीं उठता है",
+    "missingActionsCount": 10,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) दूसरे पैंटो का उपयोग करें।"
+      },
+      {
+        "idx": 1,
+        "text": "b) यदि BPEMS स्विच दबा है तो उसे रीसेट करें। (अध्याय-1, 1.5 II G, पृष्ठ.10)"
+      },
+      {
+        "idx": 2,
+        "text": "c) यदि लोको में HLS / ZLS स्विच दिया है तो स्विच का ऑन होना सुनिश्चित करें।"
+      },
+      {
+        "idx": 3,
+        "text": "d) RS प्रेशर चैक करें, यदि कम है तो CPA द्वारा बनाएं।"
+      },
+      {
+        "idx": 4,
+        "text": "e) बैटरी वोल्टेज चैक करें।"
+      },
+      {
+        "idx": 5,
+        "text": "f) CCBA और CCPT चैक करें (यदि आवश्यक हो तो HOBA का उपयोग करें) (अध्याय 7, क्र. 1-12, पृष्ठ-51-53)"
+      },
+      {
+        "idx": 6,
+        "text": "g) VEPT आइसोलेटिंग कॉक खुले हैं और VEPT टर्मिनल बराबर है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 7,
+        "text": "h) VEPT को हाथ से ऑपरेट करें।"
+      },
+      {
+        "idx": 8,
+        "text": "i) पीछे वाली कैब से पैंटो उठाने का प्रयत्न करें।"
+      },
+      {
+        "idx": 9,
+        "text": "j) VEPT वेज करें, सैक्शन क्लीयर करें और TLC से सम्पर्क करें।"
+      }
+    ],
+    "lamp": "पैंटो ऊपर नहीं उठता, OHE संपर्क नहीं बनता (Pantograph does not raise)",
+    "effect": "लोको इनर्जाइज नहीं हो सकता, DJ/VCB क्लोज नहीं होगा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 70,
+    "id": "CONV-BP-PRESSURE-NOT-BUILDING",
+    "title": "BP प्रेशर नहीं बनता है (केवल लोको)",
+    "missingActionsCount": 9,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) A-9 हैंडल दोनों कैब में “रिलीज” पोजीशन पर और MR प्रेशर सामान्य है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 1,
+        "text": "b) BLCPD क्लोज करके प्रयत्न करें।"
+      },
+      {
+        "idx": 2,
+        "text": "c) A-9 के दोनों कट आउट कॉक कार्यरत (Working) कैब में खुले और पीछे वाली कैब में बंद हैं, सुनिश्चित करें।"
+      },
+      {
+        "idx": 3,
+        "text": "d) BP चार्जिंग कॉक खुला है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 4,
+        "text": "e) MU2B वाल्व “लीड” पोजीशन पर है, सुनिश्चित करें। दो तीन बार ऑपरेट करें।"
+      },
+      {
+        "idx": 5,
+        "text": "f) MR-4 कट आउट कॉक खुला है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 6,
+        "text": "g) दोनों सिरों पर एंगल कॉक बंद हैं, सुनिश्चित करें। IP वाल्व और RS वाल्व में लीकेज नहीं है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 7,
+        "text": "h) यदि IP वाल्व में लीकेज है तो उसका कट आउट कॉक बंद करें।"
+      },
+      {
+        "idx": 8,
+        "text": "i) यदि BP प्रेशर 0 kg/cm² ही रहता है तो चेक करें कि पीछे कैब के नीचे अथवा कैब में एडिशनल कॉक बंद तो नहीं है।"
+      }
+    ],
+    "lamp": "BP प्रेशर गेज पर प्रेशर 0 kg/cm² रहेगा या 5.0 kg/cm² नहीं बढ़ेगा (BP gauge stays 0 kg/cm² or does not build to 5.0)",
+    "effect": "लोको में ब्रेक पाइप (BP) प्रेशर नहीं बनेगा; गाड़ी में ब्रेक रिलीज नहीं हो सकेंगे व ब्रेक बाइंडिंग रहेगी",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 71,
+    "id": "CONV-BP-PRESSURE-SURGE-BRAKE-BINDING",
+    "title": "BP प्रेशर बढ़कर 5 kg/cm² से अधिक हो जाता है और फिर से घटकर 5 kg/cm² तक आ जाता है और सारी गाड़ी में ब्रेक बंधती है",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) A-9 वाल्व के regulator द्वारा समंजित (adjust) करके BP प्रेशर बढ़ाएं ताकि लोको एवं गाड़ी में ब्रेक रिलीज हो जाएं। सैक्शन क्लीयर करके (यदि लेवल सैक्शन है तो) निम्नलिखित कार्यवाही करें - A-9 को “इमरजेंसी” पोजीशन पर लाएं। BP प्रेशर के “0” पर आने तक रुकें। लोको और गाड़ी के बीच BP और FP के एंगल कॉक बंद कर दें।"
+      },
+      {
+        "idx": 1,
+        "text": "b) पूरी गाड़ी के ब्रेक रिलीज करें। A-9 को “रिलीज” पोजीशन पर रखें और BP प्रेशर को A-9 वाल्व के regulator द्वारा 5 kg/cm² पर समंजित (adjust) करें। लोको ब्रेक रिलीज करने के लिये लोको के डिस्ट्रीब्यूटर वाल्व का रिलीज वाल्व खींचें। एंगल कॉक खोल दें। जब गार्ड वान में BP प्रेशर बढ़कर 4.8 kg/cm² से 5 kg/cm² हो जाये तो कन्टीन्युइटी टेस्ट करने के बाद गाड़ी चलाएं।"
+      }
+    ],
+    "lamp": "BP प्रेशर गेज 5.0 से अधिक उछलकर पुनः 5.0 kg/cm² पर आता है, गाड़ी में ब्रेक बाइंडिंग (BP surges above 5 kg/cm² then drops, train brakes applied)",
+    "effect": "ओवरचार्जिंग के कारण पूरी गाड़ी के डिस्ट्रीब्यूटर वाल्व (DV) एक्टिवेट होकर ब्रेक बाइंडिंग करेंगे; गाड़ी रुक जाएगी",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 72,
+    "id": "CONV-BP-NOT-RISING-AFTER-ATTACHING-LOAD",
+    "title": "एयर ब्रेक लोड पर अटैच करने के बाद BP प्रेशर 5 kg/cm² तक नहीं बढ़ता है और MR प्रेशर भी कम होता है",
+    "missingActionsCount": 7,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) यदि MR प्रेशर कम है तो तीनों कम्प्रेशर चलाएं।"
+      },
+      {
+        "idx": 1,
+        "text": "b) BLCP ओपन करें और BLCPD क्लोज करें।"
+      },
+      {
+        "idx": 2,
+        "text": "c) यदि फिर भी MR प्रेशर नहीं बनता है तो लोको और लोड के बीच BP और FP एंगल कॉक बंद करें:"
+      },
+      {
+        "idx": 3,
+        "text": "   i) यदि MR प्रेशर 9.5 kg/cm² तक बन जाता है तो लोड में खराबी है। गाड़ी में लीकेज चेक करें।"
+      },
+      {
+        "idx": 4,
+        "text": "   ii) यदि MR प्रेशर नहीं बनता है तो लोको में लीकेज चेक करें। BP प्रेशर चेक करें:"
+      },
+      {
+        "idx": 5,
+        "text": "      • यदि BP प्रेशर बढ़ता है तो लोड में खराबी है। वैगनों के बीच सभी एंगल कॉक खुले हैं और होस पाइप बराबर लगे हैं और BP में लीकेज नहीं है, सुनिश्चित करें। लोड की खराबी दूर कर देने के बाद FP और BP के एंगल कॉक खोल दें।"
+      },
+      {
+        "idx": 6,
+        "text": "      • यदि BP प्रेशर नहीं बढ़ता है तो लोको में खराबी है। पृष्ठ क्र. 68, 69 पर फेलियर क्र. 3 & 4 के अनुसार ट्रबलशूट करें।"
+      }
+    ],
+    "lamp": "BP प्रेशर गेज 5.0 kg/cm² तक नहीं पहुंचता तथा MR प्रेशर में गिरावट (BP fails to reach 5 kg/cm², MR drops)",
+    "effect": "एयर ब्रेक ट्रेन में ब्रेक रिलीज नहीं होंगे; भारी न्यूमैटिक लीकेज या कंप्रेसर क्षमता से अधिक एयर खपत",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 74,
+    "id": "CONV-A9-LOCO-BRAKE-NOT-APPLYING",
+    "title": "A-9 द्वारा लोको ब्रेक नहीं लगती है",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 2,
+        "text": "c) Ensure BP pressure is normal. (सुनिश्चित करें, BP प्रेशर सामान्य है।)"
+      },
+      {
+        "idx": 5,
+        "text": "f) If required, apply brakes by RS or SA-9. (आवश्यकता पड़ने पर RS या SA-9 द्वारा ब्रेक लगाएं।)"
+      }
+    ],
+    "lamp": "A-9 लगाने पर लोको ब्रेक सिलेंडर (BC) पर प्रेशर नहीं बढ़ता (No BC gauge pressure rise on applying A-9)",
+    "effect": "ट्रेन में ब्रेक लग सकती है लेकिन लोकोमोटिव में आटोमैटिक ब्रेक (A-9) द्वारा ब्रेक नहीं लगेगी; केवल SA-9 या RS द्वारा लोको ब्रेक संभव",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 75,
+    "id": "CONV-SA9-LOCO-BRAKE-NOT-APPLYING",
+    "title": "SA-9 द्वारा लोको ब्रेक नहीं लगती है",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "b) MU2B वाल्व “लीड” (LEAD) पोजीशन पर है, सुनिश्चित करें। उसे 2-3 बार ऑपरेट करें। (Ensure MU2B valve is on \"LEAD\" position. Operate it 2-3 times.)"
+      }
+    ],
+    "lamp": "SA-9 लगाने पर लोको ब्रेक सिलेंडर (BC) पर 3.5 kg/cm² प्रेशर नहीं बढ़ता (No BC gauge pressure rise on applying SA-9)",
+    "effect": "लोकोमोटिव में डायरेक्ट/इंडिपेंडेंट ब्रेक (SA-9) कार्य नहीं करेगी; केवल A-9 या RS वाल्व द्वारा ही ब्रेकिंग संभव",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 76,
+    "id": "CONV-LOCO-BRAKE-NOT-RELEASING-A9-SA9-RELEASE",
+    "title": "लोको ब्रेक रिलीज नहीं होते हैं, यद्यपि A-9 और SA-9 “रिलीज” पोजीशन पर हैं",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) सुनिश्चित करें, BP प्रेशर 5 kg/cm² है। (Ensure BP pressure is 5.0 kg/cm².)"
+      },
+      {
+        "idx": 2,
+        "text": "c) MU2B वाल्व पूरी तरह से “लीड” (LEAD) पर है, सुनिश्चित करें। (Ensure MU2B valve is fully on LEAD position.)"
+      }
+    ],
+    "lamp": "ब्रेक सिलेंडर (BC) गेज पर प्रेशर 0 kg/cm² नहीं होता (BC pressure does not drop to 0, remains applied)",
+    "effect": "पहिये जाम होने, व्हील स्किडिंग (wheel skidding) तथा पहिये में फ्लैट टायर (flat tyre) पड़ने का गंभीर जोखिम",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 77,
+    "id": "CONV-BLCP-MR-PRESSURE-NOT-BUILDING",
+    "title": "MR प्रेशर नहीं बनता है / BLCP क्लोज करने पर MR प्रेशर नहीं बनता है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• Check MCP. (MCP चेक करें:)"
+      },
+      {
+        "idx": 4,
+        "text": "c) Check Q100 (start blowers); if Q100 is not energized: ((c) Q100 चेक करें (ब्लोअर चालू करें) यदि इनर्जाइज नहीं है तो:)"
+      },
+      {
+        "idx": 6,
+        "text": "   ii) Wedge relay Q100. (ii) Q100 को वेज करें।)"
+      }
+    ],
+    "lamp": "MR प्रेशर गेज पर प्रेशर नहीं बढ़ेगा (MR pressure gauge will not rise, remains low)",
+    "effect": "लोको व गाड़ी में न्यूमैटिक प्रेशर (MR/BP) नहीं बनेगा, ब्रेक व पैंटो ऑपरेशन बाधित होगा (Pneumatic pressure will not build, brakes & panto will be affected)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 78,
+    "id": "CONV-MR-PRESSURE-LESS-THAN-7",
+    "title": "MR प्रेशर 7 kg/cm² से कम बनता है (केवल लोको)",
+    "missingActionsCount": 4,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) तीनों MCP चालू करें। जब MR प्रेशर 9.5 kg/cm² तक बन जाये तो HCP को आवश्यक पोजीशन पर रख दें।"
+      },
+      {
+        "idx": 1,
+        "text": "b) RAL कॉक खोल कर RS गेज चेक करें। यदि RS प्रेशर 8 kg/cm² के लगभग है तो इसका अर्थ है MR प्रेशर बराबर है, गेज में खराबी है। यदि RS प्रेशर MR प्रेशर के बराबर या कम है तो BP चार्जिंग कॉक बंद करें और MR प्रेशर देखें:"
+      },
+      {
+        "idx": 2,
+        "text": "i) यदि MR प्रेशर नहीं बनता है तो:- MR ड्रेन कॉक, सेफ्टी वाल्व, अनलोडर वाल्व, सैंडिंग वाल्व, ब्रेक सिलेंडर इत्यादि में लीकेज चेक करें। एयर ड्रायर से लीकेज है तो “C” कॉक खोलें “A” व “B” कॉक बंद करें।"
+      },
+      {
+        "idx": 3,
+        "text": "ii) यदि MR प्रेशर बनता है तो:- MR प्रेशर 9.5 kg/cm² बन जाने तक रुकें। उसके बाद BP चार्जिंग कॉक खोल दें। यदि MR प्रेशर फिर से अत्यधिक मात्रा में कम होना शुरू होता है तो IP वाल्व, RS, BP होस पाइप और एंगल कॉक इत्यादि में लीकेज चेक करें।"
+      }
+    ],
+    "lamp": "MR प्रेशर गेज 7 kg/cm² से कम दर्शाता है (MR gauge indicates less than 7 kg/cm²)",
+    "effect": "न्यूमैटिक ब्रेक व पैंटो ऑपरेशन हेतु अपर्याप्त एयर प्रेशर; गेज त्रुटि अथवा भारी न्यूमैटिक लीकेज की संभावना",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 80,
+    "id": "CONV-COMPRESSOR-CONTACTORS-NOT-CLOSING",
+    "title": "कम्प्रेसर के कॉन्टैक्टर क्लोज नहीं होते",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 3,
+        "text": "• सावधानी (Important Precautions):"
+      }
+    ],
+    "lamp": "LSCHBA लैम्प की स्थिति (जलना या बुझना), कंप्रेसर कॉन्टैक्टर C-101, C-102, C-103 ओपन",
+    "effect": "कंप्रेसर मोटरें चालू नहीं होंगी, MR एयर प्रेशर नहीं बनेगा (Compressor motors do not start, MR air pressure will not build up)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 81,
+    "id": "CONV-HORN-WHISTLE-FAILURE",
+    "title": "चालू गाड़ी में व्हीसल (हॉर्न) फेल हो जाती है",
+    "missingActionsCount": 6,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) हवा का लीकेज चैक करें।"
+      },
+      {
+        "idx": 1,
+        "text": "b) सैंडिंग कट आउट कॉक बंद करके प्रयत्न करें।"
+      },
+      {
+        "idx": 2,
+        "text": "c) अंडर फ्रेम पर डुप्लेक्स चैक वाल्व को टेप करें (कॉरिडोर नं. 2 के बाहर)।"
+      },
+      {
+        "idx": 3,
+        "text": "d) यदि सफलता नहीं मिलती है तो सावधानीपूर्वक सैक्शन क्लीयर करें। अगले स्टेशन पर TLC/ASM को लिखित में सूचित करें।"
+      },
+      {
+        "idx": 4,
+        "text": "e) यदि TLC लोको को अगले सुविधाजनक स्थान तक जाने के लिए लिखित अनुमति देता है तो दृश्यता साफ होने पर 25 KMPH व दृश्यता साफ नहीं होने पर 8 KMPH के गति प्रतिबंध का पालन करते हुए तीव्र दृष्टि एवं सावधानीपूर्वक हेडलाईट तथा मार्कर लाईट का उपयोग करते हुए G&SR 4.50 (2) के अनुसार गाड़ी चलाएं।"
+      },
+      {
+        "idx": 5,
+        "text": "नोट:- स्टार्टिंग स्टेशन पर व्हीसल फेल होने पर लोको फेल करें।"
+      }
+    ],
+    "lamp": "व्हीसल (हॉर्न) नहीं बजता है / हवा का दबाव या वाल्व दोष (Whistle / Horn does not sound)",
+    "effect": "चेतावनी संकेत अनुपलब्ध; संरक्षा खतरे के कारण G&SR 4.50 (2) के तहत 25 KMPH (साफ) अथवा 8 KMPH (अस्पष्ट) का गति प्रतिबंध लागू होगा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 83,
+    "id": "CONV-LOSS-TRACTIVE-FORCE",
+    "title": "कर्षण बल की पूर्ण हानि (Total loss of Tractive force) (दोनों एमीटर डेविएट नहीं होते हैं)",
+    "missingActionsCount": 7,
+    "missingActions": [
+      {
+        "idx": 5,
+        "text": "a) If CCLS fuse is melted, replace it. ((a) यदि CCLS पिघल गया है तो बदली करें।)"
+      },
+      {
+        "idx": 11,
+        "text": "a) Check LSB; if glowing: (LSB चेक करें यदि प्रकाशित है तो:)"
+      },
+      {
+        "idx": 15,
+        "text": "b) Check LSP; if glowing: (LSP चेक करें यदि प्रकाशित है तो:)"
+      },
+      {
+        "idx": 32,
+        "text": "l) Open DJ, operate GR manually by hand 2 to 3 times. (DJ ओपन करें, GR को हाथ से 2-3 बार ऑपरेट करें।)"
+      },
+      {
+        "idx": 33,
+        "text": "m) Work train by operating GR manually by hand. (GR को हाथ से ऑपरेट करके गाड़ी चलाएं।)"
+      },
+      {
+        "idx": 37,
+        "text": "b) Check that HT-2 cut-out cock is open. (HT-2 का कट आउट कॉक खुला हुआ है, इसकी जांच करें।)"
+      },
+      {
+        "idx": 38,
+        "text": "c) Perform LT testing to check closing of contactors L1 to L6; verify CTF-1, CTF-2, CTF-3 are in \"Running\" position. If required, wedge contactors L1 to L6. (LT टेस्टिंग करके L1 से L6 तक के कॉन्टैक्टर क्लोज होते हैं, इसकी जांच करें; CTF-1, CTF-2 और CTF-3 “रनिंग” पोजीशन में हैं, इसकी जांच करें। आवश्यकता हो तो L1 से L6 तक के कॉन्टैक्टर वेज करें।)"
+      }
+    ],
+    "lamp": "दोनों ट्रैक्शन मोटर एमीटर डेविएट नहीं होते हैं (0 Amp), LSGR की 3 स्थितियां: पहले से बुझा हुआ / नहीं बुझता / बुझ जाता है",
+    "effect": "कर्षण बल (Tractive Effort) शून्य; दोनों एमीटर शून्य पर बने रहते हैं और लोको गति नहीं पकड़ता",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 84,
+    "id": "CONV-LSGR-ALREADY-EXTINGUISHED",
+    "title": "यदि LSGR पहले से ही बुझा है (कर्षण बल की पूर्ण हानि)",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) यदि CCLS पिघल गया है तो बदली करें। ((a) If CCLS fuse is melted, replace it.)"
+      }
+    ],
+    "lamp": "LSGR पहले से बुझा रहता है, BPT दबाने पर LSRSI व LSP प्रकाशित, दोनों एमीटर 0",
+    "effect": "सिग्नलिंग व पायलट लैम्प सप्लाई फेल; QRS डी-एनर्जाइज होने से रिग्रेशन व कर्षण शून्य",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 85,
+    "id": "CONV-LSGR-NOT-EXTINGUISHING",
+    "title": "यदि LSGR नहीं बुझता है (कर्षण बल की पूर्ण हानि / नोच न आना)",
+    "missingActionsCount": 23,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "• MP द्वारा प्रयत्न करने पर यदि सफलता नहीं मिलती है तो एक बार EEC द्वारा प्रयत्न करें:"
+      },
+      {
+        "idx": 1,
+        "text": "a) LSB चेक करें यदि प्रकाशित है तो:"
+      },
+      {
+        "idx": 2,
+        "text": "  - Q-50 चेक करें, यदि इनर्जाइज नहीं है तो J-1 और J-2 सेट हो गये हैं, इसकी जांच करें और CTF-1, CTF-2 और CTF-3 “R” पोजीशन में बराबर सेट हो गये हैं, सुनिश्चित करें। यदि वे बराबर सेट नहीं हैं तो उन्हें हाथ से सेट करें। C-145 का ओपन होना चेक करें और LSC-145 का बुझा होना सुनिश्चित करें। यदि आवश्यक हो तो Q-50 को वेज करें।"
+      },
+      {
+        "idx": 3,
+        "text": "  - यदि कोई रिवर्सर सेट नहीं होता है तो रिवर्सर को लॉक करें। संबंधित RSI ब्लॉक आइसोलेट करें तथा LSC-145 का बुझा होना सुनिश्चित करके Q-50 को वेज करें।"
+      },
+      {
+        "idx": 4,
+        "text": "  - यदि कोई रिवर्सर इच्छित दिशा में सेट नहीं होता है तो संबंधित रिवर्सर की कॉइल के टर्मिनल निकालकर टेप करें व रिवर्सर को मैन्युअली सेट करें और रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+      },
+      {
+        "idx": 5,
+        "text": "b) LSP चेक करें यदि प्रकाशित है तो:"
+      },
+      {
+        "idx": 6,
+        "text": "  - Q-48 चेक करें, यदि इनर्जाइज है तो Q-48 को हाथ से थपथपाएं, अगर सफलता न मिले तो HMCS के द्वारा प्रयत्न करें। अगर फिर भी सफलता नहीं मिलती तो सैंडिंग COC बंद करके GR को हाथ से ऑपरेट करके सेक्शन क्लियर करें।"
+      },
+      {
+        "idx": 7,
+        "text": "c) यदि ऑटो फ्लैशर की LED प्रकाशित है तो:"
+      },
+      {
+        "idx": 8,
+        "text": "  - सुनिश्चित करें BP प्रेशर 5 kg/cm² है, एयर फ्लो इंडिकेटर (AFI) की सुई पूर्व निर्धारित जगह पर है। CCLSA फ्यूज निकाल कर प्रयत्न करें।"
+      },
+      {
+        "idx": 9,
+        "text": "  - यदि सफलता नहीं मिलती है तो PR-2 को चेक करें। यदि इनर्जाइज है तो PR-2 को ओपन में वेज करें।"
+      },
+      {
+        "idx": 10,
+        "text": "  - माइक्रोप्रोसेसर युक्त लोको में HPAR/HQ-51 को 0 पोजीशन पर रखें।"
+      },
+      {
+        "idx": 12,
+        "text": "  i) यदि BP प्रेशर कम है और VCD ऑपरेट हुई है तो VCD को रीसेट करें। यदि VCD रीसेट नहीं होती है तो HVCD या टॉगल स्विच द्वारा VCD को आइसोलेट करें। यदि सफलता नहीं मिलती है तो CCVCD फ्यूज निकाल कर प्रयत्न करें। यदि CCVCD फ्यूज नहीं लगा है तो VCD मेन यूनिट के दोनों कनेक्शन निकाल दें।"
+      },
+      {
+        "idx": 13,
+        "text": "     (नोट :- यदि VCD मालफंक्शन करती है तो सिर्फ एक बार ही रीसेट करेंगे, दूसरी बार में VCD को आइसोलेट करेंगे।)"
+      },
+      {
+        "idx": 14,
+        "text": "  ii) यदि BP प्रेशर कम है और VCD ऑपरेट नहीं हुई है तो लोको तथा गाड़ी में BP लीकेज चेक करें।"
+      },
+      {
+        "idx": 15,
+        "text": "e) QRS चेक करें: यदि इनर्जाइज नहीं है तो RGEB-2 का कट आउट कॉक खुला होना चेक करें, A9 द्वारा BP प्रेशर 2 kg/cm² तक ड्रॉप करें और A9 को वापस रिलीज पोजीशन पर रख दें। यदि फिर भी QRS इनर्जाइज नहीं होती तो उसे वेज करें।"
+      },
+      {
+        "idx": 16,
+        "text": "f) सुनिश्चित करें ZSMS “1” पर है।"
+      },
+      {
+        "idx": 17,
+        "text": "g) ZSMGR हैंडल की जांच करें (वह खड़ी स्थिति में होना चाहिए)।"
+      },
+      {
+        "idx": 18,
+        "text": "h) SMGR सिम्पल (केंक कॉक की स्थिति चेक करें)।"
+      },
+      {
+        "idx": 19,
+        "text": "i) SMGR का कंट्रोल प्रेशर चेक करें (वह 2.5 से 3.5 kg/cm² होना चाहिए)।"
+      },
+      {
+        "idx": 20,
+        "text": "j) EEC द्वारा प्रयत्न करें।"
+      },
+      {
+        "idx": 21,
+        "text": "k) Q-51 और Q-52 डी-इनर्जाइज हैं, इसकी जांच करें।"
+      },
+      {
+        "idx": 22,
+        "text": "l) DJ ओपन करें, GR को हाथ से 2-3 बार ऑपरेट करें।"
+      },
+      {
+        "idx": 23,
+        "text": "m) GR को हाथ से ऑपरेट करके गाड़ी चलाएं।"
+      }
+    ],
+    "lamp": "LSGR 0 पर लगातार जलता रहेगा, LSB / LSP / ऑटो फ्लैशर LED प्रकाशित हो सकती है",
+    "effect": "टैप चेंजर GR 0 से आगे प्रोग्रेस नहीं करता; ट्रैक्शन मोटर में कोई करंट नहीं",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 86,
+    "id": "CONV-LSGR-EXTINGUISHES-NO-TE",
+    "title": "यदि LSGR बुझ जाता है (कर्षण बल की पूर्ण हानि / एमीटर डेविएट नहीं)",
+    "missingActionsCount": 1,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "b) HT-2 का कट आउट कॉक खुला हुआ है, इसकी जांच करें। ((b) Check that HT-2 cut-out cock is open.)"
+      }
+    ],
+    "lamp": "LSGR बुझ जाता है (GR 1 पर आता है), परंतु दोनों ट्रैक्शन मोटर एमीटर 0 दर्शाते हैं",
+    "effect": "टैप चेंजर नोच लेता है परंतु लाइन कॉन्टैक्टर L1-L6 क्लोज न होने या ट्रैक्शन सर्किट ओपन होने से मोटर में करंट नहीं पहुंचता",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 87,
+    "id": "CONV-PARTIAL-LOSS-TRACTIVE-FORCE",
+    "title": "कर्षण बल की आंशिक हानि (Partial Loss of Tractive Force)",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 16,
+        "text": "a) If bound, ensure BP pressure is normal (5.0 kg/cm²). ((a) यदि बंधी है तो BP प्रेशर सामान्य होना सुनिश्चित करें।)"
+      },
+      {
+        "idx": 17,
+        "text": "b) Ensure A-9 handle is in release position. ((b) A-9 का हैंडल रिलीज पोजीशन पर है, सुनिश्चित करें।)"
+      }
+    ],
+    "lamp": "एमीटर/वोल्टमीटर में असमान रीडिंग, व्हील स्लिप, या OHE वोल्टेज 19 KV से कम",
+    "effect": "लोकोमोटिव पूरी क्षमता से लोड नहीं खींच पाता; गति धीमी होना या समय हानि (Time Loss)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 88,
+    "id": "CONV-FIRST-NOTCH-AUTOREGRESSION",
+    "title": "पहली नोच पर ऑटो रिग्रेशन होता है (LSGR बुझकर फिर से प्रकाशित होता है)",
+    "missingActionsCount": 9,
+    "missingActions": [
+      {
+        "idx": 10,
+        "text": "a) पीछे वाली कैब की BL बराबर लॉक है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 11,
+        "text": "   (आगे वाली कैब की BL लॉक करने पर यदि पायलट लैम्प प्रकाशित रहते हैं तो यह इस बात का संकेत है कि पीछे वाली कैब की BL अनलॉक हालत में है)"
+      },
+      {
+        "idx": 12,
+        "text": "   • यदि पीछे वाली कैब की BL अनलॉक है तो – उसे लॉक करने का प्रयत्न करें।"
+      },
+      {
+        "idx": 13,
+        "text": "   • यदि सफलता नहीं मिलती तो Q118 को वेज करें, ZSMS को “0” पर रखें और EEC द्वारा काम करें।"
+      },
+      {
+        "idx": 14,
+        "text": "   • मोडीफाइड ZSMS वाले लोको में GR को मैनुअल कंट्रोल करके सेक्शन क्लीयर करें।"
+      },
+      {
+        "idx": 16,
+        "text": "   • नोट :- यदि VCD मालफंक्शन करती है तो पहली बार में ही रीसेट करें तथा आइसोलेट करें।"
+      },
+      {
+        "idx": 17,
+        "text": "c) मोडीफाइड ZSMS वाले लोको में, BPR दबी अवस्था में अटक गया है तो उसे नॉर्मल करने का प्रयत्न करें:"
+      },
+      {
+        "idx": 18,
+        "text": "   (i) यदि सफलता नहीं मिलती है तो ZSMS की पोजीशन बदलें।"
+      },
+      {
+        "idx": 19,
+        "text": "   (ii) यदि फिर भी सफलता नहीं मिलती है तो GR को मैनुअल कंट्रोल करके सेक्शन क्लीयर करें।"
+      }
+    ],
+    "lamp": "LSGR बुझकर तुरंत पुनः प्रकाशित होता है (GR 0 पर आता है), LSP प्रकाशित हो सकता है या बुझा रह सकता है",
+    "effect": "नोच नहीं टिकता; 1st नोच लेते ही ऑटो रिग्रेशन होकर GR 0 पर आ जाता है, गाड़ी में ट्रैक्शन नहीं मिलता",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 89,
+    "id": "CONV-FIRST-NOTCH-AUTOREGRESSION-LSP-GLOWS",
+    "title": "पहली नोच पर ऑटो रिग्रेशन - यदि नोच लेने पर LSP प्रकाशित होता है",
+    "missingActionsCount": 0,
+    "missingActions": [],
+    "lamp": "LSGR बुझकर पुनः जलता है, नोच लेते ही LSP प्रकाशित होता है",
+    "effect": "रिले Q48 पिकअप होने से ऑटो रिग्रेशन; ट्रैक्शन मोटर में असमान लोड या शंटिंग कॉन्टैक्टर चिपकना",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 90,
+    "id": "CONV-FIRST-NOTCH-AUTOREGRESSION-LSP-OFF",
+    "title": "पहली नोच पर ऑटो रिग्रेशन - यदि नोच लेने पर LSP प्रकाशित नहीं होता है",
+    "missingActionsCount": 9,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) पीछे वाली कैब की BL बराबर लॉक है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 2,
+        "text": "   (आगे वाली कैब की BL लॉक करने पर यदि पायलट लैम्प प्रकाशित रहते हैं तो यह इस बात का संकेत है कि पीछे वाली कैब की BL अनलॉक हालत में है)"
+      },
+      {
+        "idx": 3,
+        "text": "   • यदि पीछे वाली कैब की BL अनलॉक है तो – उसे लॉक करने का प्रयत्न करें।"
+      },
+      {
+        "idx": 4,
+        "text": "   • यदि सफलता नहीं मिलती तो Q118 को वेज करें, ZSMS को “0” पर रखें और EEC द्वारा काम करें।"
+      },
+      {
+        "idx": 5,
+        "text": "   • मोडीफाइड ZSMS वाले लोको में GR को मैनुअल कंट्रोल करके सेक्शन क्लीयर करें।"
+      },
+      {
+        "idx": 7,
+        "text": "   • नोट :- यदि VCD मालफंक्शन करती है तो पहली बार में ही रीसेट करें तथा आइसोलेट करें।"
+      },
+      {
+        "idx": 8,
+        "text": "c) मोडीफाइड ZSMS वाले लोको में, BPR दबी अवस्था में अटक गया है तो उसे नॉर्मल करने का प्रयत्न करें:"
+      },
+      {
+        "idx": 9,
+        "text": "   (i) यदि सफलता नहीं मिलती है तो ZSMS की पोजीशन बदलें।"
+      },
+      {
+        "idx": 10,
+        "text": "   (ii) यदि फिर भी सफलता नहीं मिलती है तो GR को मैनुअल कंट्रोल करके सेक्शन क्लीयर करें।"
+      }
+    ],
+    "lamp": "LSGR बुझकर पुनः प्रकाशित होता है (0 पर आ जाता है), LSP बुझा रहता है",
+    "effect": "कंट्रोल सर्किट, कैब BL इंटरलॉक या VCD/BPR फॉल्ट के कारण नोच होल्ड नहीं होता; तुरंत ऑटो रिग्रेशन",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 91,
+    "id": "CONV-MPJ-F-R-LSB-GLOWS",
+    "title": "MPJ को “F” या “R” पर रखने पर LSB प्रकाशित ही रहता है",
+    "missingActionsCount": 6,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) CTF-1, CTF-2 और CTF-3 “रनिंग” पोजीशन पर हैं, सुनिश्चित करें। यदि सेट नहीं हैं तो उन्हें हाथ से सेट करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) J-1 और J-2 चेक करें। यदि वांछित स्थिति (Desired Position) में नहीं हैं तो उन्हें हाथ से सेट करें। HT-1 और HT-2 के न्यूमैटिक कट आउट कॉक खुले हैं, सुनिश्चित करें।"
+      },
+      {
+        "idx": 3,
+        "text": "c) C-145 का ओपन होना चेक करें और LSC-145 का बुझा होना सुनिश्चित करें।"
+      },
+      {
+        "idx": 4,
+        "text": "d) यदि रिवर्सर और CTF बराबर सेट हैं और C-145 ओपन है (LSC-145 बुझा है) तो Q-50 को वेज करें।"
+      },
+      {
+        "idx": 8,
+        "text": "• यदि रिवर्सर क्षतिग्रस्त हो गया है या यदि कोई रिवर्सर सेट नहीं होता है तो:"
+      },
+      {
+        "idx": 9,
+        "text": "  - संबंधित RSI ब्लॉक आइसोलेट करें तथा LSC-145 का बुझा होना सुनिश्चित करके Q-50 को वेज करें।"
+      }
+    ],
+    "lamp": "LSB पायलट लैम्प लगातार प्रकाशित रहेगा (LSB pilot lamp remains glowing)",
+    "effect": "Q-50 रिले इनर्जाइज न होने पर नोच नहीं आएगा; रिवर्सर/CTF सेट न होने या C-145 क्लोज होने से ट्रैक्शन सर्किट तैयार नहीं होगा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 92,
+    "id": "CONV-FIRST-NOTCH-L1-L6-NOT-CLOSING",
+    "title": "पहली नोच लेने पर कॉन्टैक्टर L-1 से L-6 क्लोज नहीं होते हैं",
+    "missingActionsCount": 6,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) Q-50 इनर्जाइज है, सुनिश्चित करें। (LSB बुझा होना चाहिए)।"
+      },
+      {
+        "idx": 2,
+        "text": "b) दोनों HVSI और HVMT सामान्य स्थिति में हैं, जांच करें।"
+      },
+      {
+        "idx": 3,
+        "text": "c) HT-2 कट आउट कॉक खुला है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 4,
+        "text": "d) DJ/VCB ओपन करें, लोको ग्राउंड करें, CTF-1, CTF-2 व CTF-3 को हाथ से दो-तीन बार ऑपरेट करके उन्हें वापस “रनिंग” पोजीशन पर रखें। सभी कॉन्टैक्टरों को न्यूमैटिकली हाथ से ऑपरेट करें। कॉइलों के टर्मिनल इत्यादि चेक करें।"
+      },
+      {
+        "idx": 5,
+        "text": "e) यदि सफलता नहीं मिलती तो सभी कॉन्टैक्टरों को वेज करें।"
+      },
+      {
+        "idx": 6,
+        "text": "f) रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+      }
+    ],
+    "lamp": "LSGR बुझ जाता है (GR 1 पर आता है), LSB बुझा होना चाहिए, एमीटर 0 दर्शाते हैं",
+    "effect": "लाइन कॉन्टैक्टर क्लोज न होने से ट्रैक्शन मोटरों को करंट नहीं मिलता; लोको में कोई कर्षण बल (TE) नहीं",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 93,
+    "id": "CONV-L1-L3-OR-L4-L6-NOT-CLOSING",
+    "title": "L-1 से L-3 अथवा L-4 से L-6 क्लोज नहीं होते हैं",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) संबंधित HVSI और HVMT सामान्य स्थिति में हैं, जांच करें। उन्हें 2-3 बार ऑपरेट करें। संबंधित RSI ब्लॉक आइसोलेट करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) सुविधाजनक स्टॉप पर कॉन्टैक्टरों को वेज करें और स्विचों को सामान्य स्थिति में रखें।"
+      },
+      {
+        "idx": 3,
+        "text": "c) रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+      }
+    ],
+    "lamp": "संबंधित बोगी का एमीटर 0 दर्शाएगा (A1 या A2 = 0), आधा कर्षण बल (Half Traction)",
+    "effect": "एक बोगी/ट्रक के लाइन कॉन्टैक्टर क्लोज न होने से 3 ट्रैक्शन मोटरें कार्य नहीं करेंगी; आधा कर्षण बल",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 94,
+    "id": "CONV-ONE-LINE-CONTACTOR-NOT-CLOSING",
+    "title": "कोई एक लाइन कॉन्टैक्टर क्लोज नहीं होता है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) संबंधित HMCS पोजीशन “1” पर है, इसकी जांच करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) HMCS द्वारा संबंधित ट्रैक्शन मोटर को आइसोलेट करके गाड़ी चलाएं। परंतु यदि भार खींचने में कठिनाई पड़ती हो तो सुविधाजनक स्टॉप पर कॉन्टैक्टर के क्लोज न होने के लिये ट्रबलशूट करें। यदि सफलता नहीं मिलती तो उसे वेज करें।"
+      },
+      {
+        "idx": 3,
+        "text": "c) रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+      }
+    ],
+    "lamp": "संबंधित बोगी के एमीटर में करंट कम दिखेगा, 5 मोटरों पर लोको कार्य करेगा",
+    "effect": "एक लाइन कॉन्टैक्टर न लगने से संबंधित ट्रैक्शन मोटर काम नहीं करेगी; हल्के लोड में गाड़ी चल सकती है, भारी लोड में कर्षण बल कम होगा",
+    "needsLampEn": true,
+    "needsEffectEn": true
+  },
+  {
+    "index": 95,
+    "id": "CONV-LSRSI-GLOWS",
+    "title": "LSRSI प्रकाशित रहता है",
+    "missingActionsCount": 9,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) यदि एक भुजा में अथवा प्रत्येक भुजा में एक-एक टेल-टेल फ्यूज पिघल गया है तो: फ्यूज निकाल दें और ट्रैक्शन चालू करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) यदि एक भुजा में दो फ्यूज पिघल गये हैं तो: फ्यूज निकाल दें और RSI ब्लॉक आइसोलेट करें।"
+      },
+      {
+        "idx": 3,
+        "text": "c) यदि कोई भी फ्यूज नहीं पिघला है और LSRSI प्रकाशित है तो: LSRSI की परवाह न करें।"
+      },
+      {
+        "idx": 6,
+        "text": "• यदि एक ही RSI ब्लॉक में एक LED प्रकाशित होती है तो: संबंधित RSI ब्लॉक आइसोलेट करें। अधिकतम अनुमत लोड (Permissible Load) का आधा करके गाड़ी चलाएं।"
+      },
+      {
+        "idx": 9,
+        "text": "a) चलती गाड़ी में LSRSI प्रकाशित होता है, साथ ही RSI ब्लॉक में LED भी प्रकाशित होती है तो: MP को “0” पर लाएं।"
+      },
+      {
+        "idx": 10,
+        "text": "b) यदि एक LED प्रकाशित होती है एवं टॉगल स्विच है तो: उसे ऑफ करें और सामान्य रूप से गाड़ी चलाएं। यदि टॉगल स्विच नहीं है तो: संबंधित RSI ब्लॉक की जांच करते हुए गाड़ी सामान्य रूप से चलाएं।"
+      },
+      {
+        "idx": 11,
+        "text": "c) यदि दोनों RSI ब्लॉक में एक-एक LED प्रकाशित होती है तो: उपरोक्त (b) में दी गई विधि से सामान्य रूप से गाड़ी चलाएं।"
+      },
+      {
+        "idx": 12,
+        "text": "d) यदि एक ही RSI ब्लॉक में दो LED प्रकाशित होती हैं तो: संबंधित RSI ब्लॉक में से कोई एक ट्रैक्शन मोटर आइसोलेट करें।"
+      },
+      {
+        "idx": 13,
+        "text": "e) यदि एक ही RSI ब्लॉक में दो से ज्यादा LED प्रकाशित होती हैं तो: संबंधित RSI ब्लॉक आइसोलेट करें। अधिकतम अनुमत लोड का आधा करके गाड़ी चलाएं।"
+      }
+    ],
+    "lamp": "LSRSI पायलट लैम्प लगातार प्रकाशित रहेगा (LSRSI Pilot Lamp Remains Glowing)",
+    "effect": "सिलिकॉन रेक्टिफायर ब्लॉक (RSI) में डायोड/फ्यूज खराबी; लोड वहन क्षमता प्रभावित (Defect in Silicon Rectifier Block RSI diodes/fuses; hauling load capacity impacted)",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 96,
+    "id": "CONV-NOTCH-AUTOREGRESSION-LSP-GLOWS",
+    "title": "नोच लेने पर LSP प्रकाशित होता है और आटो रिग्रेशन होता है",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) यदि पहली नोच पर LSP प्रकाशित होता है तो: अध्याय 8-पृष्ठ 56 पर फेलियर सं. 3(I) देखें। (अर्थात: व्हील स्लिप जांचें, सैंडिंग व ZQWC/BPQD का उपयोग करें; एमीटर न हिलने पर HMCS से संबंधित TM आइसोलेट करें; दोनों एमीटर हिलने पर TM-2 व TM-5 को बारी-बारी आइसोलेट करें; शंटिंग कॉन्टैक्टर चेक करें।)"
+      },
+      {
+        "idx": 2,
+        "text": "b) यदि अन्य नोचों पर LSP प्रकाशित होता है तो: जांच करें कि कोई शंटिंग कॉन्टैक्टर तो क्लोज हालत में नहीं अटक गया है और उसे LT में ओपन करने का प्रयत्न करें। यदि सफलता नहीं मिलती तो HMCS के द्वारा संबंधित ट्रैक्शन मोटर को आइसोलेट करें।"
+      }
+    ],
+    "lamp": "LSP पायलट लैम्प प्रकाशित होता है और GR पर ऑटो रिग्रेशन होता है (LSGR बुझकर पुनः प्रकाशित)",
+    "effect": "रिले Q48 पिकअप या शंटिंग कॉन्टैक्टर चिपके होने के कारण नोच टिकते नहीं और ऑटो रिग्रेशन हो जाता है",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 97,
+    "id": "CONV-LSP-GLOWS-WITHOUT-NOTCH",
+    "title": "बिना नोच लिये LSP प्रकाशित रहता है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) Q-48 चेक करें (LSP): यदि इनर्जाइज है तो Q-48 को हाथ से थपथपाएं।"
+      },
+      {
+        "idx": 2,
+        "text": "b) अगर सफलता न मिले तो: HMCS के द्वारा प्रयत्न करें (संबंधित ट्रैक्शन मोटर आइसोलेट करके देखें)।"
+      },
+      {
+        "idx": 3,
+        "text": "c) अगर फिर भी सफलता नहीं मिलती तो: सैंडिंग COC बंद करें और GR को हाथ से ऑपरेट करके सेक्शन क्लीयर करें।"
+      }
+    ],
+    "lamp": "LSP पायलट लैम्प बिना नोच लिए भी लगातार प्रकाशित रहेगा (LSP glows continuously on GR 0)",
+    "effect": "व्हील स्लिप प्रोटेक्शन रिले Q-48 इनर्जाइज या चिपकी होने से नोचिंग ब्लॉक होगी अथवा लगातार सैंडिंग/रिग्रेशन का खतरा रहेगा",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 98,
+    "id": "CONV-WHEEL-SLIP-LSP-NOT-GLOWING",
+    "title": "पहिये फिसलने पर LSP प्रकाशित नहीं होता (एमीटर रीडिंग में उतार-चढ़ाव है)",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) यदि आटो रिग्रेशन और सैंडिंग नहीं होता: तो आवश्यक होने पर GR रिग्रेस करें और PSA को दबाएं (यदि आवश्यक हो तो ZQWC को दबाएं)।"
+      },
+      {
+        "idx": 2,
+        "text": "b) यदि आटो रिग्रेशन और सैंडिंग होता है: तो व्हील स्लिप के संकेतों का ध्यान रखते हुए गाड़ी चलाएं। ZQWC का उपयोग करें।"
+      }
+    ],
+    "lamp": "LSP पायलट लैम्प नहीं जलता, लेकिन एमीटरों (A-1, A-2) की सुइयों में भारी उतार-चढ़ाव (Wheel Slip)",
+    "effect": "पहिया फिसलने पर ऑटोमैटिक व्हील स्लिप डिटेक्शन (Q48/LSP) काम न करने से रेल व पहिए की घिसावट का खतरा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 99,
+    "id": "CONV-LSGR-NOT-GLOWING",
+    "title": "LSGR प्रकाशित नहीं होता है",
+    "missingActionsCount": 4,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) MP “0” पर है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) SMGR ड्रम चेक करें। यदि GR “0” पर नहीं है तो उसे हाथ से “0” पर लाएं। यदि GR “0” पर है तो भी उसे 2-3 बार ऑपरेट करें और वापस “0” पर लाएं।"
+      },
+      {
+        "idx": 3,
+        "text": "c) दूसरी कैब का लैम्प चेक करें। यदि प्रकाशित नहीं है तो QV62 चेक करें।"
+      },
+      {
+        "idx": 4,
+        "text": "d) नोच रिपीटर का ध्यान रखते हुए गाड़ी चलाएं।"
+      }
+    ],
+    "lamp": "LSGR पायलट लैम्प नहीं जलता है (GR 0 पर भी LSGR बुझा रहता है)",
+    "effect": "GR 0 पोजीशन का पायलट लैम्प इंडिकेशन न मिलना; DJ क्लोजिंग या नोचिंग की स्थिति स्पष्ट न होना",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 100,
+    "id": "CONV-TRACTION-VOLTMETER-NOT-DEVIATING",
+    "title": "ट्रैक्शन वोल्टमीटर डेविएट नहीं होते हैं परंतु कर्षण बल की कोई हानि नहीं है",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) ट्रैक्शन चालू रखें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) 28 नोच से आगे न बढ़ें।"
+      }
+    ],
+    "lamp": "ट्रैक्शन वोल्टमीटर (U-1, U-2) शून्य दर्शाते हैं, परंतु एमीटर करंट दर्शाते हैं और लोको में कर्षण सामान्य है",
+    "effect": "वोल्टमीटर मीटर सर्किट में खराबी; वोल्टेज मॉनिटरिंग उपलब्ध न होने के कारण ओवरवोल्टेज सुरक्षा हेतु 28 नोच की अधिकतम सीमा",
+    "needsLampEn": true,
+    "needsEffectEn": true
+  },
+  {
+    "index": 101,
+    "id": "CONV-NOTCH-REPEATER-NOT-WORKING",
+    "title": "नोच रिपीटर काम नहीं करता है",
+    "missingActionsCount": 5,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) वोल्टमीटर और एमीटर पर ध्यान रखते हुये ट्रैक्शन चालू रखें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) CHBA का काम चेक करें। यदि CHBA काम नहीं करता तो उसके लिये ट्रबलशूट करें।"
+      },
+      {
+        "idx": 3,
+        "text": "c) यदि CHBA काम करता है और दोनों कैब के नोच रिपीटर काम नहीं करते हैं तो: CCTFS / CCNR फ्यूज / MCB चेक करें।"
+      },
+      {
+        "idx": 4,
+        "text": "d) यदि CCTFS / CCNR बार-बार पिघलता है तो: वोल्टमीटर और एमीटर पर ध्यान रखते हुये ट्रैक्शन चालू रखें।"
+      },
+      {
+        "idx": 5,
+        "text": "e) SI UNIT लोको है तो: HRAVT नॉर्मल होना चेक करें।"
+      }
+    ],
+    "lamp": "कैब में नोच रिपीटर मीटर (0 से 32 नोच) सुई नहीं हिलती या गलत रीडिंग दिखाता है",
+    "effect": "कैब में वर्तमान नोच संख्या नहीं दिखती; ट्रैक्शन चालू रह सकता है परंतु वोल्टमीटर/एमीटर पर निगरानी रखनी होगी",
+    "needsLampEn": true,
+    "needsEffectEn": true
+  },
+  {
+    "index": 102,
+    "id": "CONV-FLASHER-LIGHT-NOT-WORKING",
+    "title": "फ्लैशर लाईट कार्य नहीं करती",
+    "missingActionsCount": 0,
+    "missingActions": [],
+    "lamp": "फ्लैशर लाईट नहीं जलती है / फ्लैशर यूनिट इंडिकेटर बंद (Flasher light does not illuminate / flash)",
+    "effect": "संरक्षा चेतावनी बाधित; आपातकालीन स्थिति में सामने से आने वाली गाड़ियों को चेतावनी नहीं दी जा सकेगी। संरक्षा नियमों के अनुसार शेड आउट न करें अथवा लोको फेल करें",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 103,
+    "id": "CONV-HEADLIGHT-NOT-GLOWING",
+    "title": "हेडलाइट प्रकाशित नहीं होती है",
+    "missingActionsCount": 7,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "a) BL अनलॉक और ZRT/ ZPR का ऑन होना, सुनिश्चित करें।"
+      },
+      {
+        "idx": 1,
+        "text": "b) BLPRD क्लोज करें।"
+      },
+      {
+        "idx": 2,
+        "text": "c) BLPRD/ BLPRF ओपन करें और BLPRR क्लोज करें।"
+      },
+      {
+        "idx": 3,
+        "text": "- यदि पीछे वाली हेड लाइट भी प्रकाशित नहीं होती है तो DC to DC कन्वर्टर के टॉगल स्विच की पोजीशन बदलकर प्रयत्न करें।"
+      },
+      {
+        "idx": 4,
+        "text": "- यदि पीछे वाली हेड लाइट प्रकाशित होती है तो बल्ब बदली करें।"
+      },
+      {
+        "idx": 5,
+        "text": "d) यदि सफलता नहीं मिलती तो मार्कर लाइटों की सहायता से 40 KMPH के गति प्रतिबंध (Speed Restriction) से G & SR 4.14 के अनुसार गाड़ी चलाएं।"
+      },
+      {
+        "idx": 6,
+        "text": "नोट:- यदि HRTPR है तो उसे पोजीशन “0” पर रखकर RTPR का उपयोग करें। परिचालन संबंधी निर्देश कंडिका 3.7 पृष्ठ 29 देखें।"
+      }
+    ],
+    "lamp": "लोको हेडलाइट प्रकाशित नहीं होती है (Twin beam headlight does not illuminate / glows dimly)",
+    "effect": "रात्रि में ट्रैक दृश्यता बाधित; G & SR 4.14 के अनुसार मार्कर लाइट से 40 KMPH का गति प्रतिबंध लागू होगा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 104,
+    "id": "CONV-NO-PILOT-LAMP-ON-UNLOCKING-BL",
+    "title": "BL को अनलॉक करने पर कोई भी पायलट लैम्प प्रकाशित नहीं होता है",
+    "missingActionsCount": 13,
+    "missingActions": [
+      {
+        "idx": 0,
+        "text": "A) यदि दूसरी कैब में पायलट लैम्प प्रकाशित है तो पीछे वाली कैब के और दूसरे मापक यंत्रों पर ध्यान रखते हुए गाड़ी चलाएं।"
+      },
+      {
+        "idx": 1,
+        "text": "B) यदि दूसरी कैब में भी पायलट लैम्प प्रकाशित नहीं है तो -"
+      },
+      {
+        "idx": 2,
+        "text": "a) BL को 2-3 बार ऑपरेट करें।"
+      },
+      {
+        "idx": 3,
+        "text": "b) यदि लोको में HLS/ZLS स्विच दिया है तो उसका ऑन होना चेक करें।"
+      },
+      {
+        "idx": 4,
+        "text": "c) यदि बैटरी वोल्टेज “0” है तो एडिशनल CCBA / CCMCB (BA बॉक्स-1 पर) चेक करें, यदि मेल्ट होता है तो HOBA का उपयोग करें। बैटरी कनेक्शन चेक करें और खराब बैटरी आइसोलेट करें।"
+      },
+      {
+        "idx": 5,
+        "text": "d) CCLS चेक करें - यदि पिघल गया है तो उसे बदल दें - यदि फिर से पिघलता है तो HOBA को “ऑफ” पर रखकर फ्यूज बदली करें।"
+      },
+      {
+        "idx": 6,
+        "text": "e) यदि CCLS बराबर है तो A कॉक कनेक्शन चेक करें (TB Panel के नीचे)।"
+      },
+      {
+        "idx": 7,
+        "text": "नोट:-"
+      },
+      {
+        "idx": 8,
+        "text": "i) यदि CCLS कायम नहीं रहता है तो गाड़ी चलाने के लिए QRS को वेज करें।"
+      },
+      {
+        "idx": 9,
+        "text": "ii) IP MAGNET VALVE का COC बंद करें।"
+      },
+      {
+        "idx": 10,
+        "text": "iii) बिना पायलट लैम्प के गाड़ी चलाएं। अन्य मापक यंत्रों जैसे UA, नोच रिपीटर, एमीटर, CHBA एमीटर, रिले टारगेट इत्यादि पर ध्यान रखते हुए गाड़ी चलाएं (पृष्ठ 29 पर कंडिका 3.6 देखें)।"
+      },
+      {
+        "idx": 11,
+        "text": "iv) विजिलेंस कंट्रोल डिवाइस {VCD} कार्य नहीं करेगी।"
+      },
+      {
+        "idx": 12,
+        "text": "v) रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+      }
+    ],
+    "lamp": "BL अनलॉक करने पर कैब डेस्क के सभी पायलट लैम्प (LSDJ, LSCHBA, LSB, LSGR आदि) बुझे रहते हैं (No pilot lamps glow)",
+    "effect": "पायलट लैम्प इंडिकेशन बाधित; यदि CCLS पिघला है तो रिले QRS डी-इनर्जाइज होकर IP वाल्व से BP ड्रॉप कर सकती है और VCD फेल हो सकती है",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 105,
+    "id": "CONV-LSDJ-NOT-GLOWING-ON-UNLOCKING-BL",
+    "title": "BL अनलॉक करने पर LSDJ प्रकाशित नहीं होता है",
+    "missingActionsCount": 3,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) दूसरी कैब में LSDJ चेक करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) यदि दोनों कैब में प्रकाशित नहीं है तो: RS में प्रेशर चेक करें। यदि कम है तो CPA द्वारा 8 Kg/cm² प्रेशर बनाएं।"
+      },
+      {
+        "idx": 3,
+        "text": "c) QV60 को दो-तीन बार ऑपरेट करें। लैम्पों को चेक करें।"
+      }
+    ],
+    "lamp": "BL अनलॉक करने पर LSDJ पायलट लैम्प नहीं जलता है (LSDJ pilot lamp does not illuminate)",
+    "effect": "DJ ओपन/क्लोज स्थिति का इंडिकेशन नहीं मिलता; RS में हवा का दबाव कम होने पर DJ क्लोज नहीं होगा",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 106,
+    "id": "CONV-LSCHBA-NOT-GLOWING-ON-UNLOCKING-BL",
+    "title": "BL अनलॉक करने पर LSCHBA प्रकाशित नहीं होता है",
+    "missingActionsCount": 4,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) दूसरी कैब में LSCHBA चेक करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) यदि दोनों कैब में प्रकाशित नहीं है तो निम्न सावधानी रखें -"
+      },
+      {
+        "idx": 3,
+        "text": "i) जब कभी DJ/VCB क्लोज करना हो BLRDJ को 3-4 सेकंड में छोड़ दें।"
+      },
+      {
+        "idx": 4,
+        "text": "ii) CHBA काम कर रहा है, सुनिश्चित करने के लिये CHBA एमीटर पर ध्यान रखें।"
+      }
+    ],
+    "lamp": "BL अनलॉक करने पर LSCHBA पायलट लैम्प नहीं जलता है",
+    "effect": "बैटरी चार्जर CHBA इंडिकेशन उपलब्ध नहीं; DJ क्लोजिंग के समय समय पर BLRDJ छोड़ना होगा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 107,
+    "id": "CONV-LSB-NOT-GLOWING-ON-UNLOCKING-BL",
+    "title": "BL अनलॉक करने पर LSB प्रकाशित नहीं होता है",
+    "missingActionsCount": 4,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) दूसरी कैब में LSB चेक करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) यदि दोनों कैबों में LSB प्रकाशित नहीं है तो निम्न सावधानी रखें:-"
+      },
+      {
+        "idx": 3,
+        "text": "• जब कभी MPJ को ऑपरेट करें, सुनिश्चित करें कि दोनों रिवर्सर (J1, J2) वांछित दिशा में सेट हो गये हैं और Q50 इनर्जाइज हो गई है।"
+      },
+      {
+        "idx": 4,
+        "text": "c) रेहियोस्टैटिक ब्रेक का उपयोग न करें।"
+      }
+    ],
+    "lamp": "BL अनलॉक करने पर LSB पायलट लैम्प नहीं जलता है",
+    "effect": "रिवर्सर व ट्रैक्शन/ब्रेकिंग चेंजओवर की स्थिति का लैम्प इंडिकेशन बाधित; Q50 व रिवर्सर दिशा की मैन्युअल पुष्टि आवश्यक",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 108,
+    "id": "CONV-LSGR-NOT-GLOWING-ON-UNLOCKING-BL",
+    "title": "BL अनलॉक करने पर LSGR प्रकाशित नहीं होता है",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) SMGR ड्रम चेक करें और GR “0” पर है, सुनिश्चित करें। यदि GR “0” पर नहीं है तो उसे हाथ से “0” पर लाएं। लैम्प चेक करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) यदि GR “0” पर है तो एमीटर और नोच रिपीटर की ओर ध्यान रखते हुये गाड़ी चलाएं।"
+      }
+    ],
+    "lamp": "BL अनलॉक करने पर LSGR पायलट लैम्प नहीं जलता है (GR 0 पर बुझा रहता है)",
+    "effect": "GR 0 पोजीशन इंडिकेशन बाधित",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 109,
+    "id": "CONV-LSP-GLOWS-ON-UNLOCKING-BL",
+    "title": "BL अनलॉक करने पर LSP प्रकाशित होता है",
+    "missingActionsCount": 2,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) Q-48 चेक करें (LSP): यदि इनर्जाइज है तो Q-48 को हाथ से थपथपाएं, अगर सफलता न मिले तो HMCS के द्वारा प्रयत्न करें, अगर फिर भी सफलता नहीं मिलती तो सैंडिंग COC बंद करें और GR को हाथ से ऑपरेट करके सेक्शन क्लीयर करें।"
+      },
+      {
+        "idx": 2,
+        "text": "b) यदि Q-48 रिले डी-इनर्जाइज है तो: BPT को 2-3 बार ऑपरेट करें।"
+      }
+    ],
+    "lamp": "BL अनलॉक करते ही बिना नोच लिए LSP पायलट लैम्प प्रकाशित हो जाता है",
+    "effect": "व्हील स्लिप सर्किट एक्टिव या रिले Q48 चिपकी होने से ऑटो रिग्रेशन या सैंडिंग का जोखिम",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 110,
+    "id": "CONV-BPT-LSP-LSRSI-NOT-GLOWING",
+    "title": "BPT दबाने पर LSP / LSRSI प्रकाशित नहीं होते हैं",
+    "missingActionsCount": 5,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "• LSP / LSRSI को टेस्ट करने के लिये पीछे वाली कैब की BPT दबाएं।"
+      },
+      {
+        "idx": 2,
+        "text": "• यदि LSP / LSRSI प्रकाशित नहीं होते हैं तो सावधानीपूर्वक गाड़ी चलाएं:"
+      },
+      {
+        "idx": 3,
+        "text": "a) व्हील स्लिप के साथ एमीटरों में उतार-चढ़ाव चेक करते रहें।"
+      },
+      {
+        "idx": 4,
+        "text": "b) समय-समय पर RSI ब्लॉक पर टेल-टेल फ्यूज चेक करते रहें।"
+      },
+      {
+        "idx": 5,
+        "text": "c) यदि LED वाले RSI ब्लॉक हैं तो सभी LED का बुझा होना चेक करते रहें।"
+      }
+    ],
+    "lamp": "BPT (Lamp Test Push Button) दबाने पर LSP या LSRSI पायलट लैम्प नहीं जलते हैं",
+    "effect": "पायलट लैम्प बल्ब या टेस्टिंग सर्किट खराब; पहिया फिसलने या RSI ब्लॉक फेलियर पर दृश्य चेतावनी नहीं मिल सकेगी",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  },
+  {
+    "index": 111,
+    "id": "CONV-CPA-NOT-STARTING",
+    "title": "CPA चालू नहीं होता है",
+    "missingActionsCount": 5,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) HBA “1” पर है और बैटरी वोल्टेज 80 वोल्ट से अधिक है, सुनिश्चित करें (ZCPA को “1” पर रखने के बाद)।"
+      },
+      {
+        "idx": 2,
+        "text": "b) CCBA चेक करें। यदि आवश्यक हो तो HOBA का उपयोग करें।"
+      },
+      {
+        "idx": 3,
+        "text": "c) ZCPA को 2-3 बार ऑपरेट करें।"
+      },
+      {
+        "idx": 4,
+        "text": "d) ZCPA के टर्मिनल वायर कनेक्शन चेक करें।"
+      },
+      {
+        "idx": 5,
+        "text": "e) MCPA के टर्मिनल वायर कनेक्शन चेक करें।"
+      }
+    ],
+    "lamp": "CPA मोटर की आवाज नहीं आती, RS प्रेशर नहीं बढ़ता (CPA motor does not run)",
+    "effect": "कंट्रोल रिजर्वोयर RS में एयर प्रेशर नहीं बनेगा; पैंटोग्राफ नहीं उठ सकेगा तथा DJ क्लोज नहीं हो पाएगा",
+    "needsLampEn": false,
+    "needsEffectEn": true
+  },
+  {
+    "index": 112,
+    "id": "CONV-CPA-RUNS-RS-PRESSURE-NOT-BUILDING",
+    "title": "CPA चालू होता है परंतु RS प्रेशर नहीं बनता है",
+    "missingActionsCount": 9,
+    "missingActions": [
+      {
+        "idx": 1,
+        "text": "a) सुनिश्चित करें कि RAL कॉक खुला है (उसे टैप करें)।"
+      },
+      {
+        "idx": 2,
+        "text": "b) RS और MCPA के ड्रेन कॉक बंद हैं, सुनिश्चित करें।"
+      },
+      {
+        "idx": 3,
+        "text": "c) RDJ और DJ ऑयल सेपरेटर के ड्रेन कॉक बंद हैं।"
+      },
+      {
+        "idx": 4,
+        "text": "d) पैंटो पाइपिंग ड्रेन कॉक बंद है और पैंटो पाइप में कोई लीकेज नहीं है और BV बॉक्स में कोई लीकेज नहीं है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 5,
+        "text": "e) DJ/VCB कंट्रोल बॉक्स में कोई लीकेज नहीं है, सुनिश्चित करें।"
+      },
+      {
+        "idx": 6,
+        "text": "f) यदि CPA का सेफ्टी वाल्व लीक कर रहा है तो उसे ब्लैंक करें। यदि संबंधित COC दिया है तो उसे बंद करें।"
+      },
+      {
+        "idx": 7,
+        "text": "g) R-1 COC को क्लोज करके प्रयत्न करें।"
+      },
+      {
+        "idx": 8,
+        "text": "h) CPA को चालू रखें और लोको इनर्जाइज करने का प्रयत्न करें। जब MR प्रेशर 7 kg/cm² हो जाये तो CPA बंद कर दें।"
+      },
+      {
+        "idx": 9,
+        "text": "• नोट: CPA चार्जिंग रेट चेक करें - 1 kg/cm² प्रति मिनट होना चाहिए।"
+      }
+    ],
+    "lamp": "CPA मोटर चलती है परंतु RS गेज पर सुई नहीं बढ़ती या 8 kg/cm² तक नहीं पहुंचती",
+    "effect": "RS प्रेशर कम रहने से पैंटोग्राफ रेज नहीं होगा और DJ/VCB क्लोज नहीं हो सकेगा",
+    "needsLampEn": false,
+    "needsEffectEn": false
+  }
+]

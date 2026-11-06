@@ -110,6 +110,7 @@ export default function App() {
   const [voiceInputLang, setVoiceInputLang] = useState<'hi-IN' | 'en-IN'>('hi-IN');
   const [isInIframe, setIsInIframe] = useState<boolean>(false);
   const speechRecognitionRef = useRef<any>(null);
+  const voiceSilenceTimerRef = useRef<any>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -141,8 +142,9 @@ export default function App() {
       }
 
       const recognition = new SpeechRecognition();
-      recognition.lang = voiceInputLang; // 'hi-IN' or 'en-IN'
-      recognition.continuous = false;
+      recognition.lang = voiceInputLang; // 'hi-IN' (Hindi) or 'en-IN'
+      // CRITICAL: continuous = true allows loco pilot to speak a full railway problem naturally without abrupt cutoff
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
@@ -160,24 +162,32 @@ export default function App() {
       };
 
       recognition.onresult = (event: any) => {
+        let finalized = '';
         let interim = '';
-        let final = '';
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            final += event.results[i][0].transcript;
+        // CRITICAL BUGFIX: Iterate from index 0 across all results to prevent dropping earlier spoken Hindi phrases!
+        for (let i = 0; i < event.results.length; ++i) {
+          const item = event.results[i];
+          if (item.isFinal) {
+            finalized += item[0].transcript + ' ';
           } else {
-            interim += event.results[i][0].transcript;
+            interim += item[0].transcript;
           }
         }
 
-        const rawTranscript = final || interim;
+        const rawTranscript = (finalized + interim).trim();
         if (rawTranscript) {
           const cleaned = cleanRailwayVoiceText(rawTranscript);
           setAiQuery(cleaned);
           if (voiceInputLang === 'hi-IN' || containsDevanagari(rawTranscript)) {
             handleTroubleshootLangChange('hi');
           }
+
+          // Auto-stop after 3.5s pause after speaking
+          if (voiceSilenceTimerRef.current) clearTimeout(voiceSilenceTimerRef.current);
+          voiceSilenceTimerRef.current = setTimeout(() => {
+            stopVoiceInput();
+          }, 3500);
         }
       };
 
@@ -220,6 +230,10 @@ export default function App() {
   };
 
   const stopVoiceInput = () => {
+    if (voiceSilenceTimerRef.current) {
+      clearTimeout(voiceSilenceTimerRef.current);
+      voiceSilenceTimerRef.current = null;
+    }
     if (speechRecognitionRef.current) {
       try {
         speechRecognitionRef.current.stop();
@@ -424,7 +438,18 @@ export default function App() {
       qLower.includes('conv-horn-whistle-failure') ||
       qLower.includes('ʬीसल') || qLower.includes('İʬसल') || qLower.includes('हॉनŊ') || qLower.includes('डुɘेƛ') || qLower.includes('सैİȵंग') ||
       qLower.includes('व्हीसल') || qLower.includes('व्हिसल') || qLower.includes('whistle') ||
-      ((qLower.includes('हॉर्न') || qLower.includes('horn') || qLower.includes('हॉन') || qLower.includes('सीटी')) && (qLower.includes('फेल') || qLower.includes('fail') || qLower.includes('लीकेज') || qLower.includes('leakage') || qLower.includes('सैंडिंग') || qLower.includes('डुप्लेक्स') || qLower.includes('4.50') || qLower.includes('गाड़ी') || qLower.includes('लोको')));
+      ((qLower.includes('हॉर्न') || qLower.includes('horn') || qLower.includes('हॉन') || qLower.includes('सीटी')) && (qLower.includes('फेल') || qLower.includes('fail') || qLower.includes('लीकेज') || qLower.includes('leakage') || qLower.includes('सैंडिंग') || qLower.includes('डुप्लेक्स') || qLower.includes('4.50') || qLower.includes('गाड़ी') || qLower.includes('लोको'))) ||
+      qLower.includes('sa-9') || qLower.includes('sa9') || qLower.includes('sa 9') || qLower.includes('sa_9') ||
+      qLower.includes('एसए-9') || qLower.includes('एसए 9') || qLower.includes('एस ए 9') || qLower.includes('एसए9') ||
+      qLower.includes('a-9') || qLower.includes('a9') || qLower.includes('a 9') || qLower.includes('a_9') ||
+      qLower.includes('ए-9') || qLower.includes('ए 9') || qLower.includes('ए9') ||
+      qLower.includes('लोको ब्रेक नहीं लगती') || qLower.includes('लोको ब्रेक नहीं') ||
+      qLower.includes('icdj') || qLower.includes('±li[j nh)> hi[ti') || qLower.includes('bp1dj') || qLower.includes('bp2dj') ||
+      qLower.includes('add blrdj') || qLower.includes('dj close') || qLower.includes('vcb close') || qLower.includes('क्लोज नहीं होता') ||
+      qLower.includes('dj closed') || qLower.includes('vcb closed') || qLower.includes('mpcs') || qLower.includes('एमपीसीएस') ||
+      qLower.includes('dj nahi lag') || qLower.includes('vcb nahi lag') || qLower.includes('dj/vcb nahi lag') ||
+      (qLower.includes('dj') && (qLower.includes('close') || qLower.includes('क्लोज') || qLower.includes('नहीं होता') || qLower.includes('nahi hota'))) ||
+      (qLower.includes('vcb') && (qLower.includes('close') || qLower.includes('क्लोज') || qLower.includes('नहीं होता') || qLower.includes('nahi hota')));
 
     let targetLoco = locoType;
     if (qLower.includes('3 phase ka pooch raha') || (isExplicit3Phase && !isExplicitAmrit && !isExplicitConventional)) {
@@ -644,6 +669,14 @@ export default function App() {
   const currentFaults = useMemo(() => {
     if (locoType === 'conventional') return conventionalFaults;
     const rawLower = searchQuery.trim().toLowerCase();
+    const isConventionalSearch = 
+      rawLower.includes('mpcs') || rawLower.includes('एमपीसीएस') || rawLower.includes('icdj') || rawLower.includes('c118') || rawLower.includes('q118') ||
+      rawLower.includes('qop') || rawLower.includes('qoa') || rawLower.includes('blcp') || rawLower.includes('arno') ||
+      rawLower.includes('siv') || rawLower.includes('conv') || rawLower.includes('sa-9') || rawLower.includes('a-9') ||
+      rawLower.includes('कन्वेंशनल') || rawLower.includes('dj close') || rawLower.includes('vcb close') || rawLower.includes('dj closed');
+    if (isConventionalSearch) {
+      return conventionalFaults;
+    }
     const isAmritSearch = rawLower.includes('slave') || rawLower.includes('स्लेव') || rawLower.includes('स्लैब') || rawLower.includes('स्लेब') || rawLower.includes('slab') || rawLower.includes('push pull') || rawLower.includes('push-pull') || rawLower.includes('amrit') || rawLower.includes('अमृत');
     if (isAmritSearch) {
       return amritBharatFaults;
@@ -654,8 +687,11 @@ export default function App() {
   const matchedCatalogFault = useMemo(() => {
     if (!aiResult?.identifiedFaultId) return null;
     const cleanId = aiResult.identifiedFaultId.trim().toUpperCase();
-    return currentFaults.find(f => f.id.toUpperCase() === cleanId) || null;
-  }, [aiResult, currentFaults]);
+    return faults.find(f => f.id.toUpperCase() === cleanId) ||
+           amritBharatFaults.find(f => f.id.toUpperCase() === cleanId) ||
+           conventionalFaults.find(f => f.id.toUpperCase() === cleanId) ||
+           null;
+  }, [aiResult]);
 
   const filteredFaults = useMemo(() => {
     const rawSearch = searchQuery.trim();
@@ -1854,7 +1890,11 @@ export default function App() {
                             <span className={cn("text-xs font-black uppercase tracking-wider", isDay ? "text-slate-700" : "text-amber-400/90")}>
                               Identified Fault Code:
                             </span>
-                            {aiResult.identifiedFaultId ? (
+                            {aiResult.identifiedFaultId === 'NO_EXACT_MATCH' ? (
+                              <span className="bg-amber-600/20 text-amber-300 border border-amber-500/50 font-bold px-3 py-1 rounded-xl text-xs tracking-wide">
+                                ❌ कोई सटीक TSD दोष नहीं मिला
+                              </span>
+                            ) : aiResult.identifiedFaultId ? (
                               <span className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white font-black px-3.5 py-1 rounded-xl text-sm tracking-wide shadow-md border border-red-400/40">
                                 {aiResult.identifiedFaultId}
                               </span>
@@ -1897,6 +1937,19 @@ export default function App() {
                           )}>
                             {formatBilingualText(aiResult.faultTitle, troubleshootLanguage)}
                           </h3>
+                        )}
+
+                        {aiResult.identifiedFaultId === 'NO_EXACT_MATCH' && (
+                          <div className={cn(
+                            "rounded-xl p-3.5 border-2 flex items-start gap-3 mt-1.5",
+                            isDay ? "bg-amber-100 border-amber-400 text-amber-950" : "bg-amber-950/50 border-amber-500/60 text-amber-200"
+                          )}>
+                            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                            <div className="text-xs sm:text-sm">
+                              <span className="font-black block mb-0.5">सख्त निर्देश का पालन (No Alternative Guessing):</span>
+                              <span>दर्ज/अपलोड की गई समस्या का आधिकारिक TSD में कोई सीधा रिकॉर्ड नहीं मिला। आपकी मांग अनुसार कोई दूसरा, अनुमानित या असंबद्ध उत्तर नहीं दिखाया गया है। केवल सही जानकारी होने पर ही उत्तर दिया जाएगा।</span>
+                            </div>
+                          </div>
                         )}
                       </div>
 
@@ -1942,7 +1995,7 @@ export default function App() {
                         </div>
 
                         {/* LOCO PILOT VOICE ASSISTANT BUTTON / PLAYER */}
-                        {aiResult.suggestedActions && aiResult.suggestedActions.length > 0 && (
+                        {aiResult.identifiedFaultId !== 'NO_EXACT_MATCH' && aiResult.suggestedActions && aiResult.suggestedActions.length > 0 && (
                           <div className="mb-4">
                             <VoiceTroubleshooterPlayer
                               steps={aiResult.suggestedActions}

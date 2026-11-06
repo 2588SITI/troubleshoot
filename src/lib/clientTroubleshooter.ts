@@ -8931,23 +8931,21 @@ function resolve3PhaseDefect(query: string, norm: string): GroundedResult {
     };
   }
 
-  // 3-Phase Generic Fallback
+  // 3-Phase Generic Fallback - when no exact match found
   return {
-    identifiedFaultId: "GEN_3PH_ASSIST",
-    faultTitle: "3-फेज लोकोमोटिव दोष निवारण (WAP-7 / WAG-9 / WAP-5)",
-    analysis: `इनपुट '${query}' के आधार पर 254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी अनुसार सामान्य प्रक्रिया:`,
+    identifiedFaultId: "NO_EXACT_MATCH",
+    faultTitle: "कोई सटीक TSD समाधान नहीं मिला (No Exact TSD Match Found)",
+    analysis: `दर्ज की गई समस्या/अपलोड: "${query.trim()}"\n\n254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी में इस समस्या का कोई सीधा या सटीक मेल नहीं मिला।\n\n(यूजर के निर्देशानुसार: कोई दूसरा, अनुमानित या असंबद्ध दोष नहीं दिखाया गया है)।`,
     suggestedActions: [
-      "1. DDU / DDS स्क्रीन पर प्रदर्शित फॉल्ट संदेश व नोड (Node) नंबर की जांच करें।",
-      "2. BPFA दबाकर फॉल्ट एकनॉलेज (ACK) करें।",
-      "3. मशीन रूम (SB-1, SB-2, HB-1, HB-2) में संबंधित सबसिस्टम की MCB चेक करें।",
-      "4. आवश्यकता पड़ने पर BL चाबी या MCB 112.1 से MCE रीसेट (OFF/ON) करें।"
+      "1. DDU / DDS स्क्रीन पर प्रदर्शित फॉल्ट संदेश (जैसे F0101P2, F0601P1 आदि) व नोड (Node) नंबर की जांच करें।",
+      "2. सबसिस्टम (जैसे SB1, SB2, HB1, HB2, BUR, VCB, MCB आदि) की सही वर्तनी व MCB नंबर जांचें।"
     ],
-    precautions: "लोकोमोटिव की सुरक्षा सुनिश्चित करें और SA-9 लगा लें।",
+    precautions: "लोकोमोटिव की सुरक्षा सुनिश्चित करें और अनधिकृत MCB/कॉक संचालन न करें। तुरंत TLC से संपर्क करें।",
     manualReference: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी",
-    verifiedFromPdf: true,
+    verifiedFromPdf: false,
     pdfDocumentName: "254-पृष्ठ 3-फेज लोको TSD डायरेक्टरी (भारतीय रेल)",
     pdfPage: 1,
-    pdfQuote: "Official 3-Phase Troubleshooting Procedure"
+    pdfQuote: "कोई सटीक TSD रिकॉर्ड नहीं मिला।"
   };
 }
 
@@ -10594,21 +10592,44 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
   }
 
   const isBindingContext =
-    (hasBrake || hasRelease || norm.includes('binding') || norm.includes('बाइंडिंग')) &&
+    (
+      norm.includes('binding') ||
+      norm.includes('बाइंडिंग') ||
+      norm.includes('jam') ||
+      norm.includes('जाम') ||
+      ((hasBrake || norm.includes('chakka') || norm.includes('चक्का') || norm.includes('wheel')) &&
+        (norm.includes('binding') || norm.includes('बाइंडिंग') || norm.includes('छूट नहीं') || (norm.includes('रिलीज') && (norm.includes('नहीं') || norm.includes('न होना')))))
+    ) &&
     !norm.includes('vcd') &&
     !norm.includes('vigilance') &&
     !norm.includes('regenerative') &&
-    !norm.includes('रीजनरेटिव');
+    !norm.includes('रीजनरेटिव') &&
+    !norm.includes('sa-9') &&
+    !norm.includes('sa9') &&
+    !norm.includes('a-9') &&
+    !norm.includes('a9') &&
+    !norm.includes('नहीं लगती') &&
+    !norm.includes('न लगना') &&
+    !norm.includes('not apply');
 
   const isBrakeNotReleasingQuery =
-    norm.includes('brakes not releasing') ||
-    norm.includes('brake not releasing') ||
-    norm.includes('ब्रेक रिलीज न होना') ||
-    norm.includes('ब्रेक रिलीज नहीं') ||
-    norm.includes('ब्रेक छूट नहीं') ||
-    norm.includes('p53_brake') ||
-    norm.includes('p53_master_brake') ||
-    norm.includes('p53_slave_brake');
+    (
+      norm.includes('brakes not releasing') ||
+      norm.includes('brake not releasing') ||
+      norm.includes('ब्रेक रिलीज न होना') ||
+      norm.includes('ब्रेक रिलीज नहीं') ||
+      norm.includes('ब्रेक छूट नहीं') ||
+      norm.includes('p53_brake') ||
+      norm.includes('p53_master_brake') ||
+      norm.includes('p53_slave_brake')
+    ) &&
+    !norm.includes('sa-9') &&
+    !norm.includes('sa9') &&
+    !norm.includes('a-9') &&
+    !norm.includes('a9') &&
+    !norm.includes('नहीं लगती') &&
+    !norm.includes('न लगना') &&
+    !norm.includes('not apply');
 
   if (isBindingContext || isBrakeNotReleasingQuery) {
     // If specifically asked for slave only
@@ -11211,23 +11232,22 @@ function resolveAmritBharatDefect(query: string, norm: string): GroundedResult {
     };
   }
 
-  // Amrit Bharat Generic Fallback
+  // Amrit Bharat Generic Fallback - when no exact match found
   return {
-    identifiedFaultId: "GEN_AMRIT_ASSIST",
-    faultTitle: "अमृत भारत पुश-पुल लोकोमोटिव दोष निवारण (CLW TSD)",
-    analysis: `इनपुट '${query}' के आधार पर CLW 67-पृष्ठ अमृत भारत TSD फाइनल कॉपी अनुसार प्रक्रिया:`,
+    identifiedFaultId: "NO_EXACT_MATCH",
+    faultTitle: "कोई सटीक TSD समाधान नहीं मिला (No Exact TSD Match Found)",
+    analysis: `दर्ज की गई समस्या/अपलोड: "${query.trim()}"\n\nCLW 67-पृष्ठ अमृत भारत TSD फाइनल कॉपी में इस समस्या का कोई सीधा या सटीक मेल नहीं मिला।\n\n(यूजर के निर्देशानुसार: कोई दूसरा, अनुमानित या असंबद्ध दोष नहीं दिखाया गया है)।`,
     suggestedActions: [
-      "1. Master DDU पर फॉल्ट संदेश व Node (Node 504) की जांच करें।",
+      "1. Master DDU पर प्रदर्शित फॉल्ट संदेश (Fault Message) व Node (Node 504) की जांच करें।",
       "2. 22-पिन UIC जंपर व WTB कम्युनिकेशन लिंक की स्थिति चेक करें।",
-      "3. स्लेव लोको में कॉक 136 बंद (CLOSED) तथा SA-9 रिलीज स्थिति में होना सुनिश्चित करें।",
-      "4. आवश्यक होने पर Master कैब के 'D' पैनल पर ADD BL से स्लेव MCE रीसेट करें।"
+      "3. स्लेव लोको में कॉक 136 बंद (CLOSED) तथा SA-9 रिलीज स्थिति में होना सुनिश्चित करें।"
     ],
-    precautions: "स्लेव लोको का निरीक्षण करने से पूर्व मास्टर लोको में SA-9 अवश्य लगाएं।",
+    precautions: "मास्टर व स्लेव दोनों लोको की सुरक्षा सावधानियों व कॉक स्थितियों का कड़ाई से पालन करें। तुरंत TLC से संपर्क करें।",
     manualReference: "CLW अमृत भारत TSD फाइनल कॉपी",
-    verifiedFromPdf: true,
+    verifiedFromPdf: false,
     pdfDocumentName: "चित्तरंजन लोकोमोटिव वर्क्स (CLW) 67-पृष्ठ अमृत भारत TSD फाइनल कॉपी PDF",
-    pdfPage: 53,
-    pdfQuote: "Official Amrit Bharat Push-Pull Troubleshooting Procedure"
+    pdfPage: 1,
+    pdfQuote: "कोई सटीक TSD रिकॉर्ड नहीं मिला।"
   };
 }
 
@@ -11331,7 +11351,17 @@ export function resolveDefectClientSide(query: string, locoType: '3phase' | 'amr
     norm.includes('conv-horn-whistle-failure') ||
     norm.includes('ʬीसल') || norm.includes('İʬसल') || norm.includes('हॉनŊ') || norm.includes('डुɘेƛ') || norm.includes('सैİȵंग') ||
     norm.includes('व्हीसल') || norm.includes('व्हिसल') || norm.includes('whistle') ||
-    ((norm.includes('हॉर्न') || norm.includes('horn') || norm.includes('हॉन') || norm.includes('सीटी')) && (norm.includes('फेल') || norm.includes('fail') || norm.includes('लीकेज') || norm.includes('leakage') || norm.includes('सैंडिंग') || norm.includes('डुप्लेक्स') || norm.includes('4.50') || norm.includes('गाड़ी') || norm.includes('लोको')));
+    ((norm.includes('हॉर्न') || norm.includes('horn') || norm.includes('हॉन') || norm.includes('सीटी')) && (norm.includes('फेल') || norm.includes('fail') || norm.includes('लीकेज') || norm.includes('leakage') || norm.includes('सैंडिंग') || norm.includes('डुप्लेक्स') || norm.includes('4.50') || norm.includes('गाड़ी') || norm.includes('लोको'))) ||
+    norm.includes('sa-9') || norm.includes('sa9') || norm.includes('sa 9') || norm.includes('sa_9') ||
+    norm.includes('एसए-9') || norm.includes('एसए 9') || norm.includes('एस ए 9') || norm.includes('एसए9') ||
+    norm.includes('a-9') || norm.includes('a9') || norm.includes('a 9') || norm.includes('a_9') ||
+    norm.includes('ए-9') || norm.includes('ए 9') || norm.includes('ए9') ||
+    norm.includes('लोको ब्रेक नहीं लगती') || norm.includes('लोको ब्रेक नहीं') ||
+    norm.includes('icdj') || norm.includes('±li[j nh)> hi[ti') || norm.includes('bp1dj') || norm.includes('bp2dj') ||
+    norm.includes('add blrdj') || norm.includes('dj close') || norm.includes('vcb close') || norm.includes('क्लोज नहीं होता') ||
+    norm.includes('dj nahi lag') || norm.includes('vcb nahi lag') || norm.includes('dj/vcb nahi lag') ||
+    (norm.includes('dj') && (norm.includes('close') || norm.includes('क्लोज') || norm.includes('नहीं होता') || norm.includes('nahi hota'))) ||
+    (norm.includes('vcb') && (norm.includes('close') || norm.includes('क्लोज') || norm.includes('नहीं होता') || norm.includes('nahi hota')));
 
   let effectiveType: '3phase' | 'amrit_bharat' | 'conventional' = locoType;
   if (norm.includes('3 phase ka pooch raha') || norm.includes('question 3 phase') || norm.includes('3 phase ka') || norm.includes('3-phase ka')) {
@@ -11440,13 +11470,15 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
     norm.includes('bpmpr') || norm.includes('बीपीएमपीआर') ||
     (
       (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
-      (norm.includes('reset') || norm.includes('रीसेट') || norm.includes('रिसेट')) &&
-      (norm.includes('tr') || norm.includes('पैनल') || norm.includes('10') || norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम') || norm.includes('बटन') || norm.includes('push'))
+      (
+        norm.includes('reset') || norm.includes('reser') || norm.includes('रीसेट') || norm.includes('रिसेट') || norm.includes('रीसर') || norm.includes('रिसेर') || norm.includes('रेसर') ||
+        norm.includes('tr') || norm.includes('पैनल') || norm.includes('10') || norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम') || norm.includes('बटन') || norm.includes('push')
+      )
     ) ||
     (
       (norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम') || norm.includes('sub system') || norm.includes('sub-system') || norm.includes('subsystem')) &&
       (norm.includes('आइसोलेट') || norm.includes('isolate')) &&
-      (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('रीसेट') || norm.includes('reset') || norm.includes('bpmpr') || norm.includes('10 sec') || norm.includes('10 सेकंड'))
+      (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('रीसेट') || norm.includes('reset') || norm.includes('reser') || norm.includes('रीसर') || norm.includes('bpmpr') || norm.includes('10 sec') || norm.includes('10 सेकंड'))
     ) ||
     norm.includes('conv-mpcs-bpmpr-reset');
 
@@ -11565,11 +11597,13 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
       (norm.includes('15') || norm.includes('sec') || norm.includes('dj') || norm.includes('vcb') || norm.includes('trip') || norm.includes('(t^p') || norm.includes('hvmt'))
     ) ||
     (
-      (norm.includes('6') || norm.includes('छठा') || norm.includes('छठी')) &&
+      (norm.includes('6') || norm.includes('छठा') || norm.includes('छठी') || norm.includes('sixth')) &&
       (norm.includes('notch') || norm.includes('नोच') || norm.includes('ni[c')) &&
-      (norm.includes('15') || norm.includes('sec')) &&
-      (norm.includes('dj') || norm.includes('vcb') || norm.includes('trip') || norm.includes('ट्रिप') || norm.includes('(t^p'))
+      (norm.includes('15') || norm.includes('sec') || norm.includes('सेकंड') || norm.includes('सेकेण्ड'))
     ) ||
+    norm.includes('15 sec') ||
+    norm.includes('15 second') ||
+    norm.includes('15 सेकंड') ||
     norm.includes('conv-mpcs-dj-trip-on-6th-notch-15-sec');
 
   if (isMPCS6thNotch15SecQuery) {
@@ -11590,30 +11624,47 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
     }
   }
 
-  // 0.1A Explicit Check for MPCS - DJ/VCB Not Closing / ICDJ (CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING)
+  // 0.1A Explicit Check for DJ/VCB Not Closing / ICDJ (CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING)
   const isMPCSICDJQuery =
     !isMPCS6thNotch15SecQuery &&
     (
-      (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
+      norm.includes('icdj') ||
+      norm.includes('±li[j nh)> hi[ti') ||
+      norm.includes('±li[j nh)>') ||
+      norm.includes('क्लोज नहीं होता') ||
+      norm.includes('close nahi hota') ||
+      norm.includes('बंद नहीं होता') ||
+      norm.includes('नहीं लगता') ||
+      norm.includes('17 सूत्रीय') ||
+      norm.includes('17-सूत्रीय') ||
       (
-        norm.includes('icdj') ||
-        (norm.includes('dj') && (norm.includes('close') || norm.includes('क्लोज') || norm.includes('±li[j') || norm.includes('not close') || norm.includes('nahi hota') || norm.includes('nh)> hi[ti') || norm.includes('band'))) ||
-        (norm.includes('vcb') && (norm.includes('close') || norm.includes('क्लोज') || norm.includes('±li[j') || norm.includes('not close') || norm.includes('nahi hota') || norm.includes('nh)> hi[ti') || norm.includes('band'))) ||
-        norm.includes('bp1dj') ||
-        norm.includes('bp2dj') ||
-        norm.includes('add blrdj')
-      )
-    ) ||
-    (
-      (norm.includes('dj/vcb') || norm.includes('dj') || norm.includes('vcb')) &&
-      norm.includes('icdj') &&
-      (norm.includes('mpcs') || norm.includes('एमपीसीएस') || norm.includes('bp1dj') || norm.includes('bp2dj') || norm.includes('add blrdj') || norm.includes('cccpu'))
-    ) ||
-    (
-      (norm.includes('bp1dj') || norm.includes('bp2dj') || norm.includes('add blrdj')) &&
-      (norm.includes('dj') || norm.includes('vcb') || norm.includes('close') || norm.includes('क्लोज'))
-    ) ||
-    norm.includes('conv-mpcs-icdj-dj-vcb-not-closing');
+        (norm.includes('dj') || norm.includes('vcb') || norm.includes('डीजे') || norm.includes('वीसीबी')) &&
+        (norm.includes('close') || norm.includes('क्लोज') || norm.includes('±li[j') || norm.includes('not close') || norm.includes('nahi hota') || norm.includes('nh)> hi[ti') || norm.includes('band') || norm.includes('nahi lag') || norm.includes('नहीं लग'))
+      ) ||
+      (
+        (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
+        (
+          norm.includes('icdj') ||
+          (norm.includes('dj') && (norm.includes('close') || norm.includes('क्लोज') || norm.includes('±li[j') || norm.includes('not close') || norm.includes('nahi hota') || norm.includes('nh)> hi[ti') || norm.includes('band'))) ||
+          (norm.includes('vcb') && (norm.includes('close') || norm.includes('क्लोज') || norm.includes('±li[j') || norm.includes('not close') || norm.includes('nahi hota') || norm.includes('nh)> hi[ti') || norm.includes('band'))) ||
+          norm.includes('bp1dj') ||
+          norm.includes('bp2dj') ||
+          norm.includes('add blrdj')
+        )
+      ) ||
+      (
+        (norm.includes('bp1dj') || norm.includes('bp2dj') || norm.includes('add blrdj')) &&
+        (norm.includes('dj') || norm.includes('vcb') || norm.includes('close') || norm.includes('क्लोज'))
+      ) ||
+      norm.includes('conv-mpcs-icdj-dj-vcb-not-closing')
+    ) &&
+    !norm.includes('lsdj nahi bujhta') &&
+    !norm.includes('lsdj नहीं बुझता') &&
+    !norm.includes('bujhne ke baad') &&
+    !norm.includes('bujhne ke bad') &&
+    !norm.includes('बुझने के बाद') &&
+    !norm.includes('bujhne se pehle') &&
+    !norm.includes('बुझने से पहले');
 
   if (isMPCSICDJQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-ICDJ-DJ-VCB-NOT-CLOSING');
@@ -11635,29 +11686,33 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
 
   // 0.1B Explicit Check for MPCS - Main Unit Not Working (CONV-MPCS-MAIN-UNIT-NOT-WORKING)
   const isMPCSMainUnitQuery =
+    !isMPCSBPMPRResetQuery &&
+    !norm.includes('reset') && !norm.includes('reser') && !norm.includes('रीसेट') && !norm.includes('रीसर') && !norm.includes('bpmpr') &&
     (
-      (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
       (
-        norm.includes('main unit') ||
-        norm.includes('मेन यूनिट') ||
-        norm.includes('m[n y') ||
-        norm.includes('cccpu') ||
-        norm.includes('not work') ||
-        norm.includes('कार्य नहीं') ||
-        norm.includes('काम नहीं') ||
-        norm.includes('ack') ||
-        norm.includes('buzzer') ||
-        norm.includes('बजर') ||
-        norm.includes('b[t^)') ||
-        norm.includes('battery')
-      )
-    ) ||
-    (
-      (norm.includes('main unit') || norm.includes('मेन यूनिट') || norm.includes('m[n y‰(nt') || norm.includes('m[n y*(nt') || norm.includes('m[n y')) &&
-      (norm.includes('not work') || norm.includes('कार्य नहीं') || norm.includes('काम नहीं') || norm.includes('nh)> krti') || norm.includes('fail') || norm.includes('फेल'))
-    ) ||
-    norm.includes('cccpu') ||
-    norm.includes('conv-mpcs-main-unit-not-working');
+        (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
+        (
+          norm.includes('main unit') ||
+          norm.includes('मेन यूनिट') ||
+          norm.includes('m[n y') ||
+          norm.includes('cccpu') ||
+          norm.includes('not work') ||
+          norm.includes('कार्य नहीं') ||
+          norm.includes('काम नहीं') ||
+          norm.includes('ack') ||
+          norm.includes('buzzer') ||
+          norm.includes('बजर') ||
+          norm.includes('b[t^)') ||
+          norm.includes('battery')
+        )
+      ) ||
+      (
+        (norm.includes('main unit') || norm.includes('मेन यूनिट') || norm.includes('m[n y‰(nt') || norm.includes('m[n y*(nt') || norm.includes('m[n y')) &&
+        (norm.includes('not work') || norm.includes('कार्य नहीं') || norm.includes('काम नहीं') || norm.includes('nh)> krti') || norm.includes('fail') || norm.includes('फेल'))
+      ) ||
+      norm.includes('cccpu') ||
+      norm.includes('conv-mpcs-main-unit-not-working')
+    );
 
   if (isMPCSMainUnitQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-MPCS-MAIN-UNIT-NOT-WORKING');
@@ -12232,8 +12287,8 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
     !norm.includes('प्रकाशित नहीं') && !norm.includes('prakashit nahi') && !norm.includes('not glow') && !norm.includes('nahi jalta') &&
     !norm.includes('blrdj') && !norm.includes('दूसरी कैब') && !norm.includes('doosri cab') &&
     !norm.includes('नोच रिपीटर') && !norm.includes('notch repeater') && !norm.includes('repeater') &&
-    !norm.includes('lsdj') && !norm.includes('बुझने') && !norm.includes('bujhne') &&
-    !norm.includes('pehle') && !norm.includes('baad') && !norm.includes('before') && !norm.includes('after') &&
+    !norm.includes('lsdj') && !norm.includes('बुझने') && !norm.includes('bujhne') && !norm.includes('bujne') &&
+    !norm.includes('pehle') && !norm.includes('baad') && !norm.includes('bad') && !norm.includes('before') && !norm.includes('after') &&
     !norm.includes('arno') && !norm.includes('आर्नो') &&
     (((norm.includes('chba') || norm.includes('hchba') || norm.includes('battery charger') || norm.includes('बैटरी चार्जर')) &&
       (norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('fail') || norm.includes('खराब') || norm.includes('प्रकाशित रहता') || norm.includes('remains glowing') || norm.includes('bina dj') || norm.includes('बिना dj') || norm.includes('discharg') || norm.includes('डिस्चार्ज'))) ||
@@ -12289,12 +12344,13 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
 
   // 13B. Explicit Check for यदि कोई ऑक्सिलरी क्षतिग्रस्त (Damage) हो गई है अथवा जल गई है (CONV-AUX-DAMAGED-BURNT)
   const isAuxDamagedBurntQuery =
-    norm.includes('damage') || norm.includes('क्षतिग्रस्त') || norm.includes('shatigrast') ||
+    !norm.includes('छठी नोच') && !norm.includes('छठी नाच') && !norm.includes('6 नोच') && !norm.includes('6th notch') &&
+    (norm.includes('damage') || norm.includes('क्षतिग्रस्त') || norm.includes('shatigrast') ||
     norm.includes('जल गई') || norm.includes('जल गयी') || norm.includes('jal gai') || norm.includes('jal gayi') ||
     norm.includes('जली हुई') || norm.includes('jali hui') || norm.includes('जलने') || norm.includes('jalne') ||
     norm.includes('fire extinguisher') || norm.includes('अग्निशामक') || norm.includes('agnishamak') ||
     (norm.includes('auxiliary') && (norm.includes('burnt') || norm.includes('burn') || norm.includes('fire') || norm.includes('damage'))) ||
-    (norm.includes('ऑक्सिलरी') && (norm.includes('जल') || norm.includes('आग') || norm.includes('धुआं') || norm.includes('क्षतिग्रस्त')));
+    (norm.includes('ऑक्सिलरी') && (norm.includes('जल') || norm.includes('आग') || norm.includes('धुआं') || norm.includes('क्षतिग्रस्त'))));
 
   if (isAuxDamagedBurntQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-AUX-DAMAGED-BURNT')!;
@@ -12341,9 +12397,13 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
   // 15. Explicit Check for MVSL-1/MVSL-2 काम नहीं करता है (CONV-MVSL-NOT-WORKING)
   const isMVSLNotWorkingQuery =
     !isAuxDamagedBurntQuery &&
-    ((norm.includes('mvsl') && (norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('fail') || norm.includes('खराब') || norm.includes('आधा') || norm.includes('permissible') || norm.includes('half load') || norm.includes('hvsl') || norm.includes('hvsi') || norm.includes('hvmt'))) ||
-    ((norm.includes('mvsl-1') || norm.includes('mvsl-2') || norm.includes('mvsl 1') || norm.includes('mvsl 2')) && !norm.includes('lschba') && !norm.includes('बुझने के बाद')) ||
-    (norm.includes('hvsl') && norm.includes('hvmt') && norm.includes('hvsi') && (norm.includes('mvsl') || (norm.includes('0') && (norm.includes('आधा') || norm.includes('half'))))));
+    (
+      (norm.includes('mvsl') && (norm.includes('काम नहीं') || norm.includes('kaam nahi') || norm.includes('not work') || norm.includes('fail') || norm.includes('खराब') || norm.includes('आधा') || norm.includes('permissible') || norm.includes('half load') || norm.includes('hvsl') || norm.includes('hvsi') || norm.includes('hvmt'))) ||
+      ((norm.includes('mvsl-1') || norm.includes('mvsl-2') || norm.includes('mvsl 1') || norm.includes('mvsl 2')) && !norm.includes('lschba') && !norm.includes('बुझने के बाद')) ||
+      (norm.includes('hvsl') && (norm.includes('hvmt') || norm.includes('hvsi')) && (norm.includes('0') || norm.includes('block') || norm.includes('ब्लॉक') || norm.includes('isolate') || norm.includes('आइसोलेट') || norm.includes('आधा') || norm.includes('permissible'))) ||
+      (norm.includes('hvsl-1') && norm.includes('hvsl-2') && !norm.includes('lschba') && !norm.includes('3')) ||
+      norm.includes('conv-mvsl-not-working')
+    );
 
   if (isMVSLNotWorkingQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-MVSL-NOT-WORKING')!;
@@ -13043,8 +13103,13 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
   // 8. Explicit Check for LSCHBA के बुझने के बाद LSDJ फिर से प्रकाशित होता है (CONV-LSDJ-AFTER-LSCHBA)
   const isLSCHBAAfterQuery =
     !isCHBANotWorkingQuery && !isMPHNotWorkingQuery && !isMVSLNotWorkingQuery && !isMVSINotWorkingQuery && !isMVMTNotWorkingQuery && !isMVRHNotWorkingQuery &&
-    (norm.includes('lschba') || norm.includes('hph') || norm.includes('hvsl') || norm.includes('mvsl') || norm.includes('mph') || (norm.includes('q118') && (norm.includes('wedge') || norm.includes('vej') || norm.includes('वेज')))) &&
-    (norm.includes('baad') || norm.includes('bad') || norm.includes('बाद') || norm.includes('after') || (norm.includes('hph') && norm.includes('3')) || norm.includes('hvsl-1') || norm.includes('hvsl-2'));
+    !norm.includes('pehle') && !norm.includes('pahle') && !norm.includes('पहले') && !norm.includes('before') &&
+    (
+      (norm.includes('lschba') && (norm.includes('baad') || norm.includes('bad') || norm.includes('बाद') || norm.includes('after') || norm.includes('bujh') || norm.includes('bujn') || norm.includes('बुझ'))) ||
+      ((norm.includes('lschba') || norm.includes('hph') || norm.includes('hvsl') || norm.includes('mvsl') || norm.includes('mph') || (norm.includes('q118') && (norm.includes('wedge') || norm.includes('vej') || norm.includes('वेज')))) &&
+       (norm.includes('baad') || norm.includes('bad') || norm.includes('बाद') || norm.includes('after') || (norm.includes('hph') && norm.includes('3')) || norm.includes('hvsl-1') || norm.includes('hvsl-2'))) ||
+      norm.includes('conv-lsdj-after-lschba')
+    );
 
   if (isLSCHBAAfterQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-LSDJ-AFTER-LSCHBA')!;
@@ -13115,8 +13180,22 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
   // 11. Explicit Check for छठी नोच पर DJ/VCB ट्रिप होता है (CONV-DJ-TRIP-SIXTH-NOTCH)
   const isSixthNotchTripQuery =
     !isMVMTNotWorkingQuery && !isMVRHNotWorkingQuery &&
-    ((norm.includes('6th notch') || norm.includes('sixth notch') || norm.includes('छठी नोच') || norm.includes('छठा नोच') || norm.includes('chhati notch') || norm.includes('chatha notch')) ||
-    ((norm.includes('c107') || norm.includes('c105') || norm.includes('c106') || norm.includes('q100') || norm.includes('cca')) && (norm.includes('notch') || norm.includes('नोच') || norm.includes('trip'))));
+    !norm.includes('15 sec') && !norm.includes('15 सेकंड') && !norm.includes('15sec') && !norm.includes('ccpt') &&
+    (
+      (
+        (norm.includes('6th') || norm.includes('sixth') || norm.includes('छठी') || norm.includes('छठा') || norm.includes('chhati') || norm.includes('chatha') || norm.includes('6 नोच') || norm.includes('६ नोच') || norm.includes('6 notch') || norm.includes('6 noch') || norm.includes('6 नाच') || norm.includes('छठी नाच')) &&
+        (norm.includes('notch') || norm.includes('नोच') || norm.includes('नाच') || norm.includes('noch')) &&
+        (norm.includes('trip') || norm.includes('ट्रिप') || norm.includes('dj') || norm.includes('vcb') || norm.includes('डीजे'))
+      ) ||
+      norm.includes('छठी नोच पर dj') ||
+      norm.includes('छठी नाच पर dj') ||
+      norm.includes('6 नोच पर dj') ||
+      norm.includes('conv-dj-trip-sixth-notch') ||
+      (
+        (norm.includes('c107') || norm.includes('c105') || norm.includes('c106') || norm.includes('q100') || norm.includes('cca')) &&
+        (norm.includes('notch') || norm.includes('नोच') || norm.includes('नाच') || norm.includes('trip') || norm.includes('ट्रिप'))
+      )
+    );
 
   if (isSixthNotchTripQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-DJ-TRIP-SIXTH-NOTCH')!;
@@ -13230,10 +13309,11 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
   // 12C-0000. Explicit Check for SA-9 द्वारा लोको ब्रेक नहीं लगती है (CONV-SA9-LOCO-BRAKE-NOT-APPLYING)
   const isSA9LocoBrakeNotApplyingQuery =
     !isLocoBrakeNotReleasingA9SA9ReleaseQuery &&
-    (norm.includes('sa-9') || norm.includes('sa9') || norm.includes('एसए-9') || norm.includes('एसए9') || norm.includes('sa 9') || norm.includes('sa_9')) &&
-    (norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('ïýë»') || norm.includes('loco') || norm.includes('लोको') || norm.includes('ôí»í')) &&
-    (norm.includes('nahi') || norm.includes('नहीं') || norm.includes('not') || norm.includes('ìúi') || norm.includes('fail') || norm.includes('फेल')) &&
-    (norm.includes('lag') || norm.includes('लग') || norm.includes('apply') || norm.includes('ô½') || norm.includes('action') || norm.includes('kam') || norm.includes('काम'));
+    (
+      norm.includes('sa-9') || norm.includes('sa9') || norm.includes('एसए-9') || norm.includes('एसए9') || 
+      norm.includes('sa 9') || norm.includes('sa_9') || norm.includes('एस ए 9') || norm.includes('एस ए नाइन') ||
+      norm.includes('एसए नाइन') || norm.includes('sa nine') || norm.includes('essay 9')
+    );
 
   if (isSA9LocoBrakeNotApplyingQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-SA9-LOCO-BRAKE-NOT-APPLYING')!;
@@ -13257,11 +13337,11 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
   const isA9LocoBrakeNotApplyingQuery =
     !isLocoBrakeNotReleasingA9SA9ReleaseQuery &&
     !isSA9LocoBrakeNotApplyingQuery &&
-    (norm.includes('a-9') || norm.includes('a9') || norm.includes('ए-9') || norm.includes('ए9')) &&
-    (norm.includes('loco') || norm.includes('लोको') || norm.includes('ôí»í')) &&
-    (norm.includes('brake') || norm.includes('ब्रेक') || norm.includes('ïýë»')) &&
-    (norm.includes('nahi') || norm.includes('नहीं') || norm.includes('not') || norm.includes('ìúi') || norm.includes('fail') || norm.includes('फेल')) &&
-    (norm.includes('lag') || norm.includes('लग') || norm.includes('apply') || norm.includes('ô½') || norm.includes('action') || norm.includes('kam'));
+    (
+      norm.includes('a-9') || norm.includes('a9') || norm.includes('ए-9') || norm.includes('ए9') || 
+      norm.includes('a 9') || norm.includes('a_9') || norm.includes('ए 9') || norm.includes('ए नाइन') ||
+      norm.includes('ए-नाइन') || norm.includes('a nine')
+    );
 
   if (isA9LocoBrakeNotApplyingQuery) {
     const f = conventionalFaults.find(cf => cf.id === 'CONV-A9-LOCO-BRAKE-NOT-APPLYING')!;
@@ -13430,7 +13510,10 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
   // 13B. Explicit Check for फ्लैशर लाईट कार्य नहीं करती (CONV-FLASHER-LIGHT-NOT-WORKING)
   const isFlasherLightNotWorkingQuery =
     norm.includes('flasher') ||
+    norm.includes('fresher') ||
     norm.includes('फ्लैशर') ||
+    norm.includes('फ्रेशर') ||
+    norm.includes('फ्लेसर') ||
     norm.includes('½l]sr') ||
     norm.includes('lie<t') ||
     (norm.includes('afl') && (norm.includes('fail') || norm.includes('not work') || norm.includes('फेल') || norm.includes('काम नहीं') || norm.includes('कार्य नहीं') || norm.includes('standby') || norm.includes('ग्लास')));
@@ -14286,7 +14369,7 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
         norm.includes('bpmpr') || norm.includes('बीपीएमपीआर') ||
         (
           (norm.includes('mpcs') || norm.includes('एमपीसीएस')) &&
-          (norm.includes('reset') || norm.includes('रीसेट') || norm.includes('रिसेट') || norm.includes('tr') || norm.includes('पैनल') || norm.includes('10 sec') || norm.includes('10 सेकंड') || norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम'))
+          (norm.includes('reset') || norm.includes('reser') || norm.includes('रीसेट') || norm.includes('रिसेट') || norm.includes('रीसर') || norm.includes('रिसेर') || norm.includes('रेसर') || norm.includes('tr') || norm.includes('पैनल') || norm.includes('10 sec') || norm.includes('10 सेकंड') || norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम'))
         ) ||
         (
           (norm.includes('सब सिस्टम') || norm.includes('सब-सिस्टम')) && (norm.includes('आइसोलेट') || norm.includes('isolate'))
@@ -14307,12 +14390,14 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
         norm.includes('add blrdj')
       )) ||
       (f.id === 'CONV-MPCS-MAIN-UNIT-NOT-WORKING' && (
-        norm.includes('mpcs') ||
-        norm.includes('एमपीसीएस') ||
-        norm.includes('main unit') ||
-        norm.includes('मेन यूनिट') ||
-        norm.includes('cccpu') ||
-        (norm.includes('m[n') && norm.includes('kiy<'))
+        !norm.includes('reset') && !norm.includes('reser') && !norm.includes('रीसेट') && !norm.includes('रीसर') && !norm.includes('bpmpr') &&
+        (
+          norm.includes('main unit') ||
+          norm.includes('मेन यूनिट') ||
+          norm.includes('cccpu') ||
+          (norm.includes('m[n') && norm.includes('kiy<')) ||
+          ((norm.includes('mpcs') || norm.includes('एमपीसीएस')) && (norm.includes('fail') || norm.includes('not working') || norm.includes('काम नहीं') || norm.includes('कार्य नहीं') || norm.includes('फेल')))
+        )
       )) ||
       (f.id === 'CONV-SIV-EARTH-FAULT-BYPASS-PROCEDURE' && (
         ((norm.includes('earth') || norm.includes('अर्थ') || norm.includes('ay<')) && (norm.includes('bypass') || norm.includes('बाईपास') || norm.includes('biypis'))) ||
@@ -14366,20 +14451,53 @@ function resolveConventionalDefect(query: string, norm: string): GroundedResult 
     }
   }
 
-  // Fallback to highest scored match
-  let best = conventionalFaults[0];
+  // Fallback to highest scored match using meaningful technical keywords
+  const STOP_WORDS = new Set([
+    'नहीं', 'नही', 'रहा', 'रहे', 'रही', 'होता', 'होते', 'होती', 'होने', 'करने', 'करना', 'करके',
+    'गाड़ी', 'लोको', 'लोकोमोटिव', 'जाता', 'जाती', 'जाते', 'दिए', 'दिया', 'रखें', 'रखना',
+    'चेक', 'जांच', 'सकते', 'सकता', 'सकती', 'परंतु', 'लेकिन', 'अथवा', 'किन्तु', 'अगर', 'यदि',
+    'वाले', 'वाली', 'वाला', 'लिया', 'लिए', 'काम', 'कार्य', 'बतावे', 'बताएं', 'दिखाएं',
+    'मदद', 'उत्तर', 'आंसर', 'answer', 'naswer', 'problem', 'fault', 'loco', 'train',
+    'check', 'done', 'step', 'with', 'from', 'this', 'that', 'have', 'been', 'does',
+    'nahi', 'nahin', 'raha', 'rahe', 'rahi', 'hota', 'hote', 'hoti', 'hone', 'karne',
+    'karna', 'gadi', 'kaise', 'kare', 'karein'
+  ]);
+
+  let best: any = null;
   let bestScore = 0;
+  const meaningfulWords = Array.from(new Set(norm.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w))));
+
   for (const f of conventionalFaults) {
     let score = 0;
     const all = (f.id + ' ' + f.message + ' ' + f.effect + ' ' + f.actions.join(' ')).toLowerCase();
-    const words = norm.split(/\s+/).filter(w => w.length > 2);
-    for (const w of words) {
+    for (const w of meaningfulWords) {
       if (all.includes(w)) score += 10;
     }
     if (score > bestScore) {
       bestScore = score;
       best = f;
     }
+  }
+
+  // CRITICAL USER MANDATE: "agar answer nahi mil raha hai to dusar answer nahi batave"
+  // If no match found or bestScore is below confident threshold: DO NOT return another/unrelated fault!
+  if (!best || bestScore < 30) {
+    return {
+      identifiedFaultId: "NO_EXACT_MATCH",
+      faultTitle: "कोई सटीक TSD समाधान नहीं मिला (No Exact TSD Match Found)",
+      analysis: `दर्ज की गई समस्या/अपलोड: "${query.trim()}"\n\nCAMTECH कन्वेंशनल लोको TSD डायरेक्टरी में इस समस्या का कोई सीधा या सटीक मेल नहीं मिला।\n\n(यूजर के निर्देशानुसार: कोई दूसरा, अनुमानित या असंबद्ध दोष नहीं दिखाया गया है)।`,
+      suggestedActions: [
+        "1. जो दोष या विवरण आपने अपलोड/दर्ज किया है, उसके रिले, पायलट लैम्प, न्यूमैटिक वाल्व या स्विच कोड की वर्तनी जांचें।",
+        "2. कन्वेंशनल लोको के मुख्य कोड: QLM, QOP, QRSI, Q44, Q118, LSCHBA, LSDJ, LSGR, LSP, A-9, SA-9, MU2B, MCP, DJ आदि की सही पहचान करें।",
+        "3. यदि समस्या किसी विशिष्ट अध्याय से संबंधित है तो नीचे सिस्टम डायरेक्टरी सूची से उस अध्याय को सीधे खोलें।"
+      ],
+      precautions: "सुरक्षा कारणों से लोकोमोटिव में अनधिकृत रिले वेजिंग या छेड़छाड़ न करें और तुरंत TLC / PCOR से संपर्क करें।",
+      manualReference: "CAMTECH कन्वेंशनल लोको TSD डायरेक्टरी",
+      verifiedFromPdf: false,
+      pdfDocumentName: "CAMTECH कन्वेंशनल TSD डायरेक्टरी",
+      pdfPage: 1,
+      pdfQuote: "कोई सटीक TSD रिकॉर्ड नहीं मिला।"
+    };
   }
 
   return {

@@ -688,7 +688,13 @@ async function startServer() {
 
       const problem = cleanRailwayVoiceText(rawProblem.trim());
 
-      // Check for direct grounded match from manual memory & universal page search
+      // Check for direct grounded match from clientTroubleshooter / conventional / amrit / 3-phase TSD
+      const clientMatch = resolveDefectClientSide(rawProblem, locoType) || resolveDefectClientSide(problem, locoType);
+      if (clientMatch && clientMatch.identifiedFaultId && clientMatch.identifiedFaultId !== 'NO_EXACT_MATCH') {
+        console.log(`[Direct TSD Grounded Match] Serving exact verified solution for: "${rawProblem}" (ID: ${clientMatch.identifiedFaultId})`);
+        return res.json(clientMatch);
+      }
+
       const directMatch = getGroundedSolution(rawProblem, locoType) || getGroundedSolution(problem, locoType);
 
       if (directMatch) {
